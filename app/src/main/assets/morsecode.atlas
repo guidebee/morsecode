@@ -1,0 +1,313 @@
+morsecode.png
+size: 256, 256
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+bomb1
+  rotate: false
+  xy: 1, 67
+  size: 48, 48
+  orig: 48, 48
+  offset: 0, 0
+  index: -1
+bombbackground
+  rotate: false
+  xy: 79, 1
+  size: 48, 48
+  orig: 48, 48
+  offset: 0, 0
+  index: -1
+box
+  rotate: false
+  xy: 1, 117
+  size: 48, 48
+  orig: 48, 48
+  offset: 0, 0
+  index: -1
+boxbackground
+  rotate: false
+  xy: 129, 1
+  size: 48, 48
+  orig: 48, 48
+  offset: 0, 0
+  index: -1
+dash
+  rotate: false
+  xy: 179, 1
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+dashdotbackground
+  rotate: false
+  xy: 1, 167
+  size: 48, 48
+  orig: 48, 48
+  offset: 0, 0
+  index: -1
+dot
+  rotate: false
+  xy: 1, 217
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+lettera
+  rotate: false
+  xy: 213, 1
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+letterb
+  rotate: false
+  xy: 51, 67
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+letterc
+  rotate: false
+  xy: 51, 101
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+letterd
+  rotate: false
+  xy: 51, 135
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+lettere
+  rotate: false
+  xy: 51, 169
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+letterf
+  rotate: false
+  xy: 85, 51
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+letterg
+  rotate: false
+  xy: 85, 85
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+letterh
+  rotate: false
+  xy: 119, 51
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+letteri
+  rotate: false
+  xy: 85, 119
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+letterj
+  rotate: false
+  xy: 119, 85
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+letterk
+  rotate: false
+  xy: 85, 153
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+letterl
+  rotate: false
+  xy: 119, 119
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+letterm
+  rotate: false
+  xy: 119, 153
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+lettern
+  rotate: false
+  xy: 153, 51
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+lettero
+  rotate: false
+  xy: 153, 85
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+letterp
+  rotate: false
+  xy: 153, 119
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+letterq
+  rotate: false
+  xy: 153, 153
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+letterr
+  rotate: false
+  xy: 187, 35
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+letters
+  rotate: false
+  xy: 187, 69
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+lettert
+  rotate: false
+  xy: 187, 103
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+letteru
+  rotate: false
+  xy: 187, 137
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+letterv
+  rotate: false
+  xy: 221, 35
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+letterw
+  rotate: false
+  xy: 221, 69
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+letterx
+  rotate: false
+  xy: 221, 103
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+lettery
+  rotate: false
+  xy: 221, 137
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+letterz
+  rotate: false
+  xy: 35, 217
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+number0
+  rotate: false
+  xy: 85, 187
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+number1
+  rotate: false
+  xy: 119, 187
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+number2
+  rotate: false
+  xy: 153, 187
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+number3
+  rotate: false
+  xy: 187, 171
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+number4
+  rotate: false
+  xy: 221, 171
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+number5
+  rotate: false
+  xy: 187, 205
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+number6
+  rotate: false
+  xy: 221, 205
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+number7
+  rotate: false
+  xy: 69, 221
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+number8
+  rotate: false
+  xy: 103, 221
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+number9
+  rotate: false
+  xy: 137, 221
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+plus5
+  rotate: false
+  xy: 1, 1
+  size: 76, 64
+  orig: 76, 64
+  offset: 0, 0
+  index: -1

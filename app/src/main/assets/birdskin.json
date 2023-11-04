@@ -1,0 +1,40 @@
+{
+
+  com.guidebee.game.ui.Button$ButtonStyle: {
+  play: { down: button_play_down, up: button_play_up },
+  shop: { down: button_shop_down,  up: button_shop_up },
+  score: { down: button_score_down,  up: button_score_up },
+  design: { down: design_down,  up: design_up },
+  option: { down: option_down,  up: option_up },
+  save: { up: save_down,  down: save_up },
+  back: { up: back_down,  down: back_up },
+  buy: { up: BUY_button,  down: BUY_button },
+  load: { up: load_up,  down: load_down },
+  run: { up: run_up,  down: run_down },
+  add: { up: add_up,  down: add_down },
+  del: { up: del_up,  down: del_down },
+  random: { up: random_up,  down: random_down },
+  change: { up: change_down,  down: change_up },
+  reset: { up: reset_up,  down: reset_down },
+
+
+
+},
+
+  com.guidebee.game.ui.Image: {
+  menu_background : { drawable : menu_background},
+  guidebeeit : { drawable : guidebeeit},
+  dialog_bg: {drawable : dialog_bg},
+  highscore: {drawable : highscore},
+  button_score_up: {drawable : button_score_up},
+  highscore: {drawable : highscore},
+  notice: {drawable : notice},
+  tubemum: {drawable : tubemum},
+  toplen: {drawable : toplen},
+  bottom: {drawable : bottom},
+  distance: {drawable : distance},
+
+
+
+}
+}

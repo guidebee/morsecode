@@ -1,0 +1,54 @@
+<resources>
+    <string name="app_name">Morse Code Toolkit</string>
+    <string name="power">POWER</string>
+    <string name="analog">ANALOG</string>
+    <string name="x_pos">X-POS</string>
+    <string name="y_pos">Y-POS</string>
+    <string name="reset">RESET</string>
+    <string name="play_sample">Play Sample</string>
+    <string name="stop_sample">Stop Sample</string>
+    <string name="clear">Clear</string>
+    <string name="play_sound">Play Sound</string>
+    <string name="morse_code_keypad">Morse Code Keypad</string>
+    <string name="wpm">WPM</string>
+    <string name="receive">Receive</string>
+    <string name="play">Play</string>
+    <string name="decoder_title">Morse Toolkit - Decoder</string>
+    <string name="transmit_letter_title">Transmit Letter</string>
+    <string name="transmit_word_title">Transmit Word</string>
+    <string name="transmit_free_pad_title">Transmit Free Text</string>
+
+    <string name="receive_letter_title">Receive Letter</string>
+    <string name="receive_word_title">Receive Word</string>
+    <string name="receive_free_pad_title">Receive Free Text</string>
+    <string name="options_title">Morse Toolkit - Options</string>
+
+    <string name="flashcard_title">Morse Toolkit - FlashCard</string>
+    <string name="handbook_title">Morse Toolkit - Handbook</string>
+    <string name="morse_description">Morse code is a method of transmitting text information as a series of on-off tones, lights, or clicks that can be directly understood by a skilled listener or observer without special equipment. International Morse code is composed of five elements: 1.short mark, dot or \'dit\' (·) : \'dot duration\' is one time unit long 2.longer mark, dash or \'dah\' (–) : three time units long 3.inter-element gap between the dots and dashes within a character : one dot duration or one unit long 4.short gap (between letters) : three time units long 5.medium gap (between words) : seven time units long</string>
+    <string name="international_morse_code">International Morse Code</string>
+    <!-- This is an ad unit ID for a test ad. Replace with your own banner ad unit id. -->
+    <string name="banner_ad_unit_id">ca-app-pub-1370558989807131/4913862806</string>
+    <string name="transmit">Transmit</string>
+    <string name="decoder">Decoder</string>
+    <string name="options">Options</string>
+    <string name="flashcard">FlashCard</string>
+    <string name="handbook">Handbook</string>
+    <string name="stop">Stop</string>
+    <string name="sample_rate">Sample Rate</string>
+    <string name="letter_on_front">Letter on Front</string>
+    <string name="a">A</string>
+    <string name="eclipes">...</string>
+    <string name="morse">MORSE</string>
+    <string name="your_response">Your Response</string>
+    <string name="error_get_audio_recorder">Error get audio input device,please try to use different sample rate in option.</string>
+    <string name="game">Game</string>
+    <string name="audio">Audio</string>
+    <string name="light">Light</string>
+    <string name="game_option">Game Option</string>
+    <string name="encode_or_decode">Encode Or Decode</string>
+    <string name="encode">Encode</string>
+    <string name="decode">Decode</string>
+    <string name="flappybird">Flappy Bird</string>
+    <string name="battlecity">Battle City</string>
+</resources>

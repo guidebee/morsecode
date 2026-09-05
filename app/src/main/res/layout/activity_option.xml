@@ -46,7 +46,7 @@
                         android:id="@+id/textView"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Transmit"
+                        android:text="@string/transmit"
                         android:textAppearance="?android:attr/textAppearanceLarge"
                         android:textColor="@color/colorPrimary" />
 
@@ -67,7 +67,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:checked="true"
-                                android:text="Letter"
+                                android:text="@string/letter"
                                 android:textColor="@color/colorPrimary" />
 
                             <HorizontalScrollView
@@ -86,7 +86,7 @@
                                         android:layout_width="wrap_content"
                                         android:layout_height="wrap_content"
                                         android:checked="true"
-                                        android:text="Letter"
+                                        android:text="@string/letter"
                                         android:textColor="@color/colorPrimary" />
 
                                     <CheckBox
@@ -94,14 +94,14 @@
                                         android:layout_width="wrap_content"
                                         android:layout_height="wrap_content"
                                         android:checked="true"
-                                        android:text="Number"
+                                        android:text="@string/number"
                                         android:textColor="@color/colorPrimary" />
 
                                     <CheckBox
                                         android:id="@+id/checkBoxTransmitPunctuation"
                                         android:layout_width="wrap_content"
                                         android:layout_height="wrap_content"
-                                        android:text="Punctuation"
+                                        android:text="@string/punctuation"
                                         android:textColor="@color/colorPrimary" />
                                 </LinearLayout>
                             </HorizontalScrollView>
@@ -117,14 +117,14 @@
                                 android:id="@+id/radioButtonTransmitWord"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Word"
+                                android:text="@string/word"
                                 android:textColor="@color/colorPrimary" />
 
                             <RadioButton
                                 android:id="@+id/radioButtonTransmitFreeText"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Free Text"
+                                android:text="@string/free_text"
                                 android:textColor="@color/colorPrimary" />
                         </LinearLayout>
                     </RadioGroup>
@@ -161,7 +161,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:checked="true"
-                                android:text="Letter"
+                                android:text="@string/letter"
                                 android:textColor="@color/colorPrimary" />
 
                             <HorizontalScrollView
@@ -180,7 +180,7 @@
                                         android:layout_width="wrap_content"
                                         android:layout_height="wrap_content"
                                         android:checked="true"
-                                        android:text="Letter"
+                                        android:text="@string/letter"
                                         android:textColor="@color/colorPrimary" />
 
                                     <CheckBox
@@ -188,14 +188,14 @@
                                         android:layout_width="wrap_content"
                                         android:layout_height="wrap_content"
                                         android:checked="true"
-                                        android:text="Number"
+                                        android:text="@string/number"
                                         android:textColor="@color/colorPrimary" />
 
                                     <CheckBox
                                         android:id="@+id/checkBoxReceivePunctuation"
                                         android:layout_width="wrap_content"
                                         android:layout_height="wrap_content"
-                                        android:text="Punctuation"
+                                        android:text="@string/punctuation"
                                         android:textColor="@color/colorPrimary" />
 
                                 </LinearLayout>
@@ -211,14 +211,14 @@
                                 android:id="@+id/radioButtonReceiveWord"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Word"
+                                android:text="@string/word"
                                 android:textColor="@color/colorPrimary" />
 
                             <RadioButton
                                 android:id="@+id/radioButtonReceiveFreeText"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Free Text"
+                                android:text="@string/free_text"
                                 android:textColor="@color/colorPrimary" />
                         </LinearLayout>
                     </RadioGroup>
@@ -254,14 +254,14 @@
                                     android:id="@+id/radioButton10"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="10"
+                                    android:text="@string/wpm_10"
                                     android:textColor="@color/colorPrimary" />
 
                                 <RadioButton
                                     android:id="@+id/radioButton15"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="15"
+                                    android:text="@string/wpm_15"
                                     android:textColor="@color/colorPrimary" />
 
                                 <RadioButton
@@ -269,21 +269,21 @@
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:checked="true"
-                                    android:text="20"
+                                    android:text="@string/wpm_20"
                                     android:textColor="@color/colorPrimary" />
 
                                 <RadioButton
                                     android:id="@+id/radioButton25"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="25"
+                                    android:text="@string/wpm_25"
                                     android:textColor="@color/colorPrimary" />
 
                                 <RadioButton
                                     android:id="@+id/radioButton40"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="40"
+                                    android:text="@string/wpm_40"
                                     android:textColor="@color/colorPrimary" />
                             </RadioGroup>
                         </HorizontalScrollView>
@@ -314,7 +314,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="match_parent"
                             android:gravity="center_vertical"
-                            android:text="Input Speed"
+                            android:text="@string/input_speed"
                             android:textAppearance="?android:attr/textAppearanceMedium"
                             android:textColor="@color/colorPrimary" />
 
@@ -339,7 +339,7 @@
                                         android:id="@+id/radioButtonSpeedSlow"
                                         android:layout_width="wrap_content"
                                         android:layout_height="wrap_content"
-                                        android:text="Slow"
+                                        android:text="@string/speed_slow"
                                         android:textColor="@color/colorPrimary" />
 
                                     <RadioButton
@@ -347,14 +347,14 @@
                                         android:layout_width="wrap_content"
                                         android:layout_height="wrap_content"
                                         android:checked="true"
-                                        android:text="Normal"
+                                        android:text="@string/speed_normal"
                                         android:textColor="@color/colorPrimary" />
 
                                     <RadioButton
                                         android:id="@+id/radioButtonSpeedFast"
                                         android:layout_width="wrap_content"
                                         android:layout_height="wrap_content"
-                                        android:text="Fast"
+                                        android:text="@string/speed_fast"
                                         android:textColor="@color/colorPrimary" />
 
                                 </RadioGroup>
@@ -401,7 +401,7 @@
                         android:id="@+id/textView5"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Flash Card"
+                        android:text="@string/flash_card_section_title"
                         android:textAppearance="?android:attr/textAppearanceLarge"
                         android:textColor="@color/colorPrimary" />
 
@@ -431,7 +431,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:checked="true"
-                                android:text="Order"
+                                android:text="@string/order"
                                 android:textColor="@color/colorPrimary" />
 
                             <RadioButton
@@ -439,7 +439,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:checked="true"
-                                android:text="Random"
+                                android:text="@string/random"
                                 android:textColor="@color/colorPrimary" />
 
 
@@ -491,7 +491,7 @@
                                     android:id="@+id/radioButton88200"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="88200"
+                                    android:text="@string/sample_rate_88200"
                                     android:textColor="@color/colorPrimary" />
 
                                 <RadioButton
@@ -499,7 +499,7 @@
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:checked="true"
-                                    android:text="44100"
+                                    android:text="@string/sample_rate_44100"
                                     android:textColor="@color/colorPrimary" />
 
                                 <RadioButton
@@ -507,14 +507,14 @@
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:checked="false"
-                                    android:text="22050"
+                                    android:text="@string/sample_rate_22050"
                                     android:textColor="@color/colorPrimary" />
 
                                 <RadioButton
                                     android:id="@+id/radioButton11025"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="11025"
+                                    android:text="@string/sample_rate_11025"
                                     android:textColor="@color/colorPrimary" />
 
                             </RadioGroup>

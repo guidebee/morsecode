@@ -13,6 +13,11 @@ buildscript {
     }
 }
 
+plugins {
+    // AGP 9+ has built-in Kotlin support; only the Compose compiler plugin is needed explicitly.
+    id 'org.jetbrains.kotlin.plugin.compose' version '2.4.0' apply false
+}
+
 allprojects {
     repositories {
         google()

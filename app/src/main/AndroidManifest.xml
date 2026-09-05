@@ -23,6 +23,11 @@
         </activity>
 
         <activity
+            android:name="au.com.guidebee.morsetoolkit.ui.HomeActivity"
+            android:exported="false"
+            android:theme="@style/AppTheme.NoActionBar" />
+
+        <activity
             android:name=".flappybird.FlappyBirdGameActivity"
             android:label="FlappyBird"
             android:screenOrientation="landscape"

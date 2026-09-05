@@ -1,0 +1,14 @@
+package au.com.guidebee.morsetoolkit.training
+
+/**
+ * Standard Koch-method character introduction order (the LCWO/G4FON
+ * sequence), lowercase to match [au.com.guidebee.morsetoolkit.helper.MorseHelper]'s keys.
+ * Kept as one named constant so the order is easy to retune later.
+ */
+object KochOrder {
+    val sequence: List<Char> = listOf(
+        'k', 'm', 'r', 's', 'u', 'a', 'p', 't', 'l', 'o', 'w', 'i', '.',
+        'n', 'j', 'e', 'f', '0', 'y', ',', 'v', 'g', '5', '/', 'q', '9',
+        'z', 'h', '3', '8', 'b', '?', '4', '2', '7', 'c', '1', 'd', '6', 'x'
+    )
+}

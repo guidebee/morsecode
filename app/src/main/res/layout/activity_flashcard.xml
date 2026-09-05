@@ -118,7 +118,7 @@
             android:text="A"
             android:textAlignment="center"
             android:textAppearance="?android:attr/textAppearanceLarge"
-            android:textColor="@color/primary"
+            android:textColor="@color/colorPrimary"
             android:textSize="160dp"
             android:textStyle="bold|normal"
             android:typeface="serif"

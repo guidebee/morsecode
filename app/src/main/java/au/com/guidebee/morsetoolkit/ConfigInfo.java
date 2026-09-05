@@ -3,8 +3,6 @@ package au.com.guidebee.morsetoolkit;
 import android.content.Context;
 import android.content.SharedPreferences;
 
-import com.google.android.gms.ads.AdRequest;
-
 
 public class ConfigInfo {
 
@@ -31,10 +29,6 @@ public class ConfigInfo {
 
     //true order ,false random
     public static boolean flashCardType = true;
-
-    public static boolean showAds = false;
-    public static boolean testAds = true;
-    public static AdRequest adRequest = null;
 
     public static boolean hasRequestedAudioPermission = false;
 

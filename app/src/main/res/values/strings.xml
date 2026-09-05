@@ -27,8 +27,6 @@
     <string name="handbook_title">Morse Toolkit - Handbook</string>
     <string name="morse_description">Morse code is a method of transmitting text information as a series of on-off tones, lights, or clicks that can be directly understood by a skilled listener or observer without special equipment. International Morse code is composed of five elements: 1.short mark, dot or \'dit\' (·) : \'dot duration\' is one time unit long 2.longer mark, dash or \'dah\' (–) : three time units long 3.inter-element gap between the dots and dashes within a character : one dot duration or one unit long 4.short gap (between letters) : three time units long 5.medium gap (between words) : seven time units long</string>
     <string name="international_morse_code">International Morse Code</string>
-    <!-- This is an ad unit ID for a test ad. Replace with your own banner ad unit id. -->
-    <string name="banner_ad_unit_id">ca-app-pub-1370558989807131/4913862806</string>
     <string name="transmit">Transmit</string>
     <string name="decoder">Decoder</string>
     <string name="options">Options</string>

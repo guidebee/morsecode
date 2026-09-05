@@ -2,7 +2,7 @@ package au.com.guidebee.morsetoolkit.helper;
 
 import android.app.Activity;
 import android.graphics.Color;
-import android.support.design.widget.Snackbar;
+import com.google.android.material.snackbar.Snackbar;
 import android.util.DisplayMetrics;
 import android.view.View;
 import android.widget.TextView;
@@ -41,7 +41,7 @@ public class UIHelper {
                 .setAction("Action", null);
         View snackBarView = snackbar.getView();
         snackBarView.setBackgroundColor(Color.WHITE);
-        TextView textView = (TextView) snackBarView.findViewById(android.support.design.R.id.snackbar_text);
+        TextView textView = (TextView) snackBarView.findViewById(com.google.android.material.R.id.snackbar_text);
         textView.setTextColor(Color.BLACK);
         snackbar.show();
 

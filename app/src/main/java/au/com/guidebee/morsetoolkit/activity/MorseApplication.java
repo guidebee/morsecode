@@ -6,8 +6,6 @@ import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.util.Log;
 
-import com.google.android.gms.ads.AdRequest;
-
 import au.com.guidebee.morsetoolkit.ConfigInfo;
 import au.com.guidebee.morsetoolkit.component.FontManager;
 
@@ -17,23 +15,6 @@ public class MorseApplication extends Application implements
     static {
         int maxSampleRate = getValidSampleRates();
         ConfigInfo.sampleRate = maxSampleRate / 2;
-
-        if (ConfigInfo.testAds) {
-            ConfigInfo.adRequest = new AdRequest.Builder()
-                    .addTestDevice(AdRequest.DEVICE_ID_EMULATOR)
-                    .addTestDevice("2F6582E54486D1A78702BB61D701F695")
-                    .addTestDevice("F7A852B5CB4C732E62C026A3599644D0")
-                    .addTestDevice("21831CCAC4C5CAD735C44DE54AAB6747")
-                    .addTestDevice("5A9A2B546A70BA0C8946469C74B55819")
-                    .addTestDevice("B571BE84863493C69E77B74A14C8F251")
-                    .addTestDevice("6619A68B8B18A1E21152A17996BA9C24")
-                    .addTestDevice("2F7452EAC6CA536B2B15E5BF11161F11")
-                    .build();
-        } else {
-            ConfigInfo.adRequest = new AdRequest.Builder()
-                    .build();
-        }
-
     }
 
     public static int getValidSampleRates() {

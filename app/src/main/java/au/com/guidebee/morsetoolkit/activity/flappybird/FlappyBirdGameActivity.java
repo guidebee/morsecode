@@ -22,12 +22,8 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.RelativeLayout;
 
-import com.google.android.gms.ads.AdSize;
-import com.google.android.gms.ads.AdView;
 import com.guidebee.game.Configuration;
 import com.guidebee.game.activity.GameActivity;
-
-import au.com.guidebee.morsetoolkit.ConfigInfo;
 
 //[------------------------------ MAIN CLASS ----------------------------------]
 
@@ -36,19 +32,10 @@ import au.com.guidebee.morsetoolkit.ConfigInfo;
  * @author James Shen <james.shen@guidebee.com>
  */
 public class FlappyBirdGameActivity extends GameActivity {
-    private AdView adView;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        // Create and load the AdView.
-        adView = new AdView(this);
-        adView.setAdUnitId("ca-app-pub-1370558989807131/4913862806");
-        adView.setAdSize(AdSize.BANNER);
-        // Add adView to the bottom of the screen.
-        RelativeLayout.LayoutParams adParams = new RelativeLayout.LayoutParams(
-                RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
-        adParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
 
         Configuration config = new Configuration();
 
@@ -58,24 +45,13 @@ public class FlappyBirdGameActivity extends GameActivity {
         View gameView = initializeForView(new FlappyBirdGamePlay(this), config);
         RelativeLayout mainLayout = new RelativeLayout(this);
         mainLayout.addView(gameView);
-        mainLayout.addView(adView, adParams);
 
         setContentView(mainLayout);
         au.com.guidebee.morsetoolkit.activity.flappybird.config.Configuration.gameActivity = this;
-        if (adView != null) {
-            if (ConfigInfo.showAds) {
-                if (ConfigInfo.adRequest != null) {
-                    adView.loadAd(ConfigInfo.adRequest);
-                }
-            }
-        }
-
     }
 
 
     public void showBanner() {
-        adView.postDelayed(() -> adView.setVisibility(View.VISIBLE), 1500);
-
     }
 
     public void backToMainActivity() {
@@ -83,7 +59,5 @@ public class FlappyBirdGameActivity extends GameActivity {
     }
 
     public void hideBanner() {
-        adView.postDelayed(() -> adView.setVisibility(View.GONE), 1500);
-
     }
 }

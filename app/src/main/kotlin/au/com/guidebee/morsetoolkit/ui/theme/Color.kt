@@ -33,3 +33,18 @@ val OnSurfaceVariantDark = Color(0xFFB0B0B0)
 val CorrectGreen = Color(0xFF669900)
 val WrongRed = Color(0xFFCC0000)
 val WrongRedDark = Color(0xFFFF6E6E)
+
+// Instrument-panel palette for the Decoder screen's oscilloscope redesign.
+// Deliberately independent of the light/dark app theme — a scope's brushed
+// metal bezel and phosphor screen read as "instrument", not "light mode" or
+// "dark mode".
+val ScopeBezel = Color(0xFF34383B)
+val ScopeBezelDark = Color(0xFF202325)
+val ScopeBezelHighlight = Color(0xFF4A4F53)
+val ScopeScreen = Color(0xFF041A0E)
+val ScopeGrid = Color(0xFF1E5B39)
+val ScopePhosphor = Color(0xFF4CFF7E)
+val ScopeAmber = Color(0xFFFFB300)
+val ScopeLedOff = Color(0xFF44494C)
+val ScopePanelText = Color(0xFFD8DED9)
+val ScopePanelTextDim = Color(0xFF8A9490)

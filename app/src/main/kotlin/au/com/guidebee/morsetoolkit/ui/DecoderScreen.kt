@@ -1,54 +1,87 @@
 package au.com.guidebee.morsetoolkit.ui
 
 import android.Manifest
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
+import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import au.com.guidebee.morsetoolkit.activity.R
 import au.com.guidebee.morsetoolkit.decoder.AudioMorseCodeDecoder
 import au.com.guidebee.morsetoolkit.training.DecoderViewModel
+import au.com.guidebee.morsetoolkit.ui.theme.ScopeAmber
+import au.com.guidebee.morsetoolkit.ui.theme.ScopeBezel
+import au.com.guidebee.morsetoolkit.ui.theme.ScopeBezelDark
+import au.com.guidebee.morsetoolkit.ui.theme.ScopeBezelHighlight
+import au.com.guidebee.morsetoolkit.ui.theme.ScopeGrid
+import au.com.guidebee.morsetoolkit.ui.theme.ScopeLedOff
+import au.com.guidebee.morsetoolkit.ui.theme.ScopePanelText
+import au.com.guidebee.morsetoolkit.ui.theme.ScopePanelTextDim
+import au.com.guidebee.morsetoolkit.ui.theme.ScopePhosphor
+import au.com.guidebee.morsetoolkit.ui.theme.ScopeScreen
 import au.com.guidebee.morsetoolkit.ui.theme.WrongRed
+import kotlin.math.cos
+import kotlin.math.sin
 
 /**
  * The audio decoder screen: mic capture ->
@@ -62,6 +95,14 @@ import au.com.guidebee.morsetoolkit.ui.theme.WrongRed
  * better at rejecting broadband noise but only within its tracked band).
  * "Play Sample" plays res/raw/morse.wav out loud and turns the mic pipeline
  * on, so the decoder demonstrates itself acoustically exactly like it used to.
+ *
+ * The panel below the app bar is styled as a classic bench oscilloscope -
+ * a dark instrument bezel, a phosphor-green graticule screen, and a single
+ * compact control strip with LED/rocker style POWER and ANALOG toggles
+ * alongside rotary-look X-POS/Y-POS knobs with vertical fader sliders, so
+ * most of the panel's height goes to the scope screen and the decoded-text
+ * terminal below it. The screen locks itself to portrait for the sake of
+ * this compact layout - landscape isn't handled yet.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -80,6 +121,15 @@ fun DecoderScreen(onBack: () -> Unit) {
         if (!granted) permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
     }
 
+    val activity = context.findActivity()
+    DisposableEffect(activity) {
+        val previousOrientation = activity?.requestedOrientation
+        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        onDispose {
+            activity?.requestedOrientation = previousOrientation ?: ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -88,100 +138,364 @@ fun DecoderScreen(onBack: () -> Unit) {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = ScopeBezelDark,
+                    titleContentColor = ScopePanelText,
+                    navigationIconContentColor = ScopePanelText
+                )
             )
-        }
+        },
+        containerColor = ScopeBezelDark
     ) { padding ->
         Column(
-            modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             if (!state.hasPermission) {
-                Text(stringResource(R.string.decoder_permission_denied), color = WrongRed)
+                Text(
+                    stringResource(R.string.decoder_permission_denied),
+                    color = WrongRed,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
             }
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(24.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(stringResource(R.string.power))
-                    Switch(
-                        checked = state.isRecording,
-                        enabled = state.hasPermission,
-                        onCheckedChange = { viewModel.setRecording(it) }
-                    )
-                }
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(stringResource(R.string.analog))
-                    Switch(checked = state.showAnalog, onCheckedChange = { viewModel.setShowAnalog(it) })
-                }
+            ScopeDisplay(state = state, modifier = Modifier.fillMaxWidth().height(170.dp))
+            ReadoutRow(state = state, viewModel = viewModel)
+            ControlPanel(state = state, viewModel = viewModel)
+            OutputTerminal(text = state.outputText, modifier = Modifier.fillMaxWidth().weight(1f))
+            ActionButtonRow(state = state, viewModel = viewModel)
+        }
+    }
+}
+
+private fun Context.findActivity(): Activity? {
+    var ctx = this
+    while (ctx is ContextWrapper) {
+        if (ctx is Activity) return ctx
+        ctx = ctx.baseContext
+    }
+    return null
+}
+
+/** The scope's screen: dark phosphor graticule with the analog/digital traces. */
+@Composable
+private fun ScopeDisplay(state: DecoderViewModel.UiState, modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(6.dp))
+            .background(Brush.linearGradient(listOf(ScopeBezelHighlight, ScopeBezel, ScopeBezelDark)))
+            .padding(8.dp)
+    ) {
+        Canvas(
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(RoundedCornerShape(2.dp))
+                .background(ScopeScreen)
+        ) {
+            val w = size.width
+            val h = size.height
+
+            // Graticule: a faint 10x8 grid, like a real scope's screen.
+            val cols = 10
+            val rows = 8
+            for (c in 0..cols) {
+                val x = w * c / cols
+                drawLine(ScopeGrid.copy(alpha = if (c == cols / 2) 0.55f else 0.25f), Offset(x, 0f), Offset(x, h), strokeWidth = 1f)
+            }
+            for (r in 0..rows) {
+                val y = h * r / rows
+                drawLine(ScopeGrid.copy(alpha = if (r == rows / 2) 0.55f else 0.25f), Offset(0f, y), Offset(w, y), strokeWidth = 1f)
             }
 
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(stringResource(R.string.decoder_algorithm), style = MaterialTheme.typography.labelMedium)
-                SingleChoiceSegmentedButtonRow {
-                    SegmentedButton(
-                        selected = state.detectionMode == AudioMorseCodeDecoder.DetectionMode.BROADBAND,
-                        onClick = { viewModel.switchDetectionMode(AudioMorseCodeDecoder.DetectionMode.BROADBAND) },
-                        shape = SegmentedButtonDefaults.itemShape(0, 2)
-                    ) { Text(stringResource(R.string.decoder_mode_classic)) }
-                    SegmentedButton(
-                        selected = state.detectionMode == AudioMorseCodeDecoder.DetectionMode.NARROWBAND,
-                        onClick = { viewModel.switchDetectionMode(AudioMorseCodeDecoder.DetectionMode.NARROWBAND) },
-                        shape = SegmentedButtonDefaults.itemShape(1, 2)
-                    ) { Text(stringResource(R.string.decoder_mode_narrowband)) }
-                }
-            }
-
-            Canvas(modifier = Modifier.fillMaxWidth().height(160.dp)) {
-                val h = size.height
-                val high = 400f
-                val savedData = state.savedData
-                val savedRawData = state.savedRawData
-                if (state.isRecording && savedData.size > 1) {
-                    for (i in 1 until savedData.size) {
-                        val x0 = (i - 1) * state.xStep
-                        val x1 = i * state.xStep
-                        if (state.showAnalog && i < savedRawData.size) {
-                            val y0 = h - (savedRawData[i - 1] / (state.maxMagnitude.toFloat() * high + 0.5f)) * h * state.yScale
-                            val y1 = h - (savedRawData[i] / (state.maxMagnitude.toFloat() * high + 0.5f)) * h * state.yScale
-                            drawLine(Color.White, Offset(x0, y0), Offset(x1, y1), strokeWidth = 1.5f)
-                        }
-                        val dy0 = h - (savedData[i - 1] / high) * h * state.yScale
-                        val dy1 = h - (savedData[i] / high) * h * state.yScale
-                        drawLine(Color.Yellow, Offset(x0, dy0), Offset(x1, dy1), strokeWidth = 2.5f)
+            val high = 400f
+            val savedData = state.savedData
+            val savedRawData = state.savedRawData
+            if (state.isRecording && savedData.size > 1) {
+                for (i in 1 until savedData.size) {
+                    val x0 = (i - 1) * state.xStep
+                    val x1 = i * state.xStep
+                    if (state.showAnalog && i < savedRawData.size) {
+                        val y0 = h - (savedRawData[i - 1] / (state.maxMagnitude.toFloat() * high + 0.5f)) * h * state.yScale
+                        val y1 = h - (savedRawData[i] / (state.maxMagnitude.toFloat() * high + 0.5f)) * h * state.yScale
+                        // Faint wide stroke under the sharp one fakes a phosphor glow.
+                        drawLine(ScopePhosphor.copy(alpha = 0.25f), Offset(x0, y0), Offset(x1, y1), strokeWidth = 4f)
+                        drawLine(ScopePhosphor.copy(alpha = 0.85f), Offset(x0, y0), Offset(x1, y1), strokeWidth = 1.5f)
                     }
+                    val dy0 = h - (savedData[i - 1] / high) * h * state.yScale
+                    val dy1 = h - (savedData[i] / high) * h * state.yScale
+                    drawLine(ScopeAmber.copy(alpha = 0.35f), Offset(x0, dy0), Offset(x1, dy1), strokeWidth = 5f)
+                    drawLine(ScopeAmber, Offset(x0, dy0), Offset(x1, dy1), strokeWidth = 2.2f)
                 }
             }
-            Text(stringResource(R.string.decoder_wpm, state.currentWpm), style = MaterialTheme.typography.labelMedium)
+        }
+    }
+}
 
-            Column {
-                Text(stringResource(R.string.x_pos), style = MaterialTheme.typography.labelMedium)
-                Slider(value = state.xStep, onValueChange = { viewModel.setXStep(it) }, valueRange = 1f..5f)
-                Text(stringResource(R.string.y_pos), style = MaterialTheme.typography.labelMedium)
-                Slider(value = state.yScale, onValueChange = { viewModel.setYScale(it) }, valueRange = 0.2f..2f)
+@Composable
+private fun ReadoutRow(state: DecoderViewModel.UiState, viewModel: DecoderViewModel) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(6.dp))
+            .background(ScopeBezel)
+            .padding(horizontal = 10.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(4.dp))
+                .background(ScopeScreen)
+                .padding(horizontal = 10.dp, vertical = 4.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.decoder_wpm, state.currentWpm),
+                color = ScopeAmber,
+                fontFamily = FontFamily.Monospace,
+                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.labelLarge
+            )
+        }
+        Text(
+            stringResource(R.string.decoder_algorithm),
+            style = MaterialTheme.typography.labelSmall,
+            color = ScopePanelTextDim
+        )
+        SingleChoiceSegmentedButtonRow {
+            SegmentedButton(
+                selected = state.detectionMode == AudioMorseCodeDecoder.DetectionMode.BROADBAND,
+                onClick = { viewModel.switchDetectionMode(AudioMorseCodeDecoder.DetectionMode.BROADBAND) },
+                shape = SegmentedButtonDefaults.itemShape(0, 2),
+                colors = scopeSegmentedColors()
+            ) { Text(stringResource(R.string.decoder_mode_classic), style = MaterialTheme.typography.labelSmall) }
+            SegmentedButton(
+                selected = state.detectionMode == AudioMorseCodeDecoder.DetectionMode.NARROWBAND,
+                onClick = { viewModel.switchDetectionMode(AudioMorseCodeDecoder.DetectionMode.NARROWBAND) },
+                shape = SegmentedButtonDefaults.itemShape(1, 2),
+                colors = scopeSegmentedColors()
+            ) { Text(stringResource(R.string.decoder_mode_narrowband), style = MaterialTheme.typography.labelSmall) }
+        }
+    }
+}
+
+@Composable
+private fun scopeSegmentedColors() = SegmentedButtonDefaults.colors(
+    activeContainerColor = ScopeAmber,
+    activeContentColor = Color.Black,
+    activeBorderColor = ScopeBezelHighlight,
+    inactiveContainerColor = ScopeScreen,
+    inactiveContentColor = ScopePanelTextDim,
+    inactiveBorderColor = ScopeBezelHighlight
+)
+
+/**
+ * One compact instrument strip holding every control: the X-POS/Y-POS
+ * knob+fader pairs and the POWER/ANALOG rockers, all in a single row so the
+ * rest of the panel's height can go to the scope screen and the decoded
+ * text terminal.
+ */
+@Composable
+private fun ControlPanel(state: DecoderViewModel.UiState, viewModel: DecoderViewModel) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(6.dp))
+            .background(ScopeBezel)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        ScopeKnob(
+            label = stringResource(R.string.x_pos),
+            value = state.xStep,
+            valueRange = 1f..5f,
+            onValueChange = { viewModel.setXStep(it) }
+        )
+        ScopeKnob(
+            label = stringResource(R.string.y_pos),
+            value = state.yScale,
+            valueRange = 0.2f..2f,
+            onValueChange = { viewModel.setYScale(it) }
+        )
+        ScopeToggle(
+            label = stringResource(R.string.power),
+            checked = state.isRecording,
+            enabled = state.hasPermission,
+            onCheckedChange = { viewModel.setRecording(it) }
+        )
+        ScopeToggle(
+            label = stringResource(R.string.analog),
+            checked = state.showAnalog,
+            onCheckedChange = { viewModel.setShowAnalog(it) }
+        )
+    }
+}
+
+/** A rotary-look knob: a static dial readout of the current value, paired with a compact vertical fader for input. */
+@Composable
+private fun ScopeKnob(
+    label: String,
+    value: Float,
+    valueRange: ClosedFloatingPointRange<Float>,
+    onValueChange: (Float) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(label, style = MaterialTheme.typography.labelSmall, color = ScopePanelTextDim)
+        Spacer(Modifier.height(4.dp))
+        Canvas(modifier = Modifier.size(34.dp)) {
+            val fraction = ((value - valueRange.start) / (valueRange.endInclusive - valueRange.start)).coerceIn(0f, 1f)
+            val startDeg = 135f
+            val sweepDeg = 270f
+            val angleRad = Math.toRadians((startDeg + sweepDeg * fraction).toDouble())
+            val radius = size.minDimension / 2f
+            val center = Offset(size.width / 2f, size.height / 2f)
+
+            drawCircle(
+                brush = Brush.radialGradient(listOf(ScopeBezelHighlight, ScopeBezelDark), center = center, radius = radius),
+                radius = radius,
+                center = center
+            )
+            drawCircle(color = Color.Black.copy(alpha = 0.5f), radius = radius, center = center, style = Stroke(width = 1.5f))
+
+            for (t in 0..10) {
+                val tickDeg = startDeg + sweepDeg * t / 10
+                val tickRad = Math.toRadians(tickDeg.toDouble())
+                val inner = radius * 0.82f
+                val outer = radius * 0.98f
+                drawLine(
+                    ScopePanelTextDim.copy(alpha = 0.6f),
+                    Offset(center.x + inner * cos(tickRad).toFloat(), center.y + inner * sin(tickRad).toFloat()),
+                    Offset(center.x + outer * cos(tickRad).toFloat(), center.y + outer * sin(tickRad).toFloat()),
+                    strokeWidth = 1f
+                )
             }
 
-            OutlinedCard(modifier = Modifier.weight(1f).fillMaxWidth()) {
-                Column(Modifier.padding(12.dp).verticalScroll(rememberScrollState())) {
-                    Text(
-                        text = state.outputText.ifEmpty { stringResource(R.string.send_placeholder) },
-                        fontFamily = FontFamily.Monospace
-                    )
-                }
-            }
+            val pointerLen = radius * 0.68f
+            drawLine(
+                ScopeAmber,
+                center,
+                Offset(center.x + pointerLen * cos(angleRad).toFloat(), center.y + pointerLen * sin(angleRad).toFloat()),
+                strokeWidth = 2.5f
+            )
+            drawCircle(ScopeBezelDark, radius = radius * 0.15f, center = center)
+        }
+        Spacer(Modifier.height(4.dp))
+        Box(modifier = Modifier.size(width = 32.dp, height = 64.dp), contentAlignment = Alignment.Center) {
+            Slider(
+                value = value,
+                onValueChange = onValueChange,
+                valueRange = valueRange,
+                modifier = Modifier.width(64.dp).rotate(-90f),
+                colors = SliderDefaults.colors(
+                    thumbColor = ScopeAmber,
+                    activeTrackColor = ScopeAmber,
+                    inactiveTrackColor = ScopeBezelDark
+                )
+            )
+        }
+    }
+}
 
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Button(
-                    enabled = state.hasPermission,
-                    onClick = { if (state.isPlayingSample) viewModel.stopSample() else viewModel.playSample() }
-                ) {
-                    Text(stringResource(if (state.isPlayingSample) R.string.stop_sample else R.string.play_sample))
-                }
-                OutlinedButton(onClick = { viewModel.resetDecoder() }) {
-                    Text(stringResource(R.string.reset))
-                }
-                OutlinedButton(onClick = { viewModel.clearOutput() }) {
-                    Text(stringResource(R.string.clear))
-                }
+/** A power-panel style toggle: an LED indicator above a switch, matching the scope's POWER/ANALOG rockers. */
+@Composable
+private fun ScopeToggle(
+    label: String,
+    checked: Boolean,
+    enabled: Boolean = true,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(
+            modifier = Modifier
+                .size(9.dp)
+                .clip(CircleShape)
+                .background(if (checked) ScopePhosphor else ScopeLedOff)
+        )
+        Spacer(Modifier.height(6.dp))
+        Switch(
+            checked = checked,
+            enabled = enabled,
+            onCheckedChange = onCheckedChange,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = ScopeAmber,
+                checkedTrackColor = ScopeBezelDark,
+                checkedBorderColor = ScopeAmber,
+                uncheckedThumbColor = ScopePanelTextDim,
+                uncheckedTrackColor = ScopeBezelDark,
+                uncheckedBorderColor = ScopePanelTextDim
+            )
+        )
+        Spacer(Modifier.height(2.dp))
+        Text(label, style = MaterialTheme.typography.labelSmall, color = ScopePanelText)
+    }
+}
+
+/**
+ * The decoded-text readout, styled as a small terminal screen. Scrolls
+ * internally once the text overflows its height, and auto-follows the
+ * bottom as new characters are decoded so the latest output is always
+ * in view without the user having to scroll manually.
+ */
+@Composable
+private fun OutputTerminal(text: String, modifier: Modifier = Modifier) {
+    val scrollState = rememberScrollState()
+    LaunchedEffect(text) {
+        scrollState.animateScrollTo(scrollState.maxValue)
+    }
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(6.dp))
+            .background(Brush.linearGradient(listOf(ScopeBezelHighlight, ScopeBezel, ScopeBezelDark)))
+            .padding(6.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(RoundedCornerShape(3.dp))
+                .background(ScopeScreen)
+                .border(1.dp, ScopeGrid.copy(alpha = 0.4f), RoundedCornerShape(3.dp))
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(scrollState)
+                    .padding(12.dp)
+            ) {
+                Text(
+                    text = text.ifEmpty { stringResource(R.string.send_placeholder) },
+                    fontFamily = FontFamily.Monospace,
+                    color = if (text.isEmpty()) ScopePanelTextDim else ScopePhosphor
+                )
             }
+        }
+    }
+}
+
+@Composable
+private fun ActionButtonRow(state: DecoderViewModel.UiState, viewModel: DecoderViewModel) {
+    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Button(
+            enabled = state.hasPermission,
+            onClick = { if (state.isPlayingSample) viewModel.stopSample() else viewModel.playSample() },
+            colors = ButtonDefaults.buttonColors(containerColor = ScopeAmber, contentColor = Color.Black)
+        ) {
+            Text(stringResource(if (state.isPlayingSample) R.string.stop_sample else R.string.play_sample))
+        }
+        OutlinedButton(
+            onClick = { viewModel.resetDecoder() },
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = ScopePanelText)
+        ) {
+            Text(stringResource(R.string.reset))
+        }
+        OutlinedButton(
+            onClick = { viewModel.clearOutput() },
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = ScopePanelText)
+        ) {
+            Text(stringResource(R.string.clear))
         }
     }
 }

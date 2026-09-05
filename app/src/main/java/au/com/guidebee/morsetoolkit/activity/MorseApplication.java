@@ -1,13 +1,11 @@
 package au.com.guidebee.morsetoolkit.activity;
 
 import android.app.Application;
-import android.content.Intent;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.util.Log;
 
 import au.com.guidebee.morsetoolkit.ConfigInfo;
-import au.com.guidebee.morsetoolkit.component.FontManager;
 
 public class MorseApplication extends Application implements
         Thread.UncaughtExceptionHandler {
@@ -34,7 +32,6 @@ public class MorseApplication extends Application implements
     @Override
     public void onCreate() {
         super.onCreate();
-        FontManager.init(getAssets());
         Thread.setDefaultUncaughtExceptionHandler(this);
     }
 

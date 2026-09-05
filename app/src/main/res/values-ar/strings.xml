@@ -126,4 +126,11 @@
     <string name="settings_reset_confirm_action">إعادة التعيين</string>
     <string name="action_back">رجوع</string>
     <string name="action_cancel">إلغاء</string>
+
+    <string name="drill_score">%1$d / %2$d صحيحة</string>
+    <string name="drill_tries_left">%d محاولات متبقية</string>
+    <string name="transmit_free_text_hint">الإرسال الحر موجود في تدريب الإرسال: اختر هدفًا، أرسله، وشاهده مفكوك الشفرة مباشرة.</string>
+    <string name="receive_free_text_label">نص لتشغيله</string>
+    <string name="decoder_wpm">ك/د: %.1f</string>
+    <string name="decoder_permission_denied">لا يمكن لوحدة فك شفرة مورس العمل دون إذن الميكروفون.</string>
 </resources>

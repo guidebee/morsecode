@@ -23,7 +23,6 @@ import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.SportsEsports
 import androidx.compose.material.icons.filled.Style
-import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -56,8 +55,7 @@ fun HomeScreen(
     onOpenFlashcards: () -> Unit,
     onOpenHandbook: () -> Unit,
     onOpenFlappyBird: () -> Unit,
-    onOpenBattleCity: () -> Unit,
-    onOpenClassicSettings: () -> Unit
+    onOpenBattleCity: () -> Unit
 ) {
     val context = LocalContext.current
     val streakTracker = remember { StreakTracker(context) }
@@ -72,8 +70,7 @@ fun HomeScreen(
         ToolItem(stringResource(R.string.flashcard), Icons.Filled.Style, onOpenFlashcards),
         ToolItem(stringResource(R.string.handbook), Icons.Filled.Book, onOpenHandbook),
         ToolItem(stringResource(R.string.flappybird), Icons.Filled.SportsEsports, onOpenFlappyBird),
-        ToolItem(stringResource(R.string.battlecity), Icons.Filled.SportsEsports, onOpenBattleCity),
-        ToolItem(stringResource(R.string.options), Icons.Filled.Tune, onOpenClassicSettings)
+        ToolItem(stringResource(R.string.battlecity), Icons.Filled.SportsEsports, onOpenBattleCity)
     )
 
     Column(

@@ -40,38 +40,6 @@
             android:screenOrientation="landscape"
             android:configChanges="keyboard|keyboardHidden|orientation">
         </activity>
-        <activity
-            android:name=".ListenActivity"
-            android:theme="@style/AppTheme.NoActionBar">
-        </activity>
-
-        <activity
-            android:name=".TransmitLetterActivity"
-            android:theme="@style/AppTheme.NoActionBar" />
-        <activity
-            android:name=".TransmitWordActivity"
-            android:theme="@style/AppTheme.NoActionBar" />
-        <activity
-            android:name=".TransmitFreePadActivity"
-            android:theme="@style/AppTheme.NoActionBar" />
-        <activity
-            android:name=".OptionActivity"
-            android:theme="@style/AppTheme.NoActionBar" />
-        <activity
-            android:name=".ReceiveLetterActivity"
-            android:theme="@style/AppTheme.NoActionBar" />
-        <activity
-            android:name=".ReceiveFreePadActivity"
-            android:theme="@style/AppTheme.NoActionBar" />
-        <activity
-            android:name=".ReceiveWordActivity"
-            android:theme="@style/AppTheme.NoActionBar" />
-        <activity
-            android:name=".HandbookActivity"
-            android:theme="@style/AppTheme.NoActionBar" />
-        <activity
-            android:name=".FlashcardActivity"
-            android:theme="@style/AppTheme.NoActionBar" />
     </application>
 
 </manifest>

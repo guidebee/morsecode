@@ -126,4 +126,11 @@
     <string name="settings_reset_confirm_action">Restablecer</string>
     <string name="action_back">Atrás</string>
     <string name="action_cancel">Cancelar</string>
+
+    <string name="drill_score">%1$d / %2$d correctas</string>
+    <string name="drill_tries_left">%d intentos restantes</string>
+    <string name="transmit_free_text_hint">El envío libre está en Práctica de envío: toca un objetivo, transmítelo y míralo decodificado en vivo.</string>
+    <string name="receive_free_text_label">Texto para reproducir</string>
+    <string name="decoder_wpm">PPM: %.1f</string>
+    <string name="decoder_permission_denied">El decodificador de código Morse no puede funcionar sin permiso de micrófono.</string>
 </resources>

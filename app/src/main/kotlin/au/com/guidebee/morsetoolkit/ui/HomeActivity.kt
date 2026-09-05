@@ -37,7 +37,7 @@ class HomeActivity : ComponentActivity() {
             }
             MorseTheme(darkTheme = darkTheme) {
                 MorseApp(
-                    onLaunchLegacy = { activityClass -> startActivity(Intent(this, activityClass)) },
+                    onLaunchGame = { activityClass -> startActivity(Intent(this, activityClass)) },
                     themeMode = themeMode,
                     onThemeModeChange = {
                         themeMode = it

@@ -1,5 +1,6 @@
 package au.com.guidebee.morsetoolkit.ui
 
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LibraryBooks
@@ -13,18 +14,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.foundation.layout.padding
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import au.com.guidebee.morsetoolkit.activity.R
-import au.com.guidebee.morsetoolkit.activity.FlashcardActivity
-import au.com.guidebee.morsetoolkit.activity.HandbookActivity
-import au.com.guidebee.morsetoolkit.activity.ListenActivity
-import au.com.guidebee.morsetoolkit.activity.OptionActivity
-import au.com.guidebee.morsetoolkit.activity.ReceiveLetterActivity
-import au.com.guidebee.morsetoolkit.activity.TransmitLetterActivity
 import au.com.guidebee.morsetoolkit.activity.battlecity.BattleCityGameActivity
 import au.com.guidebee.morsetoolkit.activity.flappybird.FlappyBirdGameActivity
 import au.com.guidebee.morsetoolkit.training.ThemeMode
@@ -33,13 +27,24 @@ private object Routes {
     const val HOME = "home"
     const val KOCH = "koch"
     const val SEND = "send"
+    const val TRANSMIT = "transmit"
+    const val RECEIVE = "receive"
+    const val DECODER = "decoder"
+    const val FLASHCARD = "flashcard"
+    const val HANDBOOK = "handbook"
     const val LIBRARY = "library"
     const val SETTINGS = "settings"
 }
 
+/**
+ * The app's only navigation model now: everything lives in this one
+ * NavHost. The two arcade games are the sole exception — they stay real
+ * Activities (OpenGL, untouched) launched by plain Intent with no
+ * back-stack flags, so finishing a game already returns here correctly.
+ */
 @Composable
 fun MorseApp(
-    onLaunchLegacy: (Class<*>) -> Unit,
+    onLaunchGame: (Class<*>) -> Unit,
     themeMode: ThemeMode,
     onThemeModeChange: (ThemeMode) -> Unit
 ) {
@@ -84,14 +89,13 @@ fun MorseApp(
                     onOpenKoch = { navController.navigate(Routes.KOCH) },
                     onOpenSend = { navController.navigate(Routes.SEND) },
                     onOpenLibrary = { navController.navigate(Routes.LIBRARY) { launchSingleTop = true } },
-                    onOpenTransmit = { onLaunchLegacy(TransmitLetterActivity::class.java) },
-                    onOpenReceive = { onLaunchLegacy(ReceiveLetterActivity::class.java) },
-                    onOpenDecoder = { onLaunchLegacy(ListenActivity::class.java) },
-                    onOpenFlashcards = { onLaunchLegacy(FlashcardActivity::class.java) },
-                    onOpenHandbook = { onLaunchLegacy(HandbookActivity::class.java) },
-                    onOpenFlappyBird = { onLaunchLegacy(FlappyBirdGameActivity::class.java) },
-                    onOpenBattleCity = { onLaunchLegacy(BattleCityGameActivity::class.java) },
-                    onOpenClassicSettings = { onLaunchLegacy(OptionActivity::class.java) }
+                    onOpenTransmit = { navController.navigate(Routes.TRANSMIT) },
+                    onOpenReceive = { navController.navigate(Routes.RECEIVE) },
+                    onOpenDecoder = { navController.navigate(Routes.DECODER) },
+                    onOpenFlashcards = { navController.navigate(Routes.FLASHCARD) },
+                    onOpenHandbook = { navController.navigate(Routes.HANDBOOK) },
+                    onOpenFlappyBird = { onLaunchGame(FlappyBirdGameActivity::class.java) },
+                    onOpenBattleCity = { onLaunchGame(BattleCityGameActivity::class.java) }
                 )
             }
             composable(Routes.KOCH) {
@@ -100,14 +104,31 @@ fun MorseApp(
             composable(Routes.SEND) {
                 SendPracticeScreen(onBack = { navController.popBackStack() })
             }
+            composable(Routes.TRANSMIT) {
+                TransmitScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpenSendPractice = { navController.navigate(Routes.SEND) }
+                )
+            }
+            composable(Routes.RECEIVE) {
+                ReceiveScreen(onBack = { navController.popBackStack() })
+            }
+            composable(Routes.DECODER) {
+                DecoderScreen(onBack = { navController.popBackStack() })
+            }
+            composable(Routes.FLASHCARD) {
+                FlashcardScreen(onBack = { navController.popBackStack() })
+            }
+            composable(Routes.HANDBOOK) {
+                HandbookScreen(onBack = { navController.popBackStack() })
+            }
             composable(Routes.LIBRARY) {
                 ContentLibraryScreen()
             }
             composable(Routes.SETTINGS) {
                 SettingsScreen(
                     themeMode = themeMode,
-                    onThemeModeChange = onThemeModeChange,
-                    onOpenClassicSettings = { onLaunchLegacy(OptionActivity::class.java) }
+                    onThemeModeChange = onThemeModeChange
                 )
             }
         }

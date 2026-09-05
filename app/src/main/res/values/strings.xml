@@ -128,4 +128,12 @@
     <string name="settings_reset_confirm_action">Reset</string>
     <string name="action_back">Back</string>
     <string name="action_cancel">Cancel</string>
+
+    <!-- Transmit / Receive / Decoder screens (ported from the legacy Views UI) -->
+    <string name="drill_score">%1$d / %2$d correct</string>
+    <string name="drill_tries_left">%d tries left</string>
+    <string name="transmit_free_text_hint">Free-form sending lives in Send Practice — tap a target, key it, and see it decoded live.</string>
+    <string name="receive_free_text_label">Text to play back</string>
+    <string name="decoder_wpm">WPM: %.1f</string>
+    <string name="decoder_permission_denied">Morse code decoder cannot work without microphone permission.</string>
 </resources>

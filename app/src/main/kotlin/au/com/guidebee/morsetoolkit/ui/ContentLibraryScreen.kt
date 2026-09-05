@@ -55,7 +55,7 @@ fun ContentLibraryScreen() {
     val scope = rememberCoroutineScope()
 
     fun play(text: String) {
-        scope.launch(Dispatchers.Default) { encoder.playMorseCode(text) }
+        scope.launch(Dispatchers.Default) { encoder.playMorseCode(text.lowercase()) }
     }
 
     var selectedTab by remember { mutableStateOf(LibraryTab.Q_CODES) }

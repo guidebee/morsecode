@@ -3,16 +3,18 @@ package au.com.guidebee.morsetoolkit.helper;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
+import android.util.Log;
 
 
 public class MorseEncoder {
 
+    private static final String TAG = "MorseEncoder";
 
     private final double fs = 8000;
     protected AudioTrack audioTrack;
     protected int toneFrequency = 800;
     protected int charDistance = 3;
-    //10wpm, 15wpm,20wpm,25wpm,40wpm,60wpm
+    // dit period (ms) -> wpm (1200 / period): 4, 6, 8, 12, 20, 40, 60 wpm
     protected int[] ditPeriods = new int[]{300, 200, 150, 100, 60, 30, 20};
     protected int wpmIndex = 2;
     private byte[] bufferDit;
@@ -27,9 +29,13 @@ public class MorseEncoder {
         bufferEmpty = new byte[bufferDit.length];
         for (int i = 0; i < bufferEmpty.length; i++) bufferEmpty[i] = 0;
         bufferDah = generateTone(toneFrequency, ditPeriod * 3);
+        int channelConfig = AudioFormat.CHANNEL_OUT_MONO;
+        int audioFormat = AudioFormat.ENCODING_PCM_16BIT;
+        int minBufferSize = AudioTrack.getMinBufferSize((int) fs, channelConfig, audioFormat);
+        int trackBufferSize = Math.max(bufferDah.length * 2, minBufferSize);
         audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, (int) fs,
-                AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT,
-                bufferDah.length * 2, AudioTrack.MODE_STREAM);
+                channelConfig, audioFormat,
+                trackBufferSize, AudioTrack.MODE_STREAM);
         audioTrack.play();
     }
 
@@ -42,6 +48,17 @@ public class MorseEncoder {
     public void resume() {
         if (audioTrack != null) {
             audioTrack.play();
+        }
+    }
+
+    /**
+     * Cancels playback of the current message without releasing the track,
+     * so a new message can be played immediately afterwards.
+     */
+    public void stop() {
+        if (audioTrack != null) {
+            audioTrack.pause();
+            audioTrack.flush();
         }
     }
 
@@ -141,8 +158,7 @@ public class MorseEncoder {
             audioTrack.play();
 
         } catch (Exception e) {
-            //ignore
-            e.printStackTrace();
+            Log.e(TAG, "playMorseCode failed for input: " + input, e);
         }
     }
 
@@ -169,7 +185,7 @@ public class MorseEncoder {
         int idx = 0;
         int i;
 
-        int ramp = numSamples / 20;  // Amplitude ramp as a percent of sample count
+        int ramp = Math.max(1, numSamples / 20);  // Amplitude ramp as a percent of sample count
 
 
         for (i = 0; i < ramp; ++i) {  // Ramp amplitude up (to avoid clicks)
@@ -205,12 +221,20 @@ public class MorseEncoder {
 
     protected String generateDitDashString(String text) {
         StringBuilder stringBuilder = new StringBuilder();
+        // Whether the previous character needs an inter-character gap
+        // emitted before the next one starts. Left false before a word
+        // gap and at the end of the string, so gaps don't stack up.
+        boolean pendingCharGap = false;
         for (int i = 0; i < text.length(); i++) {
             char character = text.charAt(i);
             try {
                 if (character != ' ') {
                     String morseText = MorseHelper.morseCodeData.get(character);
                     if (morseText != null) {
+
+                        if (pendingCharGap) {
+                            stringBuilder.append('<');
+                        }
 
                         for (int j = 0; j < morseText.length(); j++) {
                             char ditOrDah = morseText.charAt(j);
@@ -219,18 +243,18 @@ public class MorseEncoder {
                             stringBuilder.append('^');
                         }
 
-                        stringBuilder.append('<');
+                        pendingCharGap = true;
 
                     }
 
                 } else {
 
                     stringBuilder.append('>');
+                    pendingCharGap = false;
 
                 }
             } catch (Exception e) {
-                //ignore
-                e.printStackTrace();
+                Log.e(TAG, "Failed to encode character: " + character, e);
             }
         }
         return stringBuilder.toString();

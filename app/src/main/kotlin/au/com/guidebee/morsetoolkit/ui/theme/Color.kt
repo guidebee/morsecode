@@ -2,33 +2,34 @@ package au.com.guidebee.morsetoolkit.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Signal-lamp amber + ink teal, matching the app's own R&D report palette.
-val SignalAmberLight = Color(0xFFB0651F)
-val SignalAmberDark = Color(0xFFE2A15A)
+// Same identity as the legacy app's res/values/colors.xml, so the new
+// Compose screens and the classic Views screens read as one app instead of
+// two: colorPrimary (#2196f3), colorPrimaryDark (#1976D2), colorAccent
+// (#00BFA5).
+val BrandBlue = Color(0xFF2196F3)
+val BrandBlueDark = Color(0xFF64B5F6)
+val BrandBlueContainerLight = Color(0xFFD3E9FD)
+val BrandBlueContainerDark = Color(0xFF0D47A1)
+val OnBrandBlueContainerLight = Color(0xFF0D3C61)
+val OnBrandBlueContainerDark = Color(0xFFD3E9FD)
 
-val InkTealLight = Color(0xFF182524)
-val InkTealDark = Color(0xFFE9EFE9)
-
-val PaperLight = Color(0xFFEEF1EC)
-val PaperDark = Color(0xFF101613)
+val BrandTeal = Color(0xFF00BFA5)
+val BrandTealDark = Color(0xFF64FFDA)
 
 val SurfaceLight = Color(0xFFFFFFFF)
-val SurfaceDark = Color(0xFF171F1C)
+val SurfaceDark = Color(0xFF1E1E1E)
+val BackgroundLight = Color(0xFFFAFAFA)
+val BackgroundDark = Color(0xFF121212)
+val OnSurfaceLight = Color(0xFF1A1A1A)
+val OnSurfaceDark = Color(0xFFEDEDED)
+val SurfaceVariantLight = Color(0xFFECECEC)
+val SurfaceVariantDark = Color(0xFF2A2A2A)
+val OnSurfaceVariantLight = Color(0xFF5F5F5F)
+val OnSurfaceVariantDark = Color(0xFFB0B0B0)
 
-val SurfaceVariantLight = Color(0xFFE4E8E1)
-val SurfaceVariantDark = Color(0xFF1D2622)
-
-val OnSurfaceVariantLight = Color(0xFF4D5C58)
-val OnSurfaceVariantDark = Color(0xFFAEBAB3)
-
-val GoodGreenLight = Color(0xFF3E7A52)
-val GoodGreenDark = Color(0xFF79C493)
-
-val ErrorRustLight = Color(0xFFA3402F)
-val ErrorRustDark = Color(0xFFE2897A)
-
-val PrimaryContainerLight = Color(0xFFF4E3CD)
-val PrimaryContainerDark = Color(0xFF4A3A22)
-
-val OnPrimaryContainerLight = Color(0xFF3A2C19)
-val OnPrimaryContainerDark = Color(0xFFF0B877)
+// Exactly TransmitLetterActivity's correctAnswerColor / wrongAnswerColor
+// (0xff669900 / 0xffcc0000) — the Koch trainer's pass/fail moment should
+// look like the legacy Receive drill's, not invent a new pair.
+val CorrectGreen = Color(0xFF669900)
+val WrongRed = Color(0xFFCC0000)
+val WrongRedDark = Color(0xFFFF6E6E)

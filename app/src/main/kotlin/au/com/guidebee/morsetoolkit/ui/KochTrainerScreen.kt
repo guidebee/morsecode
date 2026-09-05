@@ -41,6 +41,8 @@ import au.com.guidebee.morsetoolkit.training.FarnsworthTone
 import au.com.guidebee.morsetoolkit.training.KochProgression
 import au.com.guidebee.morsetoolkit.training.SessionScheduler
 import au.com.guidebee.morsetoolkit.training.StreakTracker
+import au.com.guidebee.morsetoolkit.ui.theme.CorrectGreen
+import au.com.guidebee.morsetoolkit.ui.theme.WrongRed
 import kotlinx.coroutines.delay
 
 private enum class RoundFeedback { NONE, CORRECT, WRONG }
@@ -131,8 +133,8 @@ fun KochTrainerScreen(onBack: () -> Unit) {
             }
 
             val feedbackColor = when (feedback) {
-                RoundFeedback.CORRECT -> MaterialTheme.colorScheme.secondary
-                RoundFeedback.WRONG -> MaterialTheme.colorScheme.error
+                RoundFeedback.CORRECT -> CorrectGreen
+                RoundFeedback.WRONG -> WrongRed
                 RoundFeedback.NONE -> MaterialTheme.colorScheme.onSurfaceVariant
             }
             Text(

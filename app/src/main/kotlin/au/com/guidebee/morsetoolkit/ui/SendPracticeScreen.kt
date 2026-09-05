@@ -31,6 +31,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import au.com.guidebee.morsetoolkit.activity.R
 import au.com.guidebee.morsetoolkit.training.CallsignDrill
+import au.com.guidebee.morsetoolkit.ui.theme.CorrectGreen
 
 private val practiceTargets = listOf("cq", "sos", "de", "73", "rst")
 
@@ -81,7 +82,7 @@ fun SendPracticeScreen(onBack: () -> Unit) {
             if (typed.trim().equals(target, ignoreCase = true)) {
                 Text(
                     text = stringResource(R.string.send_match),
-                    color = MaterialTheme.colorScheme.secondary,
+                    color = CorrectGreen,
                     style = MaterialTheme.typography.titleMedium
                 )
             }

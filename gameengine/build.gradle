@@ -1,40 +1,40 @@
 apply plugin: 'com.android.library'
 
 android {
-    namespace 'com.guidebee.game.engine'
-    compileSdk 35
-    ndkVersion "21.4.7075529"
+    namespace = 'com.guidebee.game.engine'
+    compileSdk = 37
+    ndkVersion = "21.4.7075529"
 
     defaultConfig {
-        minSdk 21
-        targetSdk 35
+        minSdk = 21
+        targetSdk = 37
 
         externalNativeBuild {
             ndkBuild {
-                arguments "APP_PLATFORM=android-21"
+                arguments.add("APP_PLATFORM=android-21")
             }
         }
     }
 
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled = false
         }
     }
 
     externalNativeBuild {
         ndkBuild {
-            path "src/main/jni/Android.mk"
+            path = "src/main/jni/Android.mk"
         }
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_17
-        targetCompatibility JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     lintOptions {
-        abortOnError false
+        abortOnError = false
     }
 }
 

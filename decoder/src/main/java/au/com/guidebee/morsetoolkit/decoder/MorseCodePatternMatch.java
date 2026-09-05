@@ -18,6 +18,8 @@ package au.com.guidebee.morsetoolkit.decoder;
 
 //--------------------------------- IMPORTS ------------------------------------
 
+import java.util.Arrays;
+
 import au.com.guidebee.morsetoolkit.helper.MorseHelper;
 
 //[------------------------------ MAIN CLASS ----------------------------------]
@@ -34,7 +36,6 @@ public class MorseCodePatternMatch {
     private static final String MC_DASH_SYMBOL = "-";
     private static final Character INVALID_SYMBOL = '^';
     protected int noCharDetectedCounter = 0;
-    private float estimateDotLength = 0;
     private int sampleCounter = 0;
     private int spaceCounter = 0;
     private String morseMsg = "";
@@ -60,6 +61,22 @@ public class MorseCodePatternMatch {
      * successfully in between, is a miscalibrated threshold.
      */
     private static final int STUCK_DISCARD_LIMIT = 3;
+
+    /**
+     * How many recent confirmed elements of each kind (dot/dash) feed the
+     * WPM estimate. A ratio comparison of just the single latest dot and
+     * dash - what this used to do - lets one atypical element swing
+     * calibration on the spot; a small rolling history and its median
+     * means one outlier gets outvoted by the rest instead. Small enough to
+     * still track a genuine mid-session WPM change within a few letters.
+     */
+    private static final int WPM_HISTORY_SIZE = 6;
+    private final float[] dotHistory = new float[WPM_HISTORY_SIZE];
+    private final float[] dashHistory = new float[WPM_HISTORY_SIZE];
+    private int dotHistoryFill = 0;
+    private int dashHistoryFill = 0;
+    private int dotHistoryNext = 0;
+    private int dashHistoryNext = 0;
 
     /**
      * Constructor
@@ -130,7 +147,7 @@ public class MorseCodePatternMatch {
                     {
                         if (sampleCounter > partLimit) {
                             consecutiveDiscardCount = 0;
-                            estimateWPM(sampleCounter);
+                            recordDash(sampleCounter);
                             morseMsg += MC_DASH_SYMBOL;
                             dashLength = sampleCounter;
                             sampleCounter = 0;
@@ -142,7 +159,7 @@ public class MorseCodePatternMatch {
                         } else {
                             if (sampleCounter > partLimit / 2) {
                                 consecutiveDiscardCount = 0;
-                                estimateWPM(sampleCounter);
+                                recordDot(sampleCounter);
                                 morseMsg += MC_DOT_SYMBOL;
                                 dotLength = sampleCounter;
                                 sampleCounter = 0;
@@ -156,10 +173,11 @@ public class MorseCodePatternMatch {
                                 // not an element, so discard it instead of leaving
                                 // decodeDataState stuck at Tone forever (sampleCounter
                                 // would otherwise never reset, silently corrupting every
-                                // element measured afterwards). Also skip estimateWPM()
+                                // element measured afterwards). Also skip recordDot()
                                 // here - a glitch's length is noise, not a WPM sample,
                                 // and feeding it in risks the runaway collapse the
-                                // dotLimit clamp guards against.
+                                // dotLimit clamp (and the history's median, to a lesser
+                                // extent) guards against.
                                 //
                                 // But if *every* recent tone is landing here, it's not
                                 // noise - dotLimit is calibrated too slow to recognize
@@ -168,7 +186,7 @@ public class MorseCodePatternMatch {
                                 // consecutive discards, trust the pattern and let it in.
                                 consecutiveDiscardCount++;
                                 if (consecutiveDiscardCount >= STUCK_DISCARD_LIMIT) {
-                                    estimateWPM(sampleCounter);
+                                    recordDot(sampleCounter);
                                     consecutiveDiscardCount = 0;
                                 }
                                 sampleCounter = 0;
@@ -202,7 +220,6 @@ public class MorseCodePatternMatch {
             reset();
             wordLength = 0;
         }
-        adjustWPM();
     }
 
     /**
@@ -244,18 +261,66 @@ public class MorseCodePatternMatch {
         return lastWordLength;
     }
 
-    private void estimateWPM(int newValue) {
-        if (estimateDotLength > 0) {
-            {
-                float value1 = Math.min(estimateDotLength, newValue);
-                float value2 = Math.max(estimateDotLength, newValue);
-                if (value2 > value1 * 2.5 && value2 < value1 * 6) {
-                    changeDotLimit(Math.min(value2 / 3, value1));
-                }
-            }
-
+    private void recordDot(int length) {
+        dotHistory[dotHistoryNext] = length;
+        dotHistoryNext = (dotHistoryNext + 1) % WPM_HISTORY_SIZE;
+        if (dotHistoryFill < WPM_HISTORY_SIZE) {
+            dotHistoryFill++;
         }
-        estimateDotLength = newValue;
+        recalibrateFromHistory();
+    }
+
+    private void recordDash(int length) {
+        dashHistory[dashHistoryNext] = length;
+        dashHistoryNext = (dashHistoryNext + 1) % WPM_HISTORY_SIZE;
+        if (dashHistoryFill < WPM_HISTORY_SIZE) {
+            dashHistoryFill++;
+        }
+        recalibrateFromHistory();
+    }
+
+    /**
+     * Re-estimates dotLimit from the median of recent dot lengths and the
+     * median of recent dash lengths (divided by 3), taking the smaller of
+     * the two when both are available - same bias as the old single-sample
+     * estimator (which took min(dashLength / 3, dotLength)), kept because it
+     * favours recognising fast elements over a slower compromise estimate.
+     * Using the median of several recent elements, rather than comparing
+     * just the single latest dot/dash pair, means one atypical element gets
+     * outvoted by the rest of the recent history instead of unilaterally
+     * resetting calibration on its own.
+     * <p>
+     * Requires at least two total recorded elements before touching
+     * dotLimit at all: a lone first sample is exactly the "single element
+     * unilaterally sets calibration" failure mode this redesign exists to
+     * avoid, just with a history of one instead of a confusable ratio - and
+     * fully trusting it can cascade into misclassifying the very next
+     * element (see dashThenDotAdaptsEstimatedDotLength).
+     */
+    private void recalibrateFromHistory() {
+        boolean haveDots = dotHistoryFill > 0;
+        boolean haveDashes = dashHistoryFill > 0;
+        if (dotHistoryFill + dashHistoryFill < 2) {
+            return;
+        }
+        float dotEstimate = haveDots ? median(dotHistory, dotHistoryFill) : 0;
+        float dashEstimate = haveDashes ? median(dashHistory, dashHistoryFill) / 3f : 0;
+        float candidate;
+        if (haveDots && haveDashes) {
+            candidate = Math.min(dotEstimate, dashEstimate);
+        } else {
+            candidate = haveDots ? dotEstimate : dashEstimate;
+        }
+        changeDotLimit(candidate);
+    }
+
+    private static float median(float[] values, int count) {
+        float[] copy = Arrays.copyOf(values, count);
+        Arrays.sort(copy);
+        if (count % 2 == 1) {
+            return copy[count / 2];
+        }
+        return (copy[count / 2 - 1] + copy[count / 2]) / 2f;
     }
 
     private void reset() {
@@ -264,13 +329,6 @@ public class MorseCodePatternMatch {
         decodeDataState = Status.None;
         morseMsg = "";
     }
-
-    private void adjustWPM() {
-        if (dashLength * dotLength > 0) {
-            changeDotLimit(Math.min(dashLength / 3, dotLength));
-        }
-    }
-
 
     private enum Status {
         None,

@@ -12,11 +12,11 @@ import static org.junit.Assert.assertTrue;
 /**
  * Baseline coverage for the dot/dash/letter/word timing state machine, plus
  * regression tests for the WPM-collapse bug fixed in this class: a noise
- * glitch used to be able to feed estimateWPM() and, if its length happened
- * to sit at a "confusable" ratio (2.5x-6x) to the last real element,
- * collapse dotLimit toward the glitch's tiny length - after which almost
- * every tick looks like a valid dot or dash, and everything decodes as a
- * flood of 'e'/'t'. dotLimit=10 gives round tick thresholds: partLimit=15,
+ * glitch used to be able to feed calibration and, if its length happened
+ * to sit at a "confusable" ratio to the last real element, collapse
+ * dotLimit toward the glitch's tiny length - after which almost every tick
+ * looks like a valid dot or dash, and everything decodes as a flood of
+ * 'e'/'t'. dotLimit=10 gives round tick thresholds: partLimit=15,
  * charLimit=25, wordLimit=55 (see the constructor math above).
  */
 public class MorseCodePatternMatchTest {
@@ -126,10 +126,9 @@ public class MorseCodePatternMatchTest {
 
     @Test
     public void glitchAfterCalibrationDoesNotCorruptWpmEstimate() {
-        // Reproduces the actual regression: estimateWPM() used to run even on
+        // Reproduces the actual regression: calibration used to run even on
         // discarded glitches. A short glitch compared against a recently
-        // calibrated element can land in the "confusable ratio" window
-        // (2.5x-6x) that estimateWPM() treats as a genuine dot/dash pair,
+        // calibrated element could land at a "confusable ratio" to it,
         // collapsing dotLimit toward the glitch's tiny length - after which
         // almost every subsequent tick looks like a valid dot or dash, and
         // everything decodes as 'e'/'t'. dotLimit=23 matches production
@@ -148,9 +147,9 @@ public class MorseCodePatternMatchTest {
         });
 
         feedTicks(d, 69, true);
-        feedTicks(d, 1, false); // dash, len 69 -> estimateDotLength=69 (first sample, no recalibration yet)
+        feedTicks(d, 1, false); // dash, len 69 -> dashHistory=[69], but a lone sample doesn't yet recalibrate
         feedTicks(d, 23, true);
-        feedTicks(d, 1, false); // dot, len 23 -> ratio 3.0 confirms calibration, dotLimit stays ~23
+        feedTicks(d, 1, false); // dot, len 23 -> now two samples exist; confirms calibration, dotLimit stays ~23
 
         feedTicks(d, 5, true);
         feedTicks(d, 1, false); // glitch: clears onset (>2) but under partLimit/2 (17.25) -> discarded
@@ -166,7 +165,7 @@ public class MorseCodePatternMatchTest {
         // The flip side of the collapse bug: if the *initial* dotLimit guess
         // is too slow relative to the real signal, every real (fast) element
         // gets discarded as a "glitch" - and since discards no longer feed
-        // estimateWPM, nothing would ever correct it without the stuck-discard
+        // calibration, nothing would ever correct it without the stuck-discard
         // escape hatch. dotLimit=10 (partLimit/2=7.5) is too slow for a real
         // signal whose actual dot length is only 3 ticks.
         MorseCodePatternMatch d = new MorseCodePatternMatch(10);
@@ -182,17 +181,17 @@ public class MorseCodePatternMatchTest {
             }
         });
 
-        // One legitimate dash first, so estimateDotLength has a real value to
-        // compare against - estimateWPM() needs two samples to compute a
-        // ratio, so the very first-ever call (with nothing to compare to)
-        // can never recalibrate on its own.
+        // One legitimate dash first, so dashHistory has a real value to seed
+        // calibration from - it won't recalibrate dotLimit on its own yet
+        // (a lone sample needs a second before recalibration kicks in), but
+        // primes the estimate the escalation below draws on.
         feedTicks(d, 16, true);
-        feedTicks(d, 1, false); // dash, len 16 -> estimateDotLength seeded to 16
+        feedTicks(d, 1, false); // dash, len 16 -> dashHistory=[16]
 
         // Three consecutive 3-tick "dots" - each discarded individually
         // (3 < partLimit/2 == 7.5), but the third triggers the stuck-discard
-        // escape hatch: ratio 16/3 == 5.3, within the confusable window, so
-        // dotLimit recalibrates down to 3.
+        // escape hatch, recording it as a dot and recalibrating dotLimit down
+        // toward the median of the (still sparse) history.
         for (int i = 0; i < 3; i++) {
             feedTicks(d, 3, true);
             feedTicks(d, 1, false);
@@ -210,6 +209,49 @@ public class MorseCodePatternMatchTest {
         for (int i = 0; i < ticks; i++) {
             decoder.process(tone);
         }
+    }
+
+    @Test
+    public void oneAtypicallyLongDotBarelyMovesMedianCalibratedDotLimit() {
+        // Demonstrates the actual improvement over the old single-sample
+        // estimator: a lone atypical-but-legitimately-classified element no
+        // longer directly becomes the new calibration. dotLimit=23 matches
+        // production: partLimit=34.5, partLimit/2=17.25.
+        MorseCodePatternMatch d = new MorseCodePatternMatch(23);
+        List<String> ends = new ArrayList<>();
+        d.addListener(new MorseCodePatternMatch.MorseCodeListener() {
+            @Override
+            public void onEmit(Character character) {}
+            @Override
+            public void onCharStart() {}
+            @Override
+            public void onCharEnd(String dotOrDash, int length) {
+                ends.add(dotOrDash + ":" + length);
+            }
+        });
+
+        // Fill the dot history with six typical dots (length 23) - median
+        // recalibrates dotLimit right back to its starting point each time.
+        for (int i = 0; i < 6; i++) {
+            feedTicks(d, 23, true);
+            feedTicks(d, 1, false);
+        }
+
+        // One atypically long dot: still legitimately a dot (34 <= partLimit
+        // 34.5, so not a dash; well above the onset, so not a discard), but
+        // much longer than the rest of the recent history. Under the old
+        // single-sample estimator this alone would become the new estimate,
+        // pushing partLimit past 51 and beyond.
+        feedTicks(d, 34, true);
+        feedTicks(d, 1, false);
+
+        // Proof: with the median barely moved off 23, partLimit is still
+        // ~34.5, so a 35-tick tone right after classifies as a dash, not a
+        // dot - it wouldn't if that one long dot had swung calibration.
+        feedTicks(d, 35, true);
+        feedTicks(d, 1, false);
+
+        assertEquals(List.of(".:23", ".:23", ".:23", ".:23", ".:23", ".:23", ".:34", "-:35"), ends);
     }
 
     @Test

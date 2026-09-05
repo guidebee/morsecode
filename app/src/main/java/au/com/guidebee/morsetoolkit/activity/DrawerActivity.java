@@ -2,12 +2,18 @@ package au.com.guidebee.morsetoolkit.activity;
 
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
+import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.TypedValue;
+import android.view.Gravity;
+import android.view.View;
+import android.view.ViewGroup;
 import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.drawerlayout.widget.DrawerLayout;
 
 import com.mikepenz.materialdrawer.holder.ImageHolder;
 import com.mikepenz.materialdrawer.holder.StringHolder;
@@ -24,6 +30,8 @@ public abstract class DrawerActivity extends AppCompatActivity {
     protected ActionBar actionBar;
     protected int primaryLetterColor = 0xff3f51b5;
     private Toolbar toolbar;
+    private DrawerLayout drawerLayout;
+    private ActionBarDrawerToggle drawerToggle;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,6 +86,11 @@ public abstract class DrawerActivity extends AppCompatActivity {
         handbookDrawItem.setIcon(new ImageHolder(R.drawable.handbook));
         handbookDrawItem.setIdentifier(6L);
 
+        PrimaryDrawerItem gameDrawItem = new PrimaryDrawerItem();
+        gameDrawItem.setName(new StringHolder(R.string.flappybird));
+        gameDrawItem.setIcon(new ImageHolder(R.drawable.morsegame));
+        gameDrawItem.setIdentifier(7L);
+
         PrimaryDrawerItem battleCityDrawItem = new PrimaryDrawerItem();
         battleCityDrawItem.setName(new StringHolder(R.string.battlecity));
         battleCityDrawItem.setIcon(new ImageHolder(R.drawable.morsegame));
@@ -92,16 +105,56 @@ public abstract class DrawerActivity extends AppCompatActivity {
                 optionDrawItem,
                 flashcardDrawItem,
                 handbookDrawItem,
+                gameDrawItem,
                 battleCityDrawItem
         );
         sliderView.setOnDrawerItemClickListener((view, drawerItem, position) -> {
+            if (drawerLayout != null) {
+                drawerLayout.closeDrawers();
+            }
             handleItemClick(position);
             return false;
         });
-        // Note: For 8.x, you need to add this sliderView to a DrawerLayout in your activity layout.
-        // For now, we just initialize it to fix compilation.
 
+        // MaterialDrawer 8.x no longer builds the DrawerLayout for us, so wrap the
+        // already-inflated content view in one and slide the item list in from the side.
+        ViewGroup contentRoot = findViewById(android.R.id.content);
+        View content = contentRoot.getChildAt(0);
+        contentRoot.removeView(content);
 
+        drawerLayout = new DrawerLayout(this);
+        drawerLayout.setLayoutParams(new ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        drawerLayout.addView(content, new DrawerLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        DrawerLayout.LayoutParams sliderParams = new DrawerLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT,
+                Gravity.START);
+        drawerLayout.addView(sliderView, sliderParams);
+        contentRoot.addView(drawerLayout);
+
+        if (actionBar != null) {
+            drawerToggle = new ActionBarDrawerToggle(this, drawerLayout, toolbar,
+                    R.string.drawer_open, R.string.drawer_close);
+            drawerLayout.addDrawerListener(drawerToggle);
+            drawerToggle.syncState();
+        }
+    }
+
+    @Override
+    protected void onPostCreate(Bundle savedInstanceState) {
+        super.onPostCreate(savedInstanceState);
+        if (drawerToggle != null) {
+            drawerToggle.syncState();
+        }
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        if (drawerToggle != null) {
+            drawerToggle.onConfigurationChanged(newConfig);
+        }
     }
 
     private void handleItemClick(int position) {
@@ -169,13 +222,13 @@ public abstract class DrawerActivity extends AppCompatActivity {
                 startActivity(intent);
             }
             break;
-//            case 6: {
-//                Intent intent = new Intent(DrawerActivity.this, FlappyBirdGameActivity.class);
-//                addIntentFlag(intent);
-//                startActivity(intent);
-//            }
-//            break;
             case 6: {
+                Intent intent = new Intent(DrawerActivity.this, FlappyBirdGameActivity.class);
+                addIntentFlag(intent);
+                startActivity(intent);
+            }
+            break;
+            case 7: {
                 Intent intent = new Intent(DrawerActivity.this, BattleCityGameActivity.class);
                 addIntentFlag(intent);
                 startActivity(intent);

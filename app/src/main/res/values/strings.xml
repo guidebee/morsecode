@@ -49,4 +49,6 @@
     <string name="decode">Decode</string>
     <string name="flappybird">Flappy Bird</string>
     <string name="battlecity">Battle City</string>
+    <string name="drawer_open">Open navigation drawer</string>
+    <string name="drawer_close">Close navigation drawer</string>
 </resources>

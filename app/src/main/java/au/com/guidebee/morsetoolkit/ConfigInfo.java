@@ -3,13 +3,18 @@ package au.com.guidebee.morsetoolkit;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import au.com.guidebee.morsetoolkit.helper.MorseHelper;
+
 
 public class ConfigInfo {
 
     public final static String preferenceFile = "guidebee.morse";
-    public final static int TYPE_LETTER_LETTER = 0x1;
-    public final static int TYPE_LETTER_NUMBER = 0x2;
-    public final static int TYPE_LETTER_PUNCTUATION = 0x4;
+    // Canonically defined on MorseHelper (in the dependency-free :decoder
+    // module); re-exported here so existing ConfigInfo.TYPE_LETTER_* call
+    // sites throughout the app don't need to change.
+    public final static int TYPE_LETTER_LETTER = MorseHelper.TYPE_LETTER_LETTER;
+    public final static int TYPE_LETTER_NUMBER = MorseHelper.TYPE_LETTER_NUMBER;
+    public final static int TYPE_LETTER_PUNCTUATION = MorseHelper.TYPE_LETTER_PUNCTUATION;
     public final static int TYPE_LETTER = 1;
     public final static int TYPE_WORD = 2;
     public final static int TYPE_FREE_TEXT = 4;

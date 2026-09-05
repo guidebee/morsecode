@@ -16,6 +16,9 @@ buildscript {
 plugins {
     // AGP 9+ has built-in Kotlin support; only the Compose compiler plugin is needed explicitly.
     id 'org.jetbrains.kotlin.plugin.compose' version '2.4.0' apply false
+    // :decoder is a plain JVM module (no Android dependency), so it needs the Kotlin JVM
+    // plugin explicitly - AGP's built-in Kotlin support only covers Android modules.
+    id 'org.jetbrains.kotlin.jvm' version '2.4.0' apply false
 }
 
 allprojects {

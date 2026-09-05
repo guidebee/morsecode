@@ -3,10 +3,15 @@ package au.com.guidebee.morsetoolkit.helper;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import au.com.guidebee.morsetoolkit.ConfigInfo;
-
 
 public class MorseHelper {
+
+    // Bitmask flags for initTestLetters()'s `type` parameter. Canonically live
+    // here (not in ConfigInfo, which just re-exports them) since this module
+    // has no dependency on the Android-only ConfigInfo class.
+    public static final int TYPE_LETTER_LETTER = 0x1;
+    public static final int TYPE_LETTER_NUMBER = 0x2;
+    public static final int TYPE_LETTER_PUNCTUATION = 0x4;
 
     public static HashMap<Character, String> morseCodeData = new HashMap<>();
 
@@ -136,17 +141,17 @@ public class MorseHelper {
 
     public static ArrayList<Character> initTestLetters(int type) {
         ArrayList<Character> allTestLetters = new ArrayList<>();
-        if ((type & ConfigInfo.TYPE_LETTER_LETTER) > 0) {
+        if ((type & TYPE_LETTER_LETTER) > 0) {
             for (int i = 0; i < 26; i++) {
                 allTestLetters.add((char) ('a' + i));
             }
         }
-        if ((type & ConfigInfo.TYPE_LETTER_NUMBER) > 0) {
+        if ((type & TYPE_LETTER_NUMBER) > 0) {
             for (int i = 0; i < 10; i++) {
                 allTestLetters.add((char) ('0' + i));
             }
         }
-        if ((type & ConfigInfo.TYPE_LETTER_PUNCTUATION) > 0) {
+        if ((type & TYPE_LETTER_PUNCTUATION) > 0) {
 
             for (int i = 0; i < allPunctuates.length; i++) {
                 allTestLetters.add(allPunctuates[i]);

@@ -136,4 +136,7 @@
     <string name="receive_free_text_label">Text to play back</string>
     <string name="decoder_wpm">WPM: %.1f</string>
     <string name="decoder_permission_denied">Morse code decoder cannot work without microphone permission.</string>
+    <string name="decoder_algorithm">Algorithm</string>
+    <string name="decoder_mode_classic">Classic</string>
+    <string name="decoder_mode_narrowband">Narrowband</string>
 </resources>

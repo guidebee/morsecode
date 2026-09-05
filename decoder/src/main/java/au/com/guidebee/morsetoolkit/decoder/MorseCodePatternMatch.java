@@ -48,6 +48,19 @@ public class MorseCodePatternMatch {
     private int lastWordLength = 0;
     private MorseCodeListener morseCodeListener;
     private Status decodeDataState;
+    private final float minDotLimit;
+    private final float maxDotLimit;
+    private int consecutiveDiscardCount = 0;
+
+    /**
+     * How many too-short "glitches" in a row we'll silently discard before
+     * concluding they're not glitches at all - just real, fast elements that
+     * our current dotLimit is calibrated too slow to recognize. One discard
+     * is very plausibly noise; three in a row, with nothing else classifying
+     * successfully in between, is a miscalibrated threshold.
+     */
+    private static final int STUCK_DISCARD_LIMIT = 3;
+
     /**
      * Constructor
      *
@@ -58,6 +71,15 @@ public class MorseCodePatternMatch {
         partLimit = dotLimit + dotLimit / 2;
         charLimit = dotLimit * 3 - dotLimit / 2;
         wordLimit = dotLimit * 6 - dotLimit / 2;
+        // A single misleading element-length comparison (e.g. a noise glitch
+        // that happens to sit at a confusable ratio to the last real element)
+        // can otherwise send changeDotLimit() to a wildly wrong value, and
+        // since the thresholds derive from dotLimit, that one bad estimate
+        // then makes *everything else* misclassify too - a runaway collapse.
+        // Keeping dotLimit within a band around its starting guess bounds the
+        // damage a single outlier can do while still tracking real WPM drift.
+        this.minDotLimit = dotLimit / 4f;
+        this.maxDotLimit = dotLimit * 4f;
         reset();
     }
 
@@ -106,8 +128,9 @@ public class MorseCodePatternMatch {
                 break;
                 case Tone: {
                     {
-                        estimateWPM(sampleCounter);
                         if (sampleCounter > partLimit) {
+                            consecutiveDiscardCount = 0;
+                            estimateWPM(sampleCounter);
                             morseMsg += MC_DASH_SYMBOL;
                             dashLength = sampleCounter;
                             sampleCounter = 0;
@@ -118,6 +141,8 @@ public class MorseCodePatternMatch {
                             }
                         } else {
                             if (sampleCounter > partLimit / 2) {
+                                consecutiveDiscardCount = 0;
+                                estimateWPM(sampleCounter);
                                 morseMsg += MC_DOT_SYMBOL;
                                 dotLength = sampleCounter;
                                 sampleCounter = 0;
@@ -126,6 +151,29 @@ public class MorseCodePatternMatch {
                                 if (morseCodeListener != null) {
                                     morseCodeListener.onCharEnd(MC_DOT_SYMBOL, (int) dotLength);
                                 }
+                            } else {
+                                // Too short to be a dot: normally a glitch/noise blip,
+                                // not an element, so discard it instead of leaving
+                                // decodeDataState stuck at Tone forever (sampleCounter
+                                // would otherwise never reset, silently corrupting every
+                                // element measured afterwards). Also skip estimateWPM()
+                                // here - a glitch's length is noise, not a WPM sample,
+                                // and feeding it in risks the runaway collapse the
+                                // dotLimit clamp guards against.
+                                //
+                                // But if *every* recent tone is landing here, it's not
+                                // noise - dotLimit is calibrated too slow to recognize
+                                // real (fast) elements at all, and since they're always
+                                // discarded, nothing would ever correct it. After enough
+                                // consecutive discards, trust the pattern and let it in.
+                                consecutiveDiscardCount++;
+                                if (consecutiveDiscardCount >= STUCK_DISCARD_LIMIT) {
+                                    estimateWPM(sampleCounter);
+                                    consecutiveDiscardCount = 0;
+                                }
+                                sampleCounter = 0;
+                                spaceCounter = 0;
+                                decodeDataState = Status.None;
                             }
                         }
 
@@ -163,7 +211,7 @@ public class MorseCodePatternMatch {
      * @param value dot length.
      */
     public void changeDotLimit(float value) {
-        dotLimit = value;
+        dotLimit = Math.max(minDotLimit, Math.min(maxDotLimit, value));
         partLimit = dotLimit + dotLimit / 2;
         charLimit = dotLimit * 3 - dotLimit / 2;
         wordLimit = dotLimit * 6 - dotLimit / 2;

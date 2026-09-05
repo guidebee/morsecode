@@ -48,7 +48,7 @@ dependencies {
     implementation 'com.mikepenz:crossfader:1.6.0'
     implementation 'com.mikepenz:crossfadedrawerlayout:1.1.0'
 
-    implementation 'com.guidebee:game-engine:1.0.0'
+    implementation project(':gameengine')
 
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.2.1'

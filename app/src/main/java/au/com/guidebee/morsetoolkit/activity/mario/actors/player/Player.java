@@ -1,8 +1,8 @@
 package au.com.guidebee.morsetoolkit.activity.mario.actors.player;
 
 import com.guidebee.game.graphics.Batch;
+import com.guidebee.game.graphics.TextureRegion;
 import com.guidebee.game.microedition.Layer;
-import com.guidebee.game.microedition.Sprite;
 
 import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
@@ -17,14 +17,20 @@ import au.com.guidebee.morsetoolkit.activity.mario.world.MarioWorld;
  * line (per docs/MARIO_PORT_PLAN.md SS1 - every API call changes even though
  * the algorithm carries over).
  *
- * <h2>Why this composes a Sprite instead of extending one</h2>
+ * <h2>Why this draws via Batch directly instead of composing a Sprite</h2>
  * Growing/shrinking swaps Mario's entire image strip and frame size (32x32
  * "player" vs 32x64 "big_player"/"fire_player"). The original's GTGE Sprite
  * supported that via {@code setImages(BufferedImage[])} at runtime; this
  * engine's {@code microedition.Sprite} binds its region/frame-grid at
- * construction with no equivalent setter. So {@code Player} extends
- * {@code Layer} directly and owns a {@code visual} Sprite that gets replaced
- * (not mutated) on every power-state change - see {@link #changePowerState}.
+ * construction with no equivalent setter, so {@code Player} extends
+ * {@code Layer} directly (same base {@code Sprite}/{@code TiledLayer}
+ * extend) rather than one fixed-size {@code Sprite}. Rendering uses
+ * {@code TextureRegion.split(...)} (the same slicing {@code Sprite} does
+ * internally) plus a direct {@code Batch.draw(...)} call in {@link #paint}
+ * - not a second, separately-constructed {@code Sprite} instance that's
+ * never added to the {@code LayerManager} itself, since a Sprite's
+ * rendering path is wired through being a stage member, and one that isn't
+ * one is untested territory this class doesn't need to depend on.
  *
  * <h2>Why "frames" instead of raw delta seconds</h2>
  * The original's constants (accel +-2, friction -+1, gravity step +0.42,
@@ -63,7 +69,9 @@ public class Player extends Layer {
     private final float spawnX;
     private final float spawnY;
 
-    private Sprite visual;
+    private TextureRegion[][] frameRegions;
+    private int frameCols;
+    private int frame;
     private PlayerPowerState powerState = PlayerPowerState.SMALL;
 
     /** Original's abstract "speed" unit - not px/sec, see the class doc. */
@@ -85,19 +93,24 @@ public class Player extends Layer {
         this.input = input;
         this.spawnX = x;
         this.spawnY = y;
-        this.visual = createVisual(powerState);
+        initFrames(powerState);
     }
 
-    private static Sprite createVisual(PlayerPowerState state) {
-        Sprite sprite = new Sprite(MarioResourceManager.region(state.regionName), state.width, state.height);
-        sprite.setFrame(0);
-        return sprite;
+    private void initFrames(PlayerPowerState state) {
+        TextureRegion region = MarioResourceManager.region(state.regionName);
+        frameRegions = region.split(state.width, state.height);
+        frameCols = region.getRegionWidth() / state.width;
+        frame = 0;
     }
 
     @Override
     public void paint(Batch g) {
-        visual.setPosition(getX(), getY());
-        visual.paint(g);
+        TextureRegion region = frameRegions[frame / frameCols][frame % frameCols];
+        g.draw(region, getX(), getY(), getWidth(), getHeight());
+    }
+
+    private void setFrame(int frame) {
+        this.frame = frame;
     }
 
     @Override
@@ -212,17 +225,17 @@ public class Player extends Layer {
      */
     private void updateAnimation(PlayerCommand command, float frames) {
         if (!onGround) {
-            visual.setFrame(facingRight ? 2 : 3);
+            setFrame(facingRight ? 2 : 3);
             return;
         }
         if (speed == 0) {
             walkCycleAccumulator = 0;
-            visual.setFrame(facingRight ? 0 : 1);
+            setFrame(facingRight ? 0 : 1);
             return;
         }
         boolean skidding = (command.right && speed < 0) || (command.left && speed > 0);
         if (skidding) {
-            visual.setFrame(facingRight ? 7 : 11);
+            setFrame(facingRight ? 7 : 11);
             return;
         }
         walkCycleAccumulator += Math.abs(speed) * frames;
@@ -230,7 +243,7 @@ public class Player extends Layer {
             walkCycleAccumulator = 0;
             walkCyclePos = (walkCyclePos + 1) % 3;
         }
-        visual.setFrame((facingRight ? 4 : 8) + walkCyclePos);
+        setFrame((facingRight ? 4 : 8) + walkCyclePos);
     }
 
     /**
@@ -279,7 +292,7 @@ public class Player extends Layer {
     private void changePowerState(PlayerPowerState newState) {
         float oldHeight = getHeight();
         powerState = newState;
-        visual = createVisual(newState);
+        initFrames(newState);
         setSize(newState.width, newState.height);
         // Keep Mario's feet planted: growing/shrinking extends/retracts upward.
         setY(getY() - (newState.height - oldHeight));

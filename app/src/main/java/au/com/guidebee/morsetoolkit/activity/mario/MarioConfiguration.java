@@ -36,4 +36,20 @@ public final class MarioConfiguration {
     /** The default "camera window" size, in world pixels - see {@code CameraController}. */
     public static final int VIEWPORT_WIDTH = 12 * TILE_SIZE;
     public static final int VIEWPORT_HEIGHT = 7 * TILE_SIZE;
+
+    /**
+     * The largest per-frame delta any physics code should ever act on, in
+     * seconds. A screen's first frame can carry a much larger delta than any
+     * frame after it - real wall-clock time keeps ticking during that
+     * screen's own construction (asset lookups, spawning every brick/enemy),
+     * so by the time the first render() call fires, "time since last frame"
+     * can be a large fraction of a second instead of ~1/60. Every collision
+     * check here is discrete (final-position-only, not swept), so an
+     * uncapped delta on that first frame can move an actor clean through a
+     * thin solid (e.g. gravity pulling Mario through the two-tile-thick
+     * ground in one step) before it ever gets a chance to collide with it.
+     * Clamping delta once, centrally, before it reaches any actor's act()
+     * avoids that regardless of what causes the stall.
+     */
+    public static final float MAX_DELTA_SECONDS = 1f / 30f;
 }

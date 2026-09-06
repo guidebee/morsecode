@@ -130,6 +130,11 @@ public class MarioGameScreen extends ScreenAdapter {
 
     @Override
     public void render(float delta) {
+        // See MarioConfiguration.MAX_DELTA_SECONDS - avoids tunneling through
+        // thin colliders after a hitch (e.g. this screen's own construction
+        // eating real time before the first frame renders).
+        delta = Math.min(delta, MarioConfiguration.MAX_DELTA_SECONDS);
+
         layerManager.act(delta);
         PlayerCollisionResolver.resolvePickups(player, world);
 

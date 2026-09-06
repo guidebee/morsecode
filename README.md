@@ -16,7 +16,7 @@ An Android app for learning and practicing Morse code: transmit letters/words/fr
 - **Transmit** — encode letters, words or free text into Morse (flash/tone/vibration).
 - **Receive** — practice decoding letters, words or free text.
 - **Send Practice** — key a target word or callsign by hand on an on-screen straight key and see it decoded live.
-- **Decoder** — listens through the device microphone and decodes live Morse audio in real time, styled as a bench oscilloscope, with a choice of two detection modes (see below).
+- **Decoder** — the standout feature: listens through the device microphone and decodes live Morse audio in real time (not simulated input), styled as a bench oscilloscope, with a live WPM readout and a choice of two detection algorithms (see [Decoder](#decoder) below).
 - **Flashcards** — quick drill through the Morse alphabet.
 - **Content Library** — reference material for Q-codes, prosigns, callsigns and sample QSOs.
 - **Handbook** — reference material.
@@ -87,10 +87,20 @@ Free Text in both modes hands off to Send Practice / Receive's own type-and-play
 
 ### Decoder
 
-Turns your microphone into a Morse-to-text decoder in real time, styled as a bench oscilloscope panel — POWER and ANALOG toggles, X-POS/Y-POS trace controls, and a phosphor-green scope screen tracing the incoming tone. Requires the `RECORD_AUDIO` permission on first use. **Play Sample** plays a bundled demo clip so you can see it decode without needing a real Morse source at hand. Two detection algorithms are available:
+This is what sets the Toolkit apart from most Morse "trainers": instead of only simulating input — tap a key, read a chart — it listens to **real, live audio** through the device microphone and decodes it the way an actual radio operator would: off a transceiver's speaker, another phone, a practice oscillator, or anything else nearby making Morse tones. The panel is deliberately styled as a bench oscilloscope rather than a plain text box:
 
-- **Classic** (default) — a broadband magnitude-threshold detector; simple and generally the more robust option.
-- **Narrowband** — a Goertzel single-tone detector that's more selective against background noise, at the cost of only tracking one frequency band.
+- **POWER** — starts/stops the microphone.
+- **ANALOG** — overlays the raw signal-magnitude trace (a faint amber glow) underneath the sharper digital tone/no-tone trace, so you can see exactly how clean or noisy the incoming audio actually is, not just the decoder's yes/no verdict.
+- **X-POS / Y-POS** — the scope's time-base and vertical gain: X-POS stretches or compresses the trace horizontally, Y-POS scales its height.
+- **Live WPM readout** — recalculated from every decoded dot, not a fixed setting, so it reflects the actual speed of whoever (or whatever) is sending, and updates if that speed changes mid-message.
+- **Play Sample** — plays a bundled demo `.wav` through the speaker with the mic still listening, so the whole pipeline demonstrates itself end-to-end without needing a second device or a real signal source on hand. (Echo cancellation, noise suppression and AGC are explicitly disabled on the mic session while this runs — the Android HAL's acoustic echo canceler is built to cancel out exactly the sound the device just played through its own speaker, which is precisely the tone this feature depends on hearing back.)
+
+Two independent detection algorithms are selectable mid-session, each solving "is this a tone?" differently:
+
+- **Classic (broadband)** — a frequency-agnostic magnitude threshold: whatever's loudest is presumed to be the tone. Simple, and the more robust default across a wide range of sources and volumes.
+- **Narrowband** — a Goertzel-filter tone detector that scans the whole audio band every tick, locks onto whichever frequency is currently loudest, and applies separate enter/exit thresholds (hysteresis) plus a short debounce so one noisy frame can't flip the verdict. Better at rejecting broadband background noise (voices, traffic, wind) since it only "hears" a single tracked pitch — at the cost of only working within that tracked band.
+
+Underneath either detector, the same timing state machine calibrates its own dot/dash-length estimate from a rolling median of the last several elements — rather than reacting to any single element — so it tracks the sender's actual WPM, including mid-message speed changes, without one noisy glitch throwing off the whole decode. Requires the `RECORD_AUDIO` permission on first use.
 
 ### Flashcards
 
@@ -124,12 +134,12 @@ Tapping **Replay app tour** in Settings resets every one of the flags above at o
 
 ### Decoder architecture
 
-- `DecoderViewModel` (`app/`) owns the mic-capture lifecycle, UI state and settings persistence, surviving rotation/navigation; `DecoderScreen` is a thin Compose observer of its `StateFlow`.
-- `AudioDecoderController` (`app/`) wraps `AudioRecord`, exposing capture as a suspend function driven by a coroutine (`viewModelScope.launch { controller.capture() }`) rather than a raw `Thread`.
+- `DecoderViewModel` (`app/`) owns the mic-capture lifecycle, UI state and settings persistence, surviving rotation/navigation; `DecoderScreen` is a thin Compose observer of its `StateFlow`. It recomputes the live WPM readout on every decoded dot (`sampleRate / dotLengthInSamples`, PARIS-style), and drives the "Play Sample" demo by starting capture, dropping the decoder's calibration to a known-good dot length, and playing the bundled `res/raw/morse.wav` at a reduced volume (confirmed by device testing: full volume clips the mic at close range).
+- `AudioDecoderController` (`app/`) wraps `AudioRecord`, exposing capture as a suspend function driven by a coroutine (`viewModelScope.launch { controller.capture() }`) rather than a raw `Thread`. It explicitly disables `AcousticEchoCanceler`, `NoiseSuppressor` and `AutomaticGainControl` on the capture session — left enabled, echo cancellation in particular actively fights the "Play Sample" self-test, since it's designed to cancel out sound the device itself just played through its speaker.
 - `AudioMorseCodeDecoder` (`decoder/`) supports two `DetectionMode`s, switchable from the Decoder screen and persisted across launches:
   - **Classic (broadband)** — the original, simpler magnitude-threshold detector; the default, and generally the more robust of the two.
-  - **Narrowband** — a Goertzel-based single-tone detector with a self-adjusting decaying-peak-follower threshold; more selective against background noise, but currently a secondary option to Classic.
-- `MorseCodePatternMatch` (`decoder/`) is the dot/dash/letter/word timing state machine. It adapts to the sender's actual WPM using a median of recent dot/dash lengths (rather than reacting to any single element), which bounds how much a single noisy or atypical element can swing calibration.
+  - **Narrowband** — a `ToneDetector` (`decoder/`) built on a Goertzel filter: every tick it scans ~20-25 candidate frequencies spaced in whole FFT-bin steps across 300–3000 Hz, adopts whichever is loudest as the currently tracked pitch, and classifies tone/silence against a self-adjusting decaying-peak threshold with separate enter/exit fractions (hysteresis) and a short debounce — more selective against background noise than Classic, but currently a secondary option to it.
+- `MorseCodePatternMatch` (`decoder/`) is the dot/dash/letter/word timing state machine. It adapts to the sender's actual WPM using a median of the last several recorded dot and dash lengths (rather than reacting to any single element), which bounds how much a single noisy or atypical element can swing calibration, while a clamped `dotLimit` range and a stuck-discard escape hatch keep it from either running away on an outlier or getting permanently stuck too slow to recognize genuinely fast elements.
 
 ### Tutorial architecture
 

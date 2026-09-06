@@ -21,7 +21,7 @@ An Android app for learning and practicing Morse code: transmit letters/words/fr
 - **Content Library** — reference material for Q-codes, prosigns, callsigns and sample QSOs.
 - **Handbook** — reference material.
 - **Settings** — theme, transmit/receive modes, decoder sample rate, flashcard behavior, training-progress reset, and tutorial replay, all in one place.
-- **Games** — Flappy Bird and Battle City, controlled via Morse input, running on a bundled 2D/OpenGL game engine.
+- **Games** — Flappy Bird and Battle City, controlled via Morse input, running on a bundled 2D/OpenGL game engine (see [docs/GAME_ENGINE.md](docs/GAME_ENGINE.md)).
 - **In-app tutorials** — a first-launch onboarding tour, a Home-screen coach-mark walkthrough, and short "how this works" tips on every tool screen (see [In-app tutorials](#in-app-tutorials) below).
 
 ## Screenshots
@@ -130,7 +130,7 @@ Tapping **Replay app tour** in Settings resets every one of the flags above at o
 
 - `app/` — the Android application (Compose UI, transmit/receive/decoder screens, navigation drawer, ViewModels).
 - `decoder/` — a pure-JVM (no Android dependencies) library module holding the audio-to-Morse decoding core: the timing state machine, the broadband and narrowband tone detectors, and the shared Morse lookup tables. Extracted from `app/` so the decoding logic can be unit tested with plain JUnit and reasoned about independently of Android. `app/` depends on it for the actual mic-capture/UI plumbing.
-- `gameengine/` — an in-tree Android library module containing the Guidebee Game Engine (Java game framework + JNI/OpenGL ES 2.0 + Box2D native code, built via `ndkBuild`). The two games in `app/` depend on this module directly; there is no external `game-engine` artifact.
+- `gameengine/` — an in-tree Android library module containing the Guidebee Game Engine (Java game framework + JNI/OpenGL ES 2.0 + Box2D native code, built via `ndkBuild`). The two games in `app/` depend on this module directly; there is no external `game-engine` artifact. See [docs/GAME_ENGINE.md](docs/GAME_ENGINE.md) for an engine walkthrough using Flappy Bird and Battle City as examples.
 
 ### Decoder architecture
 

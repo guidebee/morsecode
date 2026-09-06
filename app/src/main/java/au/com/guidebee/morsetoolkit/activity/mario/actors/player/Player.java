@@ -7,8 +7,10 @@ import com.guidebee.game.microedition.Layer;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.InteractiveBrick;
+import au.com.guidebee.morsetoolkit.activity.mario.actors.projectiles.FireBall;
 import au.com.guidebee.morsetoolkit.activity.mario.input.MarioInputController;
 import au.com.guidebee.morsetoolkit.activity.mario.input.PlayerCommand;
+import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioWorld;
 
 /**
@@ -134,7 +136,28 @@ public class Player extends Layer {
         moveXWithCollision(speed / 20f * frames);
         moveYWithCollision(gravity * frames);
 
+        applyFire(command);
         updateAnimation(command, frames);
+    }
+
+    /** Ported from {@code Player.Fire()} - Fire Mario only, capped at 2 concurrent fireballs. */
+    private void applyFire(PlayerCommand command) {
+        if (!command.firePressed || powerState != PlayerPowerState.FIRE) {
+            return;
+        }
+        long activeFireBalls = 0;
+        for (FireBall fireBall : world.getFireBalls()) {
+            if (fireBall.isActive()) {
+                activeFireBalls++;
+            }
+        }
+        if (activeFireBalls >= 2) {
+            return;
+        }
+        FireBall fireBall = new FireBall(getX(), getY(), facingRight);
+        world.addFireBall(fireBall);
+        MarioContext.spawn(fireBall);
+        MarioResourceManager.sound("smb_fireball").play();
     }
 
     private void applyHorizontalInput(PlayerCommand command, float frames) {
@@ -178,10 +201,10 @@ public class Player extends Layer {
         float newX = Math.max(0, getX() + dx);
         int tileSize = MarioConfiguration.TILE_SIZE;
 
-        if (dx > 0 && world.containsImpassableArea((int) newX, (int) getY(), width, height)) {
+        if (dx > 0 && world.containsImpassableArea(newX, getY(), width, height)) {
             newX = (float) (((int) (newX + width) / tileSize) * tileSize - width);
             speed = 0;
-        } else if (dx < 0 && world.containsImpassableArea((int) newX, (int) getY(), width, height)) {
+        } else if (dx < 0 && world.containsImpassableArea(newX, getY(), width, height)) {
             newX = (float) (((int) newX / tileSize + 1) * tileSize);
             speed = 0;
         }
@@ -195,15 +218,15 @@ public class Player extends Layer {
         int tileSize = MarioConfiguration.TILE_SIZE;
 
         if (dy > 0) {
-            if (world.containsImpassableArea((int) getX(), (int) newY, width, height)) {
+            if (world.containsImpassableArea(getX(), newY, width, height)) {
                 newY = (float) (((int) (newY + height) / tileSize) * tileSize - height);
                 gravity = 0;
                 onGround = true;
             } else {
                 onGround = false;
             }
-        } else if (dy < 0 && world.containsImpassableArea((int) getX(), (int) newY, width, height)) {
-            InteractiveBrick hit = world.findActiveBrickAt((int) getX(), (int) newY, width, height);
+        } else if (dy < 0 && world.containsImpassableArea(getX(), newY, width, height)) {
+            InteractiveBrick hit = world.findActiveBrickAt(getX(), newY, width, height);
             if (hit != null) {
                 hit.hitFromBelow(this);
             }
@@ -296,6 +319,16 @@ public class Player extends Layer {
         setSize(newState.width, newState.height);
         // Keep Mario's feet planted: growing/shrinking extends/retracts upward.
         setY(getY() - (newState.height - oldHeight));
+    }
+
+    /**
+     * A small upward hop after stomping an enemy, ported from the
+     * {@code game.player.Jump(-8)} call every stomp reaction makes in the
+     * original (EnemyMashroom/EnemyTurtle/TurtleShell alike).
+     */
+    public void bounceOffEnemy() {
+        gravity = -8f;
+        onGround = false;
     }
 
     /** Ported from {@code Player.STAR()} - temporary invincibility (no speed/visual flourish yet). */

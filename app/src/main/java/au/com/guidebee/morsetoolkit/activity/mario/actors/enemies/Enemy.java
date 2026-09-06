@@ -4,16 +4,25 @@ import com.guidebee.game.graphics.TextureRegion;
 import com.guidebee.game.microedition.Sprite;
 
 import au.com.guidebee.morsetoolkit.activity.mario.actors.player.Player;
+import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
+import au.com.guidebee.morsetoolkit.activity.mario.world.TileMovement;
 
 /**
- * Common base for ground-walking enemies (EnemyMashroom/EnemyTurtle in the
- * original), which all share the same shape: walk at a constant pace, fall
- * under gravity, turn around at walls. See docs/MARIO_PORT_PLAN.md Step 6.1.
+ * Common base for enemies (EnemyMashroom/EnemyTurtle/TurtleShell in the
+ * original). See docs/MARIO_PORT_PLAN.md Step 6.1.
  *
  * <p>Stomp-vs-hurt is decided by {@code EnemyCollisionResolver}, not here -
  * this class only reacts via {@link #onStomped}/{@link #onTouchedSide}.
+ *
+ * <p>{@link #walkAndFall} (constant-speed walk + gravity + wall-bounce) is a
+ * helper subclasses call from their own {@code act()}, not something this
+ * class does automatically - {@code TurtleShell} needs to sit motionless
+ * while "standing" and only walk once kicked, so a fixed base-class
+ * {@code act()} would fight that rather than help it.
  */
 public abstract class Enemy extends Sprite {
+
+    protected static final float PHYSICS_FPS = 60f;
 
     private boolean active = true;
     protected boolean movingRight;
@@ -33,10 +42,19 @@ public abstract class Enemy extends Sprite {
         remove();
     }
 
-    public boolean overlaps(int x, int y, int width, int height) {
+    public boolean overlaps(float x, float y, int width, int height) {
         return active
                 && x < getX() + getWidth() && x + width > getX()
                 && y < getY() + getHeight() && y + height > getY();
+    }
+
+    /** Walks at a constant pace, falls under gravity, turns around at walls. */
+    protected void walkAndFall(float delta, float gravity, float walkSpeed) {
+        float frames = delta * PHYSICS_FPS;
+        TileMovement.moveY(this, gravity * frames, MarioContext.world());
+        if (TileMovement.moveX(this, (movingRight ? walkSpeed : -walkSpeed) * frames, MarioContext.world())) {
+            movingRight = !movingRight;
+        }
     }
 
     /** Player landed on top. Default: die (matches EnemyMashroom; EnemyTurtle overrides). */

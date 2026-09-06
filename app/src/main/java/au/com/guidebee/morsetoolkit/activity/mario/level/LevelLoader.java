@@ -9,6 +9,9 @@ import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.InvisibleBrck;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.Iron;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.Pump;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.QuestionMark;
+import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.Enemy;
+import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.EnemyMashroom;
+import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.EnemyTurtle;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioWorld;
 
@@ -23,10 +26,12 @@ import au.com.guidebee.morsetoolkit.activity.mario.world.MarioWorld;
  *   <li>Interactive bricks (Brick/Bank/QuestionMark/BrickWithStar/
  *   InvisibleBrck/Iron/Pump) become Sprite actors - see
  *   docs/MARIO_PORT_PLAN.md Step 5.1 and {@code InteractiveBrick}.
+ *   <li>Ground-walking enemies (EnemyMashroom/EnemyTurtle) become Sprite
+ *   actors too - see docs/MARIO_PORT_PLAN.md Step 6.1 and {@code Enemy}.
  * </ul>
  *
- * Every other tile type (enemies, checkpoints, decorations...) is still left
- * untouched here - later steps.
+ * Every other tile type (checkpoints, decorations, flying/patrol enemies...)
+ * is still left untouched here - later steps.
  */
 public final class LevelLoader {
 
@@ -131,6 +136,28 @@ public final class LevelLoader {
         }
     }
 
+    /**
+     * Spawns every ground-walking enemy. Same {@link MarioContext}
+     * requirement as {@link #spawnBricks}. World 1 never places a patrol
+     * turtle or flying turtle (all {@code patrolLength} values are 0 in its
+     * level data), so only the plain walkers are handled here - see
+     * docs/MARIO_PORT_PLAN.md Step 6.1.
+     */
+    public static void spawnEnemies(LevelDefinition level) {
+        for (LevelDefinition.Tile tile : level.tiles) {
+            switch (tile.type) {
+                case "EnemyMushroom":
+                    forEachCell(tile, (x, y) -> addEnemy(new EnemyMashroom(x, y, level.attribute)));
+                    break;
+                case "EnemyTurtle":
+                    forEachCell(tile, (x, y) -> addEnemy(new EnemyTurtle(x, y, level.attribute)));
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
     private interface CellSpawner {
         void spawn(float x, float y);
     }
@@ -147,5 +174,10 @@ public final class LevelLoader {
     private static void add(InteractiveBrick brick) {
         MarioContext.world().addBrick(brick);
         MarioContext.spawn(brick);
+    }
+
+    private static void addEnemy(Enemy enemy) {
+        MarioContext.world().addEnemy(enemy);
+        MarioContext.spawn(enemy);
     }
 }

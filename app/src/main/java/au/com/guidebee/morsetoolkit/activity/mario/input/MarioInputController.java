@@ -2,20 +2,31 @@ package au.com.guidebee.morsetoolkit.activity.mario.input;
 
 import com.guidebee.game.GameEngine;
 import com.guidebee.game.Input;
+import com.guidebee.game.ui.ImageButton;
 
 /**
- * Polls keyboard/touch state into a {@link PlayerCommand} each frame. Step
- * 4.1's "start with direct polling" per docs/MARIO_PORT_PLAN.md: keyboard
- * (arrow keys or WASD to move, Space/Up/Z to jump) is the fully-supported
- * scheme for this step's vertical slice. Touch gets a provisional three-zone
- * mapping (left third = left, right third = right, middle third = jump) -
- * good enough to smoke-test on a touch device, but a real virtual
- * {@code GameController} with on-screen buttons is still a later follow-up
- * (the plan explicitly defers it: "add ... later if on-screen buttons wanted").
+ * Polls keyboard/touch state into a {@link PlayerCommand} each frame.
+ * Keyboard (arrow keys or WASD to move, Space/Up/Z to jump) always works;
+ * touch is a real on-screen control panel - left/right/jump {@link ImageButton}s
+ * built and positioned by {@code MarioGameScreen}, the same
+ * procedurally-drawn-icon + {@code ImageButton} + {@code addHUDComponent}
+ * pattern Battle City uses for its own on-screen controls (see
+ * {@code BattleCityGameScene.createBackIcon}).
  */
 public class MarioInputController {
 
     private final PlayerCommand command = new PlayerCommand();
+    private final ImageButton leftButton;
+    private final ImageButton rightButton;
+    private final ImageButton jumpButton;
+
+    private boolean jumpButtonWasPressed;
+
+    public MarioInputController(ImageButton leftButton, ImageButton rightButton, ImageButton jumpButton) {
+        this.leftButton = leftButton;
+        this.rightButton = rightButton;
+        this.jumpButton = jumpButton;
+    }
 
     public PlayerCommand poll() {
         boolean keyboardLeft = GameEngine.input.isKeyPressed(Input.Keys.LEFT)
@@ -25,29 +36,21 @@ public class MarioInputController {
         boolean keyboardJump = GameEngine.input.isKeyJustPressed(Input.Keys.SPACE)
                 || GameEngine.input.isKeyJustPressed(Input.Keys.UP)
                 || GameEngine.input.isKeyJustPressed(Input.Keys.Z);
+        // Keyboard-only for now (Fire Mario is reachable but not guaranteed within
+        // a single Level 11 playthrough) - no on-screen fire button yet, matching
+        // the same "touch is a later follow-up" deferral already used elsewhere.
+        boolean keyboardFire = GameEngine.input.isKeyJustPressed(Input.Keys.X);
 
-        boolean touchLeft = false;
-        boolean touchRight = false;
-        boolean touchJump = false;
-        int screenWidth = GameEngine.graphics.getWidth();
-        if (GameEngine.input.isTouched()) {
-            int x = GameEngine.input.getX();
-            if (x < screenWidth / 3) {
-                touchLeft = true;
-            } else if (x > screenWidth * 2 / 3) {
-                touchRight = true;
-            }
-        }
-        if (GameEngine.input.justTouched()) {
-            int x = GameEngine.input.getX();
-            if (x >= screenWidth / 3 && x <= screenWidth * 2 / 3) {
-                touchJump = true;
-            }
-        }
+        // Buttons only expose "currently held" (isPressed()), so jump is
+        // edge-detected here, the same way isKeyJustPressed works for keyboard.
+        boolean jumpButtonPressed = jumpButton.isPressed();
+        boolean jumpButtonJustPressed = jumpButtonPressed && !jumpButtonWasPressed;
+        jumpButtonWasPressed = jumpButtonPressed;
 
-        command.left = keyboardLeft || touchLeft;
-        command.right = keyboardRight || touchRight;
-        command.jumpPressed = keyboardJump || touchJump;
+        command.left = keyboardLeft || leftButton.isPressed();
+        command.right = keyboardRight || rightButton.isPressed();
+        command.jumpPressed = keyboardJump || jumpButtonJustPressed;
+        command.firePressed = keyboardFire;
         return command;
     }
 }

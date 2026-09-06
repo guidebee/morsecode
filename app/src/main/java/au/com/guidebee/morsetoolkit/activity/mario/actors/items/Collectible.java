@@ -11,7 +11,7 @@ public interface Collectible {
 
     boolean isActive();
 
-    boolean overlaps(int x, int y, int width, int height);
+    boolean overlaps(float x, float y, int width, int height);
 
     void onCollected(Player player);
 }

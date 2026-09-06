@@ -43,7 +43,7 @@ public abstract class InteractiveBrick extends Sprite {
         setVisible(false);
     }
 
-    public boolean overlaps(int x, int y, int width, int height) {
+    public boolean overlaps(float x, float y, int width, int height) {
         return active
                 && x < getX() + getWidth() && x + width > getX()
                 && y < getY() + getHeight() && y + height > getY();

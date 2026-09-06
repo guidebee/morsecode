@@ -25,10 +25,10 @@ public final class TileMovement {
         float newX = actor.getX() + dx;
         boolean blocked = false;
 
-        if (dx > 0 && world.containsImpassableArea((int) newX, (int) actor.getY(), width, height)) {
+        if (dx > 0 && world.containsImpassableArea(newX, actor.getY(), width, height)) {
             newX = (float) (((int) (newX + width) / tileSize) * tileSize - width);
             blocked = true;
-        } else if (dx < 0 && world.containsImpassableArea((int) newX, (int) actor.getY(), width, height)) {
+        } else if (dx < 0 && world.containsImpassableArea(newX, actor.getY(), width, height)) {
             newX = (float) (((int) newX / tileSize + 1) * tileSize);
             blocked = true;
         }
@@ -44,10 +44,10 @@ public final class TileMovement {
         float newY = actor.getY() + dy;
         boolean blocked = false;
 
-        if (dy > 0 && world.containsImpassableArea((int) actor.getX(), (int) newY, width, height)) {
+        if (dy > 0 && world.containsImpassableArea(actor.getX(), newY, width, height)) {
             newY = (float) (((int) (newY + height) / tileSize) * tileSize - height);
             blocked = true;
-        } else if (dy < 0 && world.containsImpassableArea((int) actor.getX(), (int) newY, width, height)) {
+        } else if (dy < 0 && world.containsImpassableArea(actor.getX(), newY, width, height)) {
             newY = (float) (((int) newY / tileSize + 1) * tileSize);
             blocked = true;
         }

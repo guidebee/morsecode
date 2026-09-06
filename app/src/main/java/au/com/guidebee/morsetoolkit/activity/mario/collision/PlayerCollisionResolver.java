@@ -26,7 +26,7 @@ public final class PlayerCollisionResolver {
                 it.remove();
                 continue;
             }
-            if (item.overlaps((int) player.getX(), (int) player.getY(),
+            if (item.overlaps(player.getX(), player.getY(),
                     (int) player.getWidth(), (int) player.getHeight())) {
                 item.onCollected(player);
                 it.remove();

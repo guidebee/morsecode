@@ -11,4 +11,7 @@ public final class PlayerCommand {
 
     /** Edge-triggered: true only on the frame the jump input started. */
     public boolean jumpPressed;
+
+    /** Edge-triggered: true only on the frame the fire input started. Only Fire Mario acts on it. */
+    public boolean firePressed;
 }

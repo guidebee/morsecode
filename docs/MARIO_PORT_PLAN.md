@@ -11,6 +11,12 @@ this document is Mario-specific; it doesn't re-explain GGE itself.
 yet. Treat each numbered step below as a checkpoint — build and smoke-test at each
 vertical slice rather than writing all modules before running anything.
 
+**Decisions locked in:**
+- **v1 scope = World 1 only** (`Level_11`–`Level_14` + their two bonus areas).
+- **Morse-code training (§9) is explicitly deferred** until World 1 is playable
+  end-to-end (Steps 0–8 complete). v1 is a straight Mario port with no Morse mechanic —
+  Step 9 and the level-scope decision in §9 are out of scope until then.
+
 ## 1. Why this isn't a mechanical port
 
 GTGE's `Sprite`/`SpriteGroup`/`PlayField`/`CollisionManager` and GGE's
@@ -208,10 +214,11 @@ areas) to prove the whole pipeline before spending effort porting all 58 levels 
 
 **Step 0 — Preparation**
 - 0.1 Create the `activity/mario/` package skeleton (empty classes/interfaces per §5).
-- 0.2 Confirm v1 level scope (World 1) and register `MarioGameActivity` in the manifest
-  (mirroring `FlappyBirdGameActivity`/`BattleCityGameActivity`) so the shell launches.
-- 0.3 Decide the concrete Morse mechanic (§9) — needed now because it affects the
-  `LevelDefinition` schema in step 1.
+- 0.2 Register `MarioGameActivity` in the manifest (mirroring
+  `FlappyBirdGameActivity`/`BattleCityGameActivity`) so the shell launches. *(Level
+  scope confirmed: World 1 only for v1.)*
+- 0.3 *(Deferred — see §9. No Morse mechanic in v1; the `morseChallenges` field in the
+  schema below stays empty and unused until after Step 8.)*
 
 **Step 1 — Level data pipeline**
 - 1.1 Write `LevelConverter`, run it against `Level_11`–`Level_14` (+ bonus areas),
@@ -268,7 +275,8 @@ areas) to prove the whole pipeline before spending effort porting all 58 levels 
   special-cased start screen).
 - 8.3 `GameStateController` wired through the full loop.
 
-**Step 9 — Morse-code training**
+**Step 9 — Morse-code training** *(deferred — starts only after World 1 is playable
+via Steps 0–8; not part of v1)*
 - 9.1 Implement the chosen mechanic (§9) via `MorseChallengeProvider` + `MorseBrick`
   and/or `MorseChallengeHud`.
 - 9.2 Extend `LevelLoader`/`LevelDefinition` so future levels can tag challenges
@@ -330,8 +338,9 @@ Recommended order for §6 Step 11, easiest-to-hardest by mechanic novelty:
    with alternate art — mechanically simplest, but do them last since they depend on
    every actor type already being ported.
 
-## 9. Morse-code training hook — decision needed
+## 9. Morse-code training hook — deferred to post-v1
 
+Not part of v1. Revisit this section once World 1 (Steps 0–8) is playable end-to-end.
 Both existing games establish a pattern worth reusing rather than inventing a third:
 
 - **Flappy Bird**: `Playground.isCollideWithTube` checks the pipe's assigned letter
@@ -362,8 +371,6 @@ core loop (Steps 0–8) is proven.
 
 ## 10. Open risks to flag before starting
 
-- **Level-scope decision (§6 Step 0.2)** — confirm World 1 as v1 scope.
-- **Morse mechanic decision (§9)** — confirm option A/B/C before Step 1.
 - **Audio format** — verify what `Sound`/`Music` actually accept before assuming WAV
   needs re-encoding (Android's decoders often accept WAV directly; don't do
   speculative conversion work).

@@ -3,6 +3,7 @@ package au.com.guidebee.morsetoolkit.activity.mario.fx;
 import com.guidebee.game.microedition.Sprite;
 
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
+import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
 
 /**
  * The "coin get" popup - ported from {@code Animations/CoinAnim.java}: pops
@@ -11,9 +12,6 @@ import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
  * persistent, player-touchable collectible - the coin is credited
  * immediately (matching the original's {@code game.parent.CoinInc()} call
  * in its constructor) and this is purely the visual.
- *
- * <p>TODO Step 8: route the coin credit through {@code GameStateController}
- * once it exists, instead of only playing the sound/animation.
  */
 public class CoinPopEffect extends Sprite {
 
@@ -29,6 +27,7 @@ public class CoinPopEffect extends Sprite {
         super(MarioResourceManager.region("coin_anim"), 32, 32);
         setPosition(x, y);
         MarioResourceManager.sound("smb_coin").play();
+        MarioContext.gameState().addCoin();
     }
 
     @Override

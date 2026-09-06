@@ -5,6 +5,7 @@ import java.util.List;
 
 import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.Enemy;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.player.Player;
+import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioWorld;
 
 /**
@@ -18,6 +19,9 @@ import au.com.guidebee.morsetoolkit.activity.mario.world.MarioWorld;
  * side), less machinery.
  */
 public final class EnemyCollisionResolver {
+
+    /** Classic NES value for a stomp - awarded here (not per-enemy-type) since every ground enemy stomped so far is worth the same. */
+    private static final int STOMP_SCORE = 100;
 
     private EnemyCollisionResolver() {
     }
@@ -46,6 +50,7 @@ public final class EnemyCollisionResolver {
             if (overlapY <= overlapX && playerAbove) {
                 enemy.onStomped(player);
                 player.bounceOffEnemy();
+                MarioContext.gameState().addScore(STOMP_SCORE);
             } else {
                 enemy.onTouchedSide(player);
             }

@@ -65,6 +65,8 @@ public class Player extends Layer {
     private static final float INVINCIBLE_SECONDS = 400f / 60f;
     /** ~1000 original 60fps ticks - matches Player.java's `STAR()`'s `delay = 1000`. */
     private static final float STAR_SECONDS = 1000f / 60f;
+    /** How far past the level's bottom edge counts as "fallen into a pit" - matches {@code FireBall}'s own fall-out margin. */
+    private static final float FALL_OUT_MARGIN_PX = 200f;
 
     private final MarioWorld world;
     private final MarioInputController input;
@@ -92,6 +94,9 @@ public class Player extends Layer {
     /** Set while a level-complete/pipe-entry sequence drives Mario instead of the player - see {@code MarioGameScreen}. */
     private PlayerCommand forcedCommand;
     private PlayerCommand lastCommand;
+
+    /** Set by {@link #die()}, cleared by {@link #consumeDeath()} - see that method's doc. */
+    private boolean justDied;
 
     public Player(float x, float y, MarioWorld world, MarioInputController input) {
         super(x, y, PlayerPowerState.SMALL.width, PlayerPowerState.SMALL.height, true);
@@ -140,6 +145,14 @@ public class Player extends Layer {
 
         moveXWithCollision(speed / 20f * frames);
         moveYWithCollision(gravity * frames);
+
+        // A pit fall - ported from Mario.java's own `player.getY() > 500`
+        // check, same idea as FireBall's own fall-out margin. Unconditional
+        // (bypasses isInvincible(), unlike shrink()) since a star or hit-
+        // invincibility never saved you from a pit in the original either.
+        if (getY() > world.getHeightPx() + FALL_OUT_MARGIN_PX) {
+            die();
+        }
 
         applyFire(command);
         updateAnimation(command, frames);
@@ -291,10 +304,7 @@ public class Player extends Layer {
 
     /**
      * Fire -> Big -> Small -> (death), ported from {@code Player.Decerease()}.
-     * No-ops while invincible, matching the original. Small-Mario death has
-     * no hazards to trigger it yet in Step 5's content (no enemies until
-     * Step 6) - this just respawns at the level start rather than a real
-     * death/lives sequence, which is Step 8's {@code GameStateController} job.
+     * No-ops while invincible, matching the original.
      */
     public void shrink() {
         if (isInvincible()) {
@@ -309,12 +319,44 @@ public class Player extends Layer {
             invincibleTimer = INVINCIBLE_SECONDS;
             MarioResourceManager.sound("smb_pipe").play();
         } else {
-            MarioResourceManager.sound("smb_mariodie").play();
-            speed = 0;
-            gravity = 0;
-            setPosition(spawnX, spawnY);
-            invincibleTimer = INVINCIBLE_SECONDS;
+            die();
         }
+    }
+
+    /**
+     * Small Mario's death - either a hit while already Small ({@link #shrink()}),
+     * or falling into a pit (see {@link #act}'s fall-out check, which unlike
+     * {@code shrink()} can fire at any power state, so this resets back to
+     * Small itself rather than assuming it already is). Respawns immediately
+     * at the level's spawn point, matching the original's instant
+     * {@code Restart()} - no death animation/delay.
+     *
+     * <p>Player has no notion of lives or game over; {@link #consumeDeath()}
+     * is how {@code MarioGameScreen} finds out a life should be charged -
+     * see {@code GameStateController}.
+     */
+    private void die() {
+        MarioResourceManager.sound("smb_mariodie").play();
+        changePowerState(PlayerPowerState.SMALL);
+        speed = 0;
+        gravity = 0;
+        setPosition(spawnX, spawnY);
+        invincibleTimer = INVINCIBLE_SECONDS;
+        justDied = true;
+    }
+
+    /**
+     * @return true the first time this is called after a death, false
+     * otherwise - a consume-once flag so {@code MarioGameScreen} charges
+     * exactly one life per death regardless of how many frames pass before
+     * it's polled.
+     */
+    public boolean consumeDeath() {
+        if (justDied) {
+            justDied = false;
+            return true;
+        }
+        return false;
     }
 
     private void changePowerState(PlayerPowerState newState) {

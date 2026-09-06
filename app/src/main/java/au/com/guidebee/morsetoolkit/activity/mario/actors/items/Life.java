@@ -14,8 +14,6 @@ import au.com.guidebee.morsetoolkit.activity.mario.world.TileMovement;
  * this port resolves ground/wall collision itself via {@link TileMovement}
  * instead of replicating that fall-through.
  *
- * <p>TODO Step 8: credit an extra life via {@code GameStateController} once
- * it exists, instead of only playing the pickup sound.
  */
 public class Life extends CollectibleItem {
 
@@ -54,6 +52,7 @@ public class Life extends CollectibleItem {
     @Override
     public void onCollected(Player player) {
         MarioResourceManager.sound("smb_1-up").play();
+        MarioContext.gameState().addLife();
         collect();
     }
 }

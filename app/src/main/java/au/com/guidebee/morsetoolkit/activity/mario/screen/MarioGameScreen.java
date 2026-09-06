@@ -29,24 +29,27 @@ import au.com.guidebee.morsetoolkit.activity.mario.collision.EnemyCollisionResol
 import au.com.guidebee.morsetoolkit.activity.mario.collision.LiftCollisionResolver;
 import au.com.guidebee.morsetoolkit.activity.mario.collision.PlayerCollisionResolver;
 import au.com.guidebee.morsetoolkit.activity.mario.collision.ProjectileCollisionResolver;
+import au.com.guidebee.morsetoolkit.activity.mario.hud.PauseOverlay;
+import au.com.guidebee.morsetoolkit.activity.mario.hud.ScoreHud;
 import au.com.guidebee.morsetoolkit.activity.mario.input.MarioInputController;
 import au.com.guidebee.morsetoolkit.activity.mario.input.PlayerCommand;
 import au.com.guidebee.morsetoolkit.activity.mario.level.LevelCatalog;
 import au.com.guidebee.morsetoolkit.activity.mario.level.LevelDefinition;
 import au.com.guidebee.morsetoolkit.activity.mario.level.LevelLoader;
+import au.com.guidebee.morsetoolkit.activity.mario.state.GameStateController;
 import au.com.guidebee.morsetoolkit.activity.mario.world.CameraController;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioWorld;
 
 /**
- * Steps 5-7 vertical slice: a level's interactive bricks, items,
+ * Steps 5-8 vertical slice: a level's interactive bricks, items,
  * ground-walking enemies (stomp/shell/kick, Fire Mario's fireballs), moving
- * platforms, and level-end flag/pipe checkpoints all work on top of Step 4's
- * movement/collision. See docs/MARIO_PORT_PLAN.md Step 5.4/6.1-6.3/7.1. Not
- * yet covered: flying/patrol enemy variants, Boss, same-level teleports
- * (unused by any World-1 level), bomb/flying-fish {@code SpawnController}
- * (Step 7.2 - also unused by any World-1 level, see {@code LevelLoader}),
- * HUD/menu/game state (Step 8).
+ * platforms, level-end flag/pipe checkpoints, and score/lives/pause/game-over
+ * all work on top of Step 4's movement/collision. See
+ * docs/MARIO_PORT_PLAN.md Step 5.4/6.1-6.3/7.1/8. Not yet covered:
+ * flying/patrol enemy variants, Boss, same-level teleports (unused by any
+ * World-1 level), bomb/flying-fish {@code SpawnController} (Step 7.2 - also
+ * unused by any World-1 level, see {@code LevelLoader}).
  *
  * <h2>Level completion</h2>
  * {@link #levelState} is a tiny state machine driving what happens once the
@@ -67,7 +70,9 @@ import au.com.guidebee.morsetoolkit.activity.mario.world.MarioWorld;
  * button B is fire, and the touchpad's knob drives left/right/down (see
  * {@code MarioInputController}). A separate small back button, drawn
  * procedurally via {@code Pixmap} exactly like
- * {@code BattleCityGameScene.createBackIcon}, exits to the main menu.
+ * {@code BattleCityGameScene.createBackIcon}, opens {@link #pauseOverlay}
+ * (see "Pause / game over" below) rather than exiting outright - the level
+ * select menu is now the only way to actually leave a level.
  *
  * <h2>Why the HUD buttons are repositioned every frame</h2>
  * {@code Stage} draws its main layer and its HUD layer (added via
@@ -115,6 +120,25 @@ import au.com.guidebee.morsetoolkit.activity.mario.world.MarioWorld;
  * and giving it {@code setScale(zoom)} - the shared camera is about to divide
  * that rendered size back down by the same factor, netting zero visible
  * change for the HUD while the world underneath still zooms.
+ *
+ * <h2>Pause / game over</h2>
+ * {@link GameStateController} (owned by {@link #gamePlay}, so it survives a
+ * checkpoint's level-to-level screen swap - see {@code MarioGamePlay}'s
+ * class doc) is the source of truth for score/coins/lives and whether the
+ * game is paused. {@link #togglePause} is the back button's handler:
+ * pausing sets {@code delta} to 0 before {@link #layerManager}{@code .act(...)}
+ * in {@link #render} - since every actor's physics here is expressed as
+ * "per-frame movement scaled by {@code delta}" (see {@code Player}'s class
+ * doc), a zero delta freezes the whole world (including timers) for free,
+ * with no per-actor pause-awareness needed - and shows {@link #pauseOverlay}.
+ *
+ * <p>{@link #levelState} gains a fourth value, {@code GAME_OVER}, entered by
+ * {@link #handlePlayerDeath} once {@link GameStateController#loseLife} says
+ * the last life is gone - a short scripted freeze (same
+ * {@code setForcedCommand} lockout technique {@link #beginTransition} uses
+ * for checkpoints) showing {@link #scoreHud}'s message label, then
+ * {@link MarioGamePlay#goToMenu}. A death that still has lives left needs no
+ * such handling here - {@code Player#die()} already respawned it in place.
  */
 public class MarioGameScreen extends ScreenAdapter {
 
@@ -141,6 +165,8 @@ public class MarioGameScreen extends ScreenAdapter {
     private static final float PIPE_ENTRY_SECONDS = 0.6f;
     /** Comfortably longer than either delay above, so a stray hit can't interrupt the sequence - see {@code Player#setInvincibleFor}. */
     private static final float TRANSITION_INVINCIBILITY_SECONDS = 5f;
+    /** How long the "GAME OVER" message shows before returning to the menu - see the class doc's "Pause / game over" section. */
+    private static final float GAME_OVER_SECONDS = 2.5f;
 
     // Kept conservative (rather than, say, 0.25-4) - CameraController's own
     // clamp (see its class doc) keeps the camera window within the level at
@@ -150,7 +176,7 @@ public class MarioGameScreen extends ScreenAdapter {
     private static final float MIN_ZOOM = 0.6f;
     private static final float MAX_ZOOM = 1.6f;
 
-    private enum LevelState {PLAYING, ENTERING, ADVANCING}
+    private enum LevelState {PLAYING, ENTERING, ADVANCING, GAME_OVER}
 
     private final MarioGamePlay gamePlay;
     private final LevelDefinition level;
@@ -168,6 +194,8 @@ public class MarioGameScreen extends ScreenAdapter {
     private final ImageButton backButton;
     /** See the class doc's "Pinch-to-zoom" section for why this is a raw {@code GestureDetector}, not a {@code GestureListener} on an actor. */
     private final GestureDetector zoomDetector;
+    private final ScoreHud scoreHud;
+    private final PauseOverlay pauseOverlay;
 
     private final float clearR;
     private final float clearG;
@@ -240,15 +268,18 @@ public class MarioGameScreen extends ScreenAdapter {
         // Bricks/items spawned below register themselves into MarioContext.world()
         // and layerManager - see LevelLoader.spawnBricks and MarioContext's class doc.
         // Scenery goes first so bricks/enemies/the player draw in front of it.
-        MarioContext.init(layerManager, world);
+        MarioContext.init(layerManager, world, gamePlay.gameState());
         LevelLoader.spawnScenery(level);
         LevelLoader.spawnBricks(level);
         LevelLoader.spawnEnemies(level);
         LevelLoader.spawnLifts(level);
 
         gameController = createGameController();
-        backButton = createBackButton(gamePlay);
+        backButton = createBackButton();
         zoomDetector = createZoomDetector();
+        scoreHud = new ScoreHud(layerManager, MarioResourceManager.uiSkin());
+        pauseOverlay = new PauseOverlay(layerManager, MarioResourceManager.uiSkin(),
+                this::resumeGame, gamePlay::goToMenu);
         MarioInputController input = new MarioInputController(gameController);
 
         // The original engine's per-level "pos" field (BasicLevel.pos) is never
@@ -337,14 +368,14 @@ public class MarioGameScreen extends ScreenAdapter {
         zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, requested));
     }
 
-    /** Exits to the main menu - otherwise this screen has no other way back. */
-    private ImageButton createBackButton(MarioGamePlay gamePlay) {
+    /** Opens {@link #pauseOverlay} - see the class doc's "Pause / game over" section. */
+    private ImageButton createBackButton() {
         ImageButton back = new ImageButton(createBackIcon(BACK_BUTTON_SIZE, false), createBackIcon(BACK_BUTTON_SIZE, true));
         back.setSize(BACK_BUTTON_SIZE, BACK_BUTTON_SIZE);
         back.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                gamePlay.finish();
+                togglePause();
             }
         });
         layerManager.addHUDComponent(back);
@@ -377,6 +408,8 @@ public class MarioGameScreen extends ScreenAdapter {
                 scrollY + effectiveHeight - gameController.getHeight() * zoom - MARGIN * zoom);
         positionHudElement(backButton, scrollX + effectiveWidth / 2f - BACK_BUTTON_SIZE * zoom / 2f,
                 scrollY + effectiveHeight - BACK_BUTTON_SIZE * zoom - MARGIN * zoom / 2f);
+        scoreHud.reposition(scrollX, scrollY, effectiveWidth, effectiveHeight, zoom);
+        pauseOverlay.reposition(scrollX, scrollY, effectiveWidth, effectiveHeight, zoom);
     }
 
     /**
@@ -448,22 +481,31 @@ public class MarioGameScreen extends ScreenAdapter {
         // eating real time before the first frame renders).
         delta = Math.min(delta, MarioConfiguration.MAX_DELTA_SECONDS);
 
-        layerManager.act(delta);
-        PlayerCollisionResolver.resolvePickups(player, world);
-        EnemyCollisionResolver.resolve(player, world);
-        ProjectileCollisionResolver.resolve(world);
-        LiftCollisionResolver.resolve(player, world);
-        updateLevelCompletion(delta);
+        // See the class doc's "Pause / game over" section - a zero delta
+        // freezes every actor's physics/timers for free, no per-actor
+        // pause-awareness needed.
+        boolean paused = gamePlay.gameState().isPaused();
+        layerManager.act(paused ? 0f : delta);
 
-        boolean hasStar = player.hasStar();
-        if (hasStar != starMusicActive) {
-            starMusicActive = hasStar;
-            startMusic(hasStar ? "Star" : levelAttribute);
+        if (!paused) {
+            PlayerCollisionResolver.resolvePickups(player, world);
+            EnemyCollisionResolver.resolve(player, world);
+            ProjectileCollisionResolver.resolve(world);
+            LiftCollisionResolver.resolve(player, world);
+            updateLevelCompletion(delta);
+
+            boolean hasStar = player.hasStar();
+            if (hasStar != starMusicActive) {
+                starMusicActive = hasStar;
+                startMusic(hasStar ? "Star" : levelAttribute);
+            }
         }
 
+        scoreHud.update(gamePlay.gameState());
         // See CameraController's class doc - setZoom before centerOn so this
         // frame's clamp/re-centering uses the current zoom's effective
-        // window size, not the nominal one.
+        // window size, not the nominal one. Harmless while paused too - the
+        // player's (frozen) position recomputes the same result.
         camera.setZoom(zoom);
         camera.centerOn(player.getX() + player.getWidth() / 2f, player.getY() + player.getHeight() / 2f);
         repositionHud();
@@ -485,10 +527,14 @@ public class MarioGameScreen extends ScreenAdapter {
         layerManager.draw();
     }
 
-    /** Drives {@link #levelState} - see the class doc's "Level completion" section. */
+    /** Drives {@link #levelState} - see the class doc's "Level completion"/"Pause / game over" sections. */
     private void updateLevelCompletion(float delta) {
         switch (levelState) {
             case PLAYING:
+                if (player.consumeDeath()) {
+                    handlePlayerDeath();
+                    break;
+                }
                 LevelDefinition.Checkpoint hit = CheckpointResolver.findTouched(level.checkpoints, player);
                 if (hit != null) {
                     beginTransition(hit);
@@ -503,7 +549,53 @@ public class MarioGameScreen extends ScreenAdapter {
             case ADVANCING:
                 // gamePlay.goToLevel already swapped this screen out; nothing left to do.
                 break;
+            case GAME_OVER:
+                transitionTimer -= delta;
+                if (transitionTimer <= 0) {
+                    gamePlay.goToMenu();
+                }
+                break;
         }
+    }
+
+    /**
+     * Charges a life for the death {@code player.consumeDeath()} just
+     * reported. If that was the last one, freezes the level and starts the
+     * {@code GAME_OVER} countdown (see the class doc); otherwise
+     * {@code Player#die()} already respawned in place and there's nothing
+     * more to do.
+     */
+    private void handlePlayerDeath() {
+        if (!gamePlay.gameState().loseLife()) {
+            return;
+        }
+        levelState = LevelState.GAME_OVER;
+        transitionTimer = GAME_OVER_SECONDS;
+        player.setForcedCommand(new PlayerCommand());
+        if (currentMusic != null) {
+            currentMusic.stop();
+        }
+        scoreHud.showMessage("GAME OVER");
+        MarioResourceManager.sound("smb_gameover").play();
+    }
+
+    /** The back button's handler - see the class doc's "Pause / game over" section. Ignored mid-transition/game-over. */
+    private void togglePause() {
+        if (levelState != LevelState.PLAYING) {
+            return;
+        }
+        GameStateController state = gamePlay.gameState();
+        if (state.isPaused()) {
+            resumeGame();
+        } else {
+            state.pause();
+            pauseOverlay.show();
+        }
+    }
+
+    private void resumeGame() {
+        gamePlay.gameState().resume();
+        pauseOverlay.hide();
     }
 
     /**

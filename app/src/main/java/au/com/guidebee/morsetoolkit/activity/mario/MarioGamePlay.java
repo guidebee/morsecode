@@ -3,17 +3,23 @@ package au.com.guidebee.morsetoolkit.activity.mario;
 import com.guidebee.game.GamePlay;
 
 import au.com.guidebee.morsetoolkit.activity.mario.screen.MarioGameScreen;
+import au.com.guidebee.morsetoolkit.activity.mario.screen.MarioMenuScreen;
+import au.com.guidebee.morsetoolkit.activity.mario.state.GameStateController;
 
 /**
  * Mario Game Play. Owns cross-screen state and shared asset loading, following
  * the same pattern as {@code FlappyBirdGamePlay}/{@code BattleCityGamePlay}.
  *
- * The real level-select menu ({@code MarioMenuScreen}) lands in Step 8; for now
- * this always opens Level 11 directly, per Step 3.3's vertical slice.
+ * <p>{@link #gameState} is the one piece of state that survives a level
+ * swap within a single playthrough (score/coins/lives/pause - see
+ * {@code GameStateController}) - {@link #goToLevel} (checkpoint transitions)
+ * carries it forward as-is, while {@link #startLevel} (a fresh pick from
+ * {@link MarioMenuScreen}) resets it.
  */
 public class MarioGamePlay extends GamePlay {
 
     private final MarioGameActivity gameActivity;
+    private final GameStateController gameState = new GameStateController();
 
     public MarioGamePlay(MarioGameActivity activity) {
         gameActivity = activity;
@@ -22,11 +28,27 @@ public class MarioGamePlay extends GamePlay {
     @Override
     public void create() {
         MarioResourceManager.load();
-        setScreen(new MarioGameScreen(11, this));
+        setScreen(new MarioMenuScreen(this));
     }
 
     public void finish() {
         gameActivity.backToMainActivity();
+    }
+
+    /** Score/coins/lives/pause for whichever level is currently active - see the class doc. */
+    public GameStateController gameState() {
+        return gameState;
+    }
+
+    /** Starts a brand-new game at the given level - see {@code MarioMenuScreen}. */
+    public void startLevel(int levelNumber) {
+        gameState.reset();
+        setScreen(new MarioGameScreen(levelNumber, this));
+    }
+
+    /** Back to the level-select menu - a paused game's "quit", or a game over. */
+    public void goToMenu() {
+        setScreen(new MarioMenuScreen(this));
     }
 
     /**

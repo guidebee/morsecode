@@ -7,6 +7,7 @@ import com.guidebee.game.graphics.Pixmap;
 import com.guidebee.game.graphics.Texture;
 import com.guidebee.game.graphics.TextureAtlas;
 import com.guidebee.game.graphics.TextureRegion;
+import com.guidebee.game.ui.Skin;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -194,5 +195,24 @@ public final class MarioResourceManager {
             throw new IllegalArgumentException("No mario music track for attribute: " + attribute);
         }
         return music;
+    }
+
+    private static Skin uiSkin;
+
+    /**
+     * The engine's bundled default font/skin (already used elsewhere in this
+     * app - see {@code flappybird.ui.DesignWindow}/{@code OptionWindow}),
+     * lazily built once and cached here so {@code ScoreHud}/{@code PauseOverlay}/
+     * {@code MarioMenuScreen} don't each reload its texture on every screen
+     * construction. Used instead of sliced digit-sprite art (Battle City's
+     * and Flappy Bird's own HUD approach) because it needs no new atlas
+     * assets - see {@code ScoreHud}'s class doc.
+     */
+    public static Skin uiSkin() {
+        if (uiSkin == null) {
+            uiSkin = new Skin(GameEngine.files.internal("skin/default/uiskin.json"),
+                    new TextureAtlas("skin/default/uiskin.atlas"));
+        }
+        return uiSkin;
     }
 }

@@ -22,6 +22,14 @@ playable levels, and every mechanic they introduce.
   `CloudsNight`, `BalenceLift`, and `Bouncer`). Building each new mechanic once, then
   converting whichever levels need it, is more accurate than the original's
   world-number-ordered guess.
+- **Runs entirely on the existing Nintendo-derived placeholder art** — per
+  [MARIO_RESKIN_PLAN.md](MARIO_RESKIN_PLAN.md)'s §5 (revised 2026-09-07), the reskin +
+  high-resolution art upgrade now happens as a single pass *after* this document is
+  complete, not folded into Step P2.1 as originally planned. **Hard gate: this app must
+  not reach anything beyond this dev machine / a closed internal test group while any
+  step below is in progress** — no public beta, no store listing, no build shared
+  outside the immediate dev team — until the reskin plan's §4.4.7 regression pass is
+  clean. See that document's §5/§6 for the full reasoning and risk.
 
 ## 1. Gap analysis
 
@@ -160,6 +168,13 @@ which already anticipated this and was never acted on since World 1 fit in one a
 `theme(level.attribute)` only, and (new) unload the previous level's theme atlas on
 `MarioGameScreen` teardown so switching worlds doesn't accumulate atlases in memory.
 
+This per-theme split does double duty later: [MARIO_RESKIN_PLAN.md](MARIO_RESKIN_PLAN.md)
+§4.3 relies on it to keep the high-resolution art upgrade's memory growth bounded, since
+that upgrade multiplies packed pixel area per asset roughly by `ART_SCALE²`. No action
+needed here beyond keeping the split real (don't let atlases quietly re-merge for
+convenience) — the resolution/hitbox work itself is entirely out of scope for this
+document, done afterward per the reskin plan's §5.
+
 ### 2.2 Player: water/swim as a sibling mode to `PlayerPowerState`, not a tweak
 
 `attribute == "Sea"` sets `Player.Water = true` for the *entire level* at load — full
@@ -242,7 +257,10 @@ Each step ends with something playable — same discipline as the original plan.
   everything currently shipped into the new layout first as a no-behavior-change
   refactor, confirm World 1 still renders identically before adding new art.
 - P2.1.2 Audit and add the ~61 unpacked PNGs (§1.2's asset groups) into their theme
-  atlases; audit the 28 audio files against current `SOUND_EFFECTS`/`MUSIC_TRACKS`.
+  atlases — still sourced from `C:\workspace\Mario\SandBox` as placeholder art, per the
+  reskin plan's revised §5 ordering (reskin happens once, afterward, over the complete
+  list this step finalizes — not here); audit the 28 audio files against current
+  `SOUND_EFFECTS`/`MUSIC_TRACKS`.
 - P2.1.3 Re-run `tools/mario-level-converter` across all remaining `Levels/*` classes;
   spot-check one converted JSON per world by hand against the original level layout.
 
@@ -291,6 +309,17 @@ Each step ends with something playable — same discipline as the original plan.
 - P2.7.3 Remaining bonus areas (all 7 templates, applied per-world).
 - P2.7.4 QA pass per world as it's added, same as the original plan's Step 11.3.
 
+**Step P2.8 — Handoff to the reskin plan** *(this document's exit criterion)*
+- P2.8.1 Confirm all 8 worlds are playable end-to-end on placeholder art with no known
+  regressions — the release gate in this document's "Decisions locked in" stays shut
+  until this is true.
+- P2.8.2 Export the finalized `PackMarioAtlas.ASSETS` table (every entry actually built
+  across P2.0–P2.7, not the §1.2 estimate) as the input to
+  [MARIO_RESKIN_PLAN.md](MARIO_RESKIN_PLAN.md) §4.4.1's asset spec sheet.
+- P2.8.3 Hand off to that document's §4/§5 execution sequence. Nothing further in *this*
+  document proceeds toward public distribution until that plan's §4.4.7 regression pass
+  is clean.
+
 ## 5. Testing approach
 
 Same build→install→relaunch→ask-user-to-test cadence as phase 1, with one addition:
@@ -302,6 +331,13 @@ rather than re-verifying the mechanic itself each time.
 
 ## 6. Risks
 
+- **Distribution gate** — this entire document runs on placeholder Nintendo-derived art
+  by design (see "Decisions locked in" and [MARIO_RESKIN_PLAN.md](MARIO_RESKIN_PLAN.md)
+  §5). The longer this phase takes, the more calendar time there is for that constraint
+  to be forgotten and a build to leak beyond the dev team (a friend asked to try it, a
+  screenshot posted, a beta-track upload). Track the gate explicitly rather than relying
+  on memory; nothing here is safe to distribute until P2.8 hands off cleanly and the
+  reskin plan's §4.4.7 regression pass is done.
 - **Water physics is the single biggest unknown** — budget it last (P2.6) so every other
   mechanic is stable first, and don't assume the ground-physics `frames = delta *
   PHYSICS_FPS` scaling trick needs to change; verify the original's `Swim()`/

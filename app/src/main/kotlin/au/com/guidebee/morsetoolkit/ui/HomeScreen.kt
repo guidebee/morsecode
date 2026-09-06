@@ -65,7 +65,8 @@ fun HomeScreen(
     onOpenFlashcards: () -> Unit,
     onOpenHandbook: () -> Unit,
     onOpenFlappyBird: () -> Unit,
-    onOpenBattleCity: () -> Unit
+    onOpenBattleCity: () -> Unit,
+    onOpenMario: () -> Unit
 ) {
     val context = LocalContext.current
     val streakTracker = remember { StreakTracker(context) }
@@ -89,7 +90,8 @@ fun HomeScreen(
         ToolItem(stringResource(R.string.flashcard), Icons.Filled.Style, onOpenFlashcards),
         ToolItem(stringResource(R.string.handbook), Icons.Filled.Book, onOpenHandbook),
         ToolItem(stringResource(R.string.flappybird), Icons.Filled.SportsEsports, onOpenFlappyBird),
-        ToolItem(stringResource(R.string.battlecity), Icons.Filled.SportsEsports, onOpenBattleCity)
+        ToolItem(stringResource(R.string.battlecity), Icons.Filled.SportsEsports, onOpenBattleCity),
+        ToolItem(stringResource(R.string.mario), Icons.Filled.SportsEsports, onOpenMario)
     )
 
     Scaffold(

@@ -42,6 +42,14 @@
             android:theme="@style/AppTheme.NoActionBar"
             android:configChanges="keyboard|keyboardHidden|orientation">
         </activity>
+
+        <activity
+            android:name=".mario.MarioGameActivity"
+            android:label="Mario"
+            android:screenOrientation="landscape"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:configChanges="keyboard|keyboardHidden|orientation">
+        </activity>
     </application>
 
 </manifest>

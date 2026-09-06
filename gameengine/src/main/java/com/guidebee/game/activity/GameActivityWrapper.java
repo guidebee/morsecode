@@ -212,16 +212,13 @@ public class GameActivityWrapper implements BaseActivity {
         createWakeLock(config.useWakelock);
         hideStatusBar(this.hideStatusBar);
         useImmersiveMode(this.useImmersiveMode);
-        if (this.useImmersiveMode && getVersion() >= 19) {
-            try {
-                Class<?> vlistener = Class.forName("com.guidebee.game.engine.platform.VisibilityListener");
-                Object o = vlistener.newInstance();
-                Method method = vlistener.getDeclaredMethod("createListener", BaseActivity.class);
-                method.invoke(o, this);
-            } catch (Exception e) {
-                log("Application", "Failed to create VisibilityListener", e);
-            }
-        }
+        // Note: immersive mode is re-applied in onWindowFocusChanged() below, which is
+        // the officially recommended hook for this. An OnSystemUiVisibilityChangeListener
+        // was previously also registered here to re-apply on every visibility change, but
+        // that fires during the OS's own transient bar-reveal animation and re-hides the
+        // bars mid-animation, which loops with the "exiting full screen" system prompt
+        // (most visible on emulators). onWindowFocusChanged alone covers the real case
+        // (user swipes to reveal bars, then taps back into the app) without the loop.
     }
 
     protected FrameLayout.LayoutParams createLayoutParams() {

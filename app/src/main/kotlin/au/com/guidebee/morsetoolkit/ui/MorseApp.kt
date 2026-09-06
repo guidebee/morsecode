@@ -24,6 +24,7 @@ import androidx.navigation.compose.rememberNavController
 import au.com.guidebee.morsetoolkit.activity.R
 import au.com.guidebee.morsetoolkit.activity.battlecity.BattleCityGameActivity
 import au.com.guidebee.morsetoolkit.activity.flappybird.FlappyBirdGameActivity
+import au.com.guidebee.morsetoolkit.activity.mario.MarioGameActivity
 import au.com.guidebee.morsetoolkit.training.ThemeMode
 import au.com.guidebee.morsetoolkit.training.TutorialPreference
 
@@ -122,7 +123,8 @@ fun MorseApp(
                     onOpenFlashcards = { navController.navigate(Routes.FLASHCARD) },
                     onOpenHandbook = { navController.navigate(Routes.HANDBOOK) },
                     onOpenFlappyBird = { onLaunchGame(FlappyBirdGameActivity::class.java) },
-                    onOpenBattleCity = { onLaunchGame(BattleCityGameActivity::class.java) }
+                    onOpenBattleCity = { onLaunchGame(BattleCityGameActivity::class.java) },
+                    onOpenMario = { onLaunchGame(MarioGameActivity::class.java) }
                 )
             }
             composable(Routes.KOCH) {

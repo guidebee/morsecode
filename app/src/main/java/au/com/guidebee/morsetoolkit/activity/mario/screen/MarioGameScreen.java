@@ -3,22 +3,27 @@ package au.com.guidebee.morsetoolkit.activity.mario.screen;
 import com.guidebee.game.GameEngine;
 import com.guidebee.game.InputProcessor;
 import com.guidebee.game.ScreenAdapter;
+import com.guidebee.game.audio.Music;
 import com.guidebee.game.camera.viewports.FitViewport;
 import com.guidebee.game.microedition.LayerManager;
 
 import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
+import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.player.Player;
+import au.com.guidebee.morsetoolkit.activity.mario.collision.PlayerCollisionResolver;
 import au.com.guidebee.morsetoolkit.activity.mario.input.MarioInputController;
 import au.com.guidebee.morsetoolkit.activity.mario.level.LevelCatalog;
 import au.com.guidebee.morsetoolkit.activity.mario.level.LevelDefinition;
 import au.com.guidebee.morsetoolkit.activity.mario.level.LevelLoader;
 import au.com.guidebee.morsetoolkit.activity.mario.world.CameraController;
+import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioWorld;
 
 /**
- * Step 4 vertical slice B: small Mario runs/jumps/collides with a level's
- * static geometry, camera following him. See docs/MARIO_PORT_PLAN.md Step 4.4.
- * Still no interactive bricks/items/enemies - those are Steps 5-6.
+ * Step 5 vertical slice C: a level's interactive bricks and items work on
+ * top of Step 4's movement/collision - breaking bricks, collecting
+ * mushrooms/flowers/stars/1UPs, growing/shrinking. Still no enemies (Step 6).
+ * See docs/MARIO_PORT_PLAN.md Step 5.4.
  */
 public class MarioGameScreen extends ScreenAdapter {
 
@@ -26,20 +31,29 @@ public class MarioGameScreen extends ScreenAdapter {
     private final MarioWorld world;
     private final Player player;
     private final CameraController camera;
+    private final String levelAttribute;
 
     private final float clearR;
     private final float clearG;
     private final float clearB;
 
+    private Music currentMusic;
+    private boolean starMusicActive;
     private InputProcessor savedInputProcessor;
 
     public MarioGameScreen(int levelNumber) {
         LevelDefinition level = LevelCatalog.load(levelNumber);
+        levelAttribute = level.attribute;
         world = LevelLoader.createWorld(level);
 
         layerManager = new LayerManager(new FitViewport(
                 MarioConfiguration.VIEWPORT_WIDTH, MarioConfiguration.VIEWPORT_HEIGHT));
         layerManager.append(world);
+
+        // Bricks/items spawned below register themselves into MarioContext.world()
+        // and layerManager - see LevelLoader.spawnBricks and MarioContext's class doc.
+        MarioContext.init(layerManager, world);
+        LevelLoader.spawnBricks(level);
 
         // The original engine's per-level "pos" field (BasicLevel.pos) is never
         // actually read anywhere in Mario.java - the shipped game only reaches a
@@ -72,15 +86,28 @@ public class MarioGameScreen extends ScreenAdapter {
         return new float[]{92f / 255f, 148f / 255f, 252f / 255f};
     }
 
+    private void startMusic(String attribute) {
+        if (currentMusic != null) {
+            currentMusic.stop();
+        }
+        currentMusic = MarioResourceManager.music(attribute);
+        currentMusic.setLooping(true);
+        currentMusic.play();
+    }
+
     @Override
     public void show() {
         savedInputProcessor = GameEngine.input.getInputProcessor();
         GameEngine.input.setInputProcessor(layerManager);
+        startMusic(levelAttribute);
     }
 
     @Override
     public void hide() {
         GameEngine.input.setInputProcessor(savedInputProcessor);
+        if (currentMusic != null) {
+            currentMusic.stop();
+        }
     }
 
     @Override
@@ -91,6 +118,14 @@ public class MarioGameScreen extends ScreenAdapter {
     @Override
     public void render(float delta) {
         layerManager.act(delta);
+        PlayerCollisionResolver.resolvePickups(player, world);
+
+        boolean hasStar = player.hasStar();
+        if (hasStar != starMusicActive) {
+            starMusicActive = hasStar;
+            startMusic(hasStar ? "Star" : levelAttribute);
+        }
+
         camera.centerOn(player.getX() + player.getWidth() / 2f, player.getY() + player.getHeight() / 2f);
 
         GameEngine.graphics.clearScreen(clearR, clearG, clearB, 1f);

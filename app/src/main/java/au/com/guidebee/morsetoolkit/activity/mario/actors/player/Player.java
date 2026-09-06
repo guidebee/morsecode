@@ -1,20 +1,30 @@
 package au.com.guidebee.morsetoolkit.activity.mario.actors.player;
 
+import com.guidebee.game.graphics.Batch;
+import com.guidebee.game.microedition.Layer;
 import com.guidebee.game.microedition.Sprite;
 
 import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
+import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.InteractiveBrick;
 import au.com.guidebee.morsetoolkit.activity.mario.input.MarioInputController;
 import au.com.guidebee.morsetoolkit.activity.mario.input.PlayerCommand;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioWorld;
 
 /**
- * Small-Mario physics/state machine, ported from the original engine's
+ * Mario's physics/state machine, ported from the original engine's
  * {@code Objects/Player.java} as *design* rather than transcribed line for
  * line (per docs/MARIO_PORT_PLAN.md SS1 - every API call changes even though
- * the algorithm carries over). Growth/shrink (big/fire), ducking and
- * swimming are out of scope for Step 4 (see docs/MARIO_PORT_PLAN.md Step
- * 4.2) - this is exactly enough to run, jump and collide as small Mario.
+ * the algorithm carries over).
+ *
+ * <h2>Why this composes a Sprite instead of extending one</h2>
+ * Growing/shrinking swaps Mario's entire image strip and frame size (32x32
+ * "player" vs 32x64 "big_player"/"fire_player"). The original's GTGE Sprite
+ * supported that via {@code setImages(BufferedImage[])} at runtime; this
+ * engine's {@code microedition.Sprite} binds its region/frame-grid at
+ * construction with no equivalent setter. So {@code Player} extends
+ * {@code Layer} directly and owns a {@code visual} Sprite that gets replaced
+ * (not mutated) on every power-state change - see {@link #changePowerState}.
  *
  * <h2>Why "frames" instead of raw delta seconds</h2>
  * The original's constants (accel +-2, friction -+1, gravity step +0.42,
@@ -28,7 +38,7 @@ import au.com.guidebee.morsetoolkit.activity.mario.world.MarioWorld;
  * gracefully at other frame rates instead of the original's frame-rate-
  * dependent behavior.
  */
-public class Player extends Sprite {
+public class Player extends Layer {
 
     private static final float PHYSICS_FPS = 60f;
 
@@ -43,8 +53,18 @@ public class Player extends Sprite {
 
     private static final float WALK_CYCLE_THRESHOLD = 160f;
 
+    /** ~400 original 60fps ticks - matches Player.java's post-shrink `invincible = 400`. */
+    private static final float INVINCIBLE_SECONDS = 400f / 60f;
+    /** ~1000 original 60fps ticks - matches Player.java's `STAR()`'s `delay = 1000`. */
+    private static final float STAR_SECONDS = 1000f / 60f;
+
     private final MarioWorld world;
     private final MarioInputController input;
+    private final float spawnX;
+    private final float spawnY;
+
+    private Sprite visual;
+    private PlayerPowerState powerState = PlayerPowerState.SMALL;
 
     /** Original's abstract "speed" unit - not px/sec, see the class doc. */
     private float speed;
@@ -56,18 +76,40 @@ public class Player extends Sprite {
     private float walkCycleAccumulator;
     private int walkCyclePos;
 
+    private float invincibleTimer;
+    private float starTimer;
+
     public Player(float x, float y, MarioWorld world, MarioInputController input) {
-        super(MarioResourceManager.region(PlayerPowerState.SMALL.regionName),
-                PlayerPowerState.SMALL.width, PlayerPowerState.SMALL.height);
-        setPosition(x, y);
+        super(x, y, PlayerPowerState.SMALL.width, PlayerPowerState.SMALL.height, true);
         this.world = world;
         this.input = input;
-        setFrame(0);
+        this.spawnX = x;
+        this.spawnY = y;
+        this.visual = createVisual(powerState);
+    }
+
+    private static Sprite createVisual(PlayerPowerState state) {
+        Sprite sprite = new Sprite(MarioResourceManager.region(state.regionName), state.width, state.height);
+        sprite.setFrame(0);
+        return sprite;
+    }
+
+    @Override
+    public void paint(Batch g) {
+        visual.setPosition(getX(), getY());
+        visual.paint(g);
     }
 
     @Override
     public void act(float delta) {
         super.act(delta);
+
+        if (invincibleTimer > 0) {
+            invincibleTimer -= delta;
+        }
+        if (starTimer > 0) {
+            starTimer -= delta;
+        }
 
         PlayerCommand command = input.poll();
         float frames = delta * PHYSICS_FPS;
@@ -108,7 +150,7 @@ public class Player extends Sprite {
             gravity = JUMP_BASE;
         }
         onGround = false;
-        MarioResourceManager.sound("smb_jump-small").play();
+        MarioResourceManager.sound(powerState == PlayerPowerState.SMALL ? "smb_jump-small" : "smb_jump-super").play();
     }
 
     private void applyGravity(float frames) {
@@ -148,14 +190,20 @@ public class Player extends Sprite {
                 onGround = false;
             }
         } else if (dy < 0 && world.containsImpassableArea((int) getX(), (int) newY, width, height)) {
-            newY = (float) (((int) newY / tileSize + 1) * tileSize);
-            gravity = 0;
+            InteractiveBrick hit = world.findActiveBrickAt((int) getX(), (int) newY, width, height);
+            if (hit != null) {
+                hit.hitFromBelow(this);
+            }
+            if (hit == null || hit.isActive()) {
+                newY = (float) (((int) newY / tileSize + 1) * tileSize);
+                gravity = 0;
+            }
         }
         setY(newY);
     }
 
     /**
-     * Frame layout in the "player" region (4 cols x 7 rows, matching the
+     * Frame layout in every player region (4 cols x 7 rows, matching the
      * original's frame indices): 0/1 = idle right/left, 2/3 = airborne
      * right/left, 4-6 = walk-right cycle, 7 = skid-right, 8-10 = walk-left
      * cycle, 11 = skid-left. This mirrors the original's frame-selection
@@ -164,17 +212,17 @@ public class Player extends Sprite {
      */
     private void updateAnimation(PlayerCommand command, float frames) {
         if (!onGround) {
-            setFrame(facingRight ? 2 : 3);
+            visual.setFrame(facingRight ? 2 : 3);
             return;
         }
         if (speed == 0) {
             walkCycleAccumulator = 0;
-            setFrame(facingRight ? 0 : 1);
+            visual.setFrame(facingRight ? 0 : 1);
             return;
         }
         boolean skidding = (command.right && speed < 0) || (command.left && speed > 0);
         if (skidding) {
-            setFrame(facingRight ? 7 : 11);
+            visual.setFrame(facingRight ? 7 : 11);
             return;
         }
         walkCycleAccumulator += Math.abs(speed) * frames;
@@ -182,7 +230,76 @@ public class Player extends Sprite {
             walkCycleAccumulator = 0;
             walkCyclePos = (walkCyclePos + 1) % 3;
         }
-        setFrame((facingRight ? 4 : 8) + walkCyclePos);
+        visual.setFrame((facingRight ? 4 : 8) + walkCyclePos);
+    }
+
+    /**
+     * Small -> Big -> Fire, ported from {@code Player.Grow()}. Already-Fire
+     * is a no-op (matches the original). The original's multi-frame morph
+     * animation (which also briefly pauses enemies) is skipped - a cosmetic
+     * simplification, not a mechanic.
+     */
+    public void grow() {
+        if (powerState == PlayerPowerState.SMALL) {
+            changePowerState(PlayerPowerState.BIG);
+        } else if (powerState == PlayerPowerState.BIG) {
+            changePowerState(PlayerPowerState.FIRE);
+        }
+        MarioResourceManager.sound("smb_powerup").play();
+    }
+
+    /**
+     * Fire -> Big -> Small -> (death), ported from {@code Player.Decerease()}.
+     * No-ops while invincible, matching the original. Small-Mario death has
+     * no hazards to trigger it yet in Step 5's content (no enemies until
+     * Step 6) - this just respawns at the level start rather than a real
+     * death/lives sequence, which is Step 8's {@code GameStateController} job.
+     */
+    public void shrink() {
+        if (isInvincible()) {
+            return;
+        }
+        if (powerState == PlayerPowerState.FIRE) {
+            changePowerState(PlayerPowerState.BIG);
+            invincibleTimer = INVINCIBLE_SECONDS;
+            MarioResourceManager.sound("smb_pipe").play();
+        } else if (powerState == PlayerPowerState.BIG) {
+            changePowerState(PlayerPowerState.SMALL);
+            invincibleTimer = INVINCIBLE_SECONDS;
+            MarioResourceManager.sound("smb_pipe").play();
+        } else {
+            MarioResourceManager.sound("smb_mariodie").play();
+            speed = 0;
+            gravity = 0;
+            setPosition(spawnX, spawnY);
+            invincibleTimer = INVINCIBLE_SECONDS;
+        }
+    }
+
+    private void changePowerState(PlayerPowerState newState) {
+        float oldHeight = getHeight();
+        powerState = newState;
+        visual = createVisual(newState);
+        setSize(newState.width, newState.height);
+        // Keep Mario's feet planted: growing/shrinking extends/retracts upward.
+        setY(getY() - (newState.height - oldHeight));
+    }
+
+    /** Ported from {@code Player.STAR()} - temporary invincibility (no speed/visual flourish yet). */
+    public void collectStar() {
+        starTimer = STAR_SECONDS;
+    }
+
+    public boolean hasStar() {
+        return starTimer > 0;
+    }
+
+    public boolean isInvincible() {
+        return invincibleTimer > 0 || hasStar();
+    }
+
+    public PlayerPowerState getPowerState() {
+        return powerState;
     }
 
     public boolean isOnGround() {

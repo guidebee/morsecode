@@ -1,0 +1,67 @@
+package au.com.guidebee.morsetoolkit.activity.mario.actors.bricks;
+
+import com.guidebee.game.graphics.TextureRegion;
+import com.guidebee.game.graphics.Texture;
+import com.guidebee.game.graphics.Pixmap;
+
+import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
+import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
+import au.com.guidebee.morsetoolkit.activity.mario.actors.items.Life;
+import au.com.guidebee.morsetoolkit.activity.mario.actors.player.Player;
+import au.com.guidebee.morsetoolkit.activity.mario.fx.CoinPopEffect;
+import au.com.guidebee.morsetoolkit.activity.mario.fx.ItemReveal;
+import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
+
+/**
+ * A brick with no visible image until hit, ported from
+ * {@code Bricks/InvisibleBrck.java}. World 1 only ever uses its "1UP"
+ * variant (Level 11's {@code InvisibleBrckWith1Up}); the "CoinInside"
+ * variant ({@code InvisibleBrckWithCoin}, used by Level 14) is supported too
+ * since it costs nothing extra here. Turns into an {@link Iron} block after use.
+ */
+public class InvisibleBrck extends InteractiveBrick {
+
+    private static final float RISE_SPEED_PX_PER_SEC = 60f;
+
+    private final String attribute;
+    private final String insideItem;
+
+    private static TextureRegion blankRegion;
+
+    public InvisibleBrck(float x, float y, String attribute, String insideItem) {
+        super(blankRegion(), x, y);
+        this.attribute = attribute;
+        this.insideItem = insideItem;
+        setVisible(false);
+    }
+
+    /** Lazily-cached shared blank texture - one GPU texture for every invisible brick, not one each. */
+    private static TextureRegion blankRegion() {
+        if (blankRegion == null) {
+            Pixmap pixmap = new Pixmap(MarioConfiguration.TILE_SIZE, MarioConfiguration.TILE_SIZE, Pixmap.Format.RGBA8888);
+            blankRegion = new TextureRegion(new Texture(pixmap));
+        }
+        return blankRegion;
+    }
+
+    @Override
+    public void hitFromBelow(Player player) {
+        Iron iron = new Iron(getX(), getY(), attribute);
+        MarioContext.world().addBrick(iron);
+        MarioContext.spawn(iron);
+        deactivate();
+
+        if ("1UP".equals(insideItem)) {
+            TextureRegion preview = MarioResourceManager.region("one_up")
+                    .split(MarioConfiguration.TILE_SIZE, MarioConfiguration.TILE_SIZE)[0][0];
+            ItemReveal reveal = new ItemReveal(preview, getX(), getY(), RISE_SPEED_PX_PER_SEC, (x, y) -> {
+                Life life = new Life(x, y);
+                MarioContext.world().addCollectible(life);
+                MarioContext.spawn(life);
+            });
+            MarioContext.spawn(reveal);
+        } else {
+            MarioContext.spawn(new CoinPopEffect(getX(), getY()));
+        }
+    }
+}

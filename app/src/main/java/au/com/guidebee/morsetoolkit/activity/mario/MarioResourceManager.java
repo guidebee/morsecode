@@ -78,6 +78,23 @@ public final class MarioResourceManager {
         return region;
     }
 
+    /**
+     * Looks up a "<base>"/"<base>_underground"/"<base>_castle" region by the
+     * level's attribute, matching the original engine's repeated
+     * if("Sea"/"Ground"/"UnderGround"/"Castle".equals(attribute)) branches
+     * seen throughout {@code Mario.java}'s tile-spawning switch (World 1
+     * never uses "Sea", so that case isn't included).
+     */
+    public static TextureRegion themedRegion(String base, String attribute) {
+        if ("UnderGround".equals(attribute)) {
+            return region(base + "_underground");
+        }
+        if ("Castle".equals(attribute)) {
+            return region(base + "_castle");
+        }
+        return region(base);
+    }
+
     public static Sound sound(String name) {
         Sound sound = SOUNDS.get(name);
         if (sound == null) {

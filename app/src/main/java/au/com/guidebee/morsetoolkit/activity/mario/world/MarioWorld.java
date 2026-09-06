@@ -2,18 +2,30 @@ package au.com.guidebee.morsetoolkit.activity.mario.world;
 
 import com.guidebee.game.microedition.TiledLayer;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
+import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.InteractiveBrick;
+import au.com.guidebee.morsetoolkit.activity.mario.actors.items.Collectible;
 
 /**
  * The static-terrain grid for one level - a {@code TiledLayer} sized to that
  * level's tile extent, drawn from the "tiles" composite region in mario.atlas
  * (see {@code tools/mario-atlas-packer}). See docs/MARIO_PORT_PLAN.md Step 3.1.
  *
- * <p>Populated by {@code LevelLoader}, not here - this class only owns the
- * grid's shape and pixel-size helpers.
+ * <p>Also tracks the level's interactive bricks and collectible items (Step
+ * 5) so both count as "solid"/"pickupable" from one place - see
+ * {@link #containsImpassableArea} and {@link #getCollectibles()}. Populated
+ * by {@code LevelLoader} and by actors spawning their own follow-ups (an
+ * exhausted Bank spawning an Iron, a reveal effect spawning a Mushroom) via
+ * {@link MarioContext}.
  */
 public class MarioWorld extends TiledLayer {
+
+    private final List<InteractiveBrick> bricks = new ArrayList<>();
+    private final List<Collectible> collectibles = new ArrayList<>();
 
     public MarioWorld(int cols, int rows) {
         super(cols, rows, MarioResourceManager.region("tiles"),
@@ -28,12 +40,27 @@ public class MarioWorld extends TiledLayer {
         return getRows() * MarioConfiguration.TILE_SIZE;
     }
 
+    public void addBrick(InteractiveBrick brick) {
+        bricks.add(brick);
+    }
+
+    public List<InteractiveBrick> getBricks() {
+        return bricks;
+    }
+
+    public void addCollectible(Collectible collectible) {
+        collectibles.add(collectible);
+    }
+
+    public List<Collectible> getCollectibles() {
+        return collectibles;
+    }
+
     /**
-     * Whether the given pixel rectangle overlaps any non-empty (solid) cell.
-     * Every populated cell in this Step-3/4 world is solid terrain (brick/
-     * stone/chocolate) - there's no "decorative but walkable" tile yet - so
-     * "populated" and "impassable" are the same test for now. Same technique
-     * as Battle City's {@code BattleField.containsImpassableArea}.
+     * Whether the given pixel rectangle overlaps any non-empty (solid) cell
+     * OR any active interactive brick (bricks live outside the tile grid
+     * since Step 5 - see {@code InteractiveBrick}'s class doc for why). Same
+     * technique as Battle City's {@code BattleField.containsImpassableArea}.
      */
     public boolean containsImpassableArea(int x, int y, int width, int height) {
         int tileSize = MarioConfiguration.TILE_SIZE;
@@ -50,6 +77,22 @@ public class MarioWorld extends TiledLayer {
                 }
             }
         }
+
+        for (InteractiveBrick brick : bricks) {
+            if (brick.isActive() && brick.overlaps(x, y, width, height)) {
+                return true;
+            }
+        }
         return false;
+    }
+
+    /** The active brick overlapping this rectangle, or null - used to route a hit-from-below. */
+    public InteractiveBrick findActiveBrickAt(int x, int y, int width, int height) {
+        for (InteractiveBrick brick : bricks) {
+            if (brick.isActive() && brick.overlaps(x, y, width, height)) {
+                return brick;
+            }
+        }
+        return null;
     }
 }

@@ -131,15 +131,22 @@ public class PackMarioAtlas {
      * conceptually static terrain - pump.png etc. are 64x32 (2 tiles wide, drawn as
      * freely-positioned/overlapping sprites in the original engine, not tile-grid
      * cells), which TiledLayer's uniform grid can't represent without distorting
-     * them. This matches docs/MARIO_PORT_PLAN.md's own package layout (SS5), which
-     * groups Pump with the Sprite-based actors/bricks/* classes, not static geometry
-     * - it becomes a Sprite actor in Step 5, like Bank/QuestionMark.
+     * them. This matches docs/MARIO_PORT_PLAN.md's own package layout (section 5),
+     * which groups Pump with the Sprite-based actors/bricks/* classes, not static
+     * geometry - it becomes a Sprite actor in Step 5, like Bank/QuestionMark.
+     *
+     * NOTE: "brick" and its variants are ALSO excluded (Step 5) - Brick turned out
+     * to be breakable (see {@code Bricks/Brick.java}'s HitFromDown), so it moved
+     * from a static TiledLayer cell to a Sprite actor
+     * ({@code actors.bricks.Brick}), same reasoning as pump. The individual
+     * "brick"/"brick_underground"/"brick_castle" regions are still packed above
+     * (ASSETS) since that actor needs them standalone - only the composite tile
+     * sheet no longer includes them.
      *
      * Kept in lockstep with {@code MarioConfiguration}'s TILE_* constants and
      * {@code LevelLoader}'s attribute -> tile-index mapping.
      */
     private static final List<String> TILE_SHEET_ORDER = List.of(
-            "brick", "brick_underground", "brick_castle",
             "stone", "stone_underground", "stone_castle",
             "chocolate", "chocolate_underground", "chocolate_castle"
     );

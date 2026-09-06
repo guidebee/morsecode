@@ -1,0 +1,59 @@
+package au.com.guidebee.morsetoolkit.activity.mario.actors.bricks;
+
+import com.guidebee.game.graphics.TextureRegion;
+import com.guidebee.game.microedition.Sprite;
+
+import au.com.guidebee.morsetoolkit.activity.mario.actors.player.Player;
+
+/**
+ * Common base for the original engine's "BasicBrick"-implementing classes
+ * (Brick, Bank, QuestionMark, BrickWithStar, InvisibleBrck, Iron, Pump).
+ *
+ * <p>Unlike Step 3's static terrain (brick/stone/chocolate baked into
+ * {@code MarioWorld}'s {@code TiledLayer}), these are real {@code Sprite}
+ * actors - see {@code MarioConfiguration}'s note on why: they need to react
+ * to being hit (break, dispense an item, disappear) or, for {@code Pump},
+ * because their art is wider than one tile and TiledLayer can't represent
+ * that. {@code MarioWorld} tracks them in its own {@code bricks} list rather
+ * than the tile grid, and folds them into
+ * {@link au.com.guidebee.morsetoolkit.activity.mario.world.MarioWorld#containsImpassableArea}
+ * so the rest of collision doesn't need to know the difference.
+ */
+public abstract class InteractiveBrick extends Sprite {
+
+    private boolean active = true;
+
+    protected InteractiveBrick(TextureRegion region, float x, float y) {
+        super(region);
+        setPosition(x, y);
+    }
+
+    /** For a brick backed by a multi-frame strip region (e.g. {@link Iron}'s themed variants). */
+    protected InteractiveBrick(TextureRegion region, int frameWidth, int frameHeight, float x, float y) {
+        super(region, frameWidth, frameHeight);
+        setPosition(x, y);
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    protected void deactivate() {
+        active = false;
+        setVisible(false);
+    }
+
+    public boolean overlaps(int x, int y, int width, int height) {
+        return active
+                && x < getX() + getWidth() && x + width > getX()
+                && y < getY() + getHeight() && y + height > getY();
+    }
+
+    /**
+     * Called when the player's head hits this brick's underside while
+     * jumping. Default: nothing (matches Stone/Pump/Iron's no-op
+     * {@code HitFromDown()} in the original engine).
+     */
+    public void hitFromBelow(Player player) {
+    }
+}

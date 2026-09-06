@@ -7,8 +7,10 @@ import java.util.List;
 
 import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
+import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.Axe;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.InteractiveBrick;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.Enemy;
+import au.com.guidebee.morsetoolkit.activity.mario.actors.hazards.Hazard;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.items.Collectible;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.lifts.Lift;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.projectiles.FireBall;
@@ -32,6 +34,8 @@ public class MarioWorld extends TiledLayer {
     private final List<Enemy> enemies = new ArrayList<>();
     private final List<FireBall> fireBalls = new ArrayList<>();
     private final List<Lift> lifts = new ArrayList<>();
+    private final List<Hazard> hazards = new ArrayList<>();
+    private final List<Axe> axes = new ArrayList<>();
 
     public MarioWorld(int cols, int rows) {
         super(cols, rows, MarioResourceManager.region("tiles"),
@@ -88,6 +92,24 @@ public class MarioWorld extends TiledLayer {
         return lifts;
     }
 
+    public void addHazard(Hazard hazard) {
+        hazards.add(hazard);
+    }
+
+    /** Contact-damage obstacles that aren't enemies - see {@code HazardCollisionResolver}. */
+    public List<Hazard> getHazards() {
+        return hazards;
+    }
+
+    public void addAxe(Axe axe) {
+        axes.add(axe);
+    }
+
+    /** Invisible walls Mario can't walk past - see {@code AxeResolver}. */
+    public List<Axe> getAxes() {
+        return axes;
+    }
+
     /**
      * A hair narrower than a tile, used to pull a rectangle's far/bottom
      * edge back inside the tile it's exactly flush against. Without this,
@@ -111,6 +133,22 @@ public class MarioWorld extends TiledLayer {
      * lost any meaningful precision there the way it did here).
      */
     public boolean containsImpassableArea(float x, float y, int width, int height) {
+        return containsImpassableArea(x, y, width, height, Float.NEGATIVE_INFINITY);
+    }
+
+    /**
+     * @param duckAboveY while ducking, {@code Player} passes its own
+     *                   {@code getY() + 32} here so an {@link InteractiveBrick}
+     *                   sitting entirely above that line (i.e. over a crouching
+     *                   Big/Fire Mario's head) doesn't block him - ported from
+     *                   the original's {@code Player_Brick} collision pair,
+     *                   which checked exactly this (see {@code Player#ducking}'s
+     *                   doc). Every other caller (enemies/items/the static
+     *                   tile grid check) passes {@link Float#NEGATIVE_INFINITY}
+     *                   via the no-arg overload, so this never applies to them -
+     *                   only {@code Player}'s own movement ducks.
+     */
+    public boolean containsImpassableArea(float x, float y, int width, int height, float duckAboveY) {
         int tileSize = MarioConfiguration.TILE_SIZE;
 
         int columnMin = Math.max(0, (int) Math.floor(x / tileSize));
@@ -127,7 +165,8 @@ public class MarioWorld extends TiledLayer {
         }
 
         for (InteractiveBrick brick : bricks) {
-            if (brick.isActive() && brick.overlaps(x, y, width, height)) {
+            if (brick.isActive() && brick.overlaps(x, y, width, height)
+                    && brick.getY() + brick.getHeight() >= duckAboveY) {
                 return true;
             }
         }

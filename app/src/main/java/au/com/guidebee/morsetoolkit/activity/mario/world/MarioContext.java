@@ -3,6 +3,7 @@ package au.com.guidebee.morsetoolkit.activity.mario.world;
 import com.guidebee.game.microedition.Layer;
 import com.guidebee.game.microedition.LayerManager;
 
+import au.com.guidebee.morsetoolkit.activity.mario.actors.player.Player;
 import au.com.guidebee.morsetoolkit.activity.mario.state.GameStateController;
 
 /**
@@ -24,6 +25,7 @@ public final class MarioContext {
     private static LayerManager layerManager;
     private static MarioWorld world;
     private static GameStateController gameState;
+    private static Player player;
 
     private MarioContext() {
     }
@@ -32,10 +34,26 @@ public final class MarioContext {
         MarioContext.layerManager = layerManager;
         MarioContext.world = world;
         MarioContext.gameState = gameState;
+        MarioContext.player = null;
     }
 
     public static MarioWorld world() {
         return world;
+    }
+
+    /**
+     * Set once {@code MarioGameScreen} constructs the level's {@code Player}
+     * (after {@link #init}, which runs before the player exists yet - see
+     * that method's caller). Needed by actors like {@code Boss} that read
+     * the player's position directly every frame, matching the original
+     * engine's own {@code Mario game} reference each enemy class held.
+     */
+    public static void setPlayer(Player player) {
+        MarioContext.player = player;
+    }
+
+    public static Player player() {
+        return player;
     }
 
     /** Score/coins/lives - see {@code MarioGamePlay#gameState()} for who owns the instance this returns. */

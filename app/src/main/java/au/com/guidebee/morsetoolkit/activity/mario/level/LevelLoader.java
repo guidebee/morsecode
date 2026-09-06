@@ -2,6 +2,7 @@ package au.com.guidebee.morsetoolkit.activity.mario.level;
 
 import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
+import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.Axe;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.Bank;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.Brick;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.BrickWithStar;
@@ -10,10 +11,15 @@ import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.InvisibleBrck;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.Iron;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.Pump;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.QuestionMark;
+import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.Boss;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.Enemy;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.EnemyMashroom;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.EnemyTurtle;
+import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.EnemyTurtlePatrol;
+import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.FlyingTurtlePatrol;
+import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.OrbitingFireball;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.lifts.Lift;
+import au.com.guidebee.morsetoolkit.activity.mario.actors.projectiles.BossFire;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.scenery.Scenery;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioWorld;
@@ -134,6 +140,10 @@ public final class LevelLoader {
                 case "Iron":
                     forEachCell(tile, (x, y) -> add(new Iron(x, y, level.attribute)));
                     break;
+                case "BridgeBloks":
+                    forEachCell(tile, (x, y) -> add(new Brick(x, y,
+                            MarioResourceManager.region("bridge_blocks"), level.attribute)));
+                    break;
                 case "pump":
                     for (int dy = 0; dy < tile.lengthY; dy++) {
                         boolean top = dy == 0;
@@ -146,14 +156,19 @@ public final class LevelLoader {
         }
     }
 
+    /** How many {@code EnemyFireBall}-equivalents ring a "FireBar"/"BigFireBar" pivot, and their radius step - see {@code Mario.java}'s own case 28/29. */
+    private static final int FIRE_BAR_COUNT = 6;
+    private static final int BIG_FIRE_BAR_COUNT = 12;
+    private static final int FIRE_BAR_RADIUS_STEP = 16;
+
     /**
-     * Spawns every ground-walking enemy. Same {@link MarioContext}
-     * requirement as {@link #spawnBricks}. World 1 never places a patrol
-     * turtle or flying turtle (all {@code patrolLength} values are 0 in its
-     * level data), so only the plain walkers are handled here - see
-     * docs/MARIO_PORT_PLAN.md Step 6.1.
+     * Spawns every ground-walking enemy, plus every other {@code Enemy}
+     * subclass that reads/writes {@code MarioWorld}'s enemy list (patrol
+     * turtles, fire-bar rings, the boss) - see docs/MARIO_PORT_PLAN.md
+     * Step 6.1 and docs/MARIO_PORT_PLAN_PHASE2.md Step P2.0.
      */
     public static void spawnEnemies(LevelDefinition level) {
+        int tileSize = MarioConfiguration.TILE_SIZE;
         for (LevelDefinition.Tile tile : level.tiles) {
             switch (tile.type) {
                 case "EnemyMushroom":
@@ -161,6 +176,60 @@ public final class LevelLoader {
                     break;
                 case "EnemyTurtle":
                     forEachCell(tile, (x, y) -> addEnemy(new EnemyTurtle(x, y, level.attribute)));
+                    break;
+                case "EnemyTurtlePatrol":
+                    addEnemy(new EnemyTurtlePatrol(tile.x * tileSize, tile.y * tileSize, tile.patrolLength));
+                    break;
+                case "FlyingTurtlePatrol":
+                    addEnemy(new FlyingTurtlePatrol(tile.x * tileSize, tile.y * tileSize, tile.patrolLength));
+                    break;
+                case "FireBar":
+                    spawnFireBar(tile, FIRE_BAR_COUNT);
+                    break;
+                case "BigFireBar":
+                    spawnFireBar(tile, BIG_FIRE_BAR_COUNT);
+                    break;
+                case "Boss":
+                    addEnemy(new Boss(tile.x * tileSize, tile.y * tileSize, tile.patrolLength * tileSize, false));
+                    break;
+                case "BossHammer":
+                    addEnemy(new Boss(tile.x * tileSize, tile.y * tileSize, tile.patrolLength * tileSize, true));
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
+    /** Ported from {@code Mario.java}'s case 28/29 - {@code count} {@code OrbitingFireball}s around one pivot, spaced {@code FIRE_BAR_RADIUS_STEP}px apart. */
+    private static void spawnFireBar(LevelDefinition.Tile tile, int count) {
+        int tileSize = MarioConfiguration.TILE_SIZE;
+        float centerX = tile.x * tileSize + 8;
+        float centerY = tile.y * tileSize + 8;
+        boolean clockwise = "CW".equals(tile.extraInfo);
+        for (int j = 0; j < count; j++) {
+            addEnemy(new OrbitingFireball(centerX, centerY, j * FIRE_BAR_RADIUS_STEP, clockwise));
+        }
+    }
+
+    /**
+     * Spawns every hazard that isn't an {@code Enemy} (an axe's invisible
+     * wall, a static drifting {@code BossFire}) - see docs/MARIO_PORT_PLAN_PHASE2.md
+     * Step P2.0. Same {@link MarioContext} requirement as {@link #spawnBricks}.
+     */
+    public static void spawnHazards(LevelDefinition level) {
+        int tileSize = MarioConfiguration.TILE_SIZE;
+        for (LevelDefinition.Tile tile : level.tiles) {
+            switch (tile.type) {
+                case "Axe":
+                    Axe axe = new Axe(tile.x * tileSize, tile.y * tileSize);
+                    MarioContext.world().addAxe(axe);
+                    MarioContext.spawn(axe);
+                    break;
+                case "BossFire":
+                    BossFire fire = new BossFire(tile.x * tileSize, tile.y * tileSize);
+                    MarioContext.world().addHazard(fire);
+                    MarioContext.spawn(fire);
                     break;
                 default:
                     break;
@@ -204,14 +273,23 @@ public final class LevelLoader {
     }
 
     /**
-     * Spawns the level-end flagpole and castles - purely decorative, no
-     * collision of their own (see {@code Scenery}'s class doc). Every other
-     * background tile type (tree/mountain/clouds) is still left unrendered -
-     * visual polish outside Step 7.1's "world mechanics" scope.
+     * Spawns the level-end flagpole, castles, and lava - purely decorative,
+     * no collision of their own (see {@code Scenery}'s class doc; a lava pit
+     * kills Mario only because falling into one means falling out of the
+     * level's bottom, which {@code Player}'s own fall-out check already
+     * handles - the original's own "Lava" tile is likewise added to a
+     * non-collided background sprite group, see docs/MARIO_PORT_PLAN_PHASE2.md
+     * Step P2.0). Every other background tile type (tree/mountain/clouds) is
+     * still left unrendered - visual polish outside Step 7.1's "world
+     * mechanics" scope.
      */
     public static void spawnScenery(LevelDefinition level) {
         int tileSize = MarioConfiguration.TILE_SIZE;
         for (LevelDefinition.Tile tile : level.tiles) {
+            if ("Lava".equals(tile.type)) {
+                forEachCell(tile, (x, y) -> MarioContext.spawn(new Scenery(x, y, MarioResourceManager.region("lava"))));
+                continue;
+            }
             String regionName = sceneryRegion(tile.type);
             if (regionName == null) {
                 continue;

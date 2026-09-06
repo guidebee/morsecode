@@ -116,6 +116,35 @@ public class Player extends Layer {
     private float walkCycleAccumulator;
     private int walkCyclePos;
 
+    /**
+     * True whenever the down input is held, ported from {@code Player.KeyPressedDown}.
+     * Locks out new horizontal acceleration regardless of power state (see
+     * {@link #applyHorizontalInput}) - existing momentum still decays via
+     * friction, matching the original's {@code breaks} logic living outside
+     * the {@code GoToLeft/Right} methods this gates.
+     */
+    private boolean keyPressedDown;
+    /**
+     * {@link #keyPressedDown}, but only for Big/Fire Mario - ported from the
+     * original's collision pairs ({@code Player_Brick}/{@code Player_EnemyGroup}/
+     * {@code Hammer_Player}), which all additionally check {@code getID() != 1}
+     * (small Mario is already short enough that there's nothing to duck under).
+     * While true: shows the crouch pose (see {@link #updateAnimation}), and
+     * lets Mario duck under an overhead {@code InteractiveBrick} (see
+     * {@link #moveXWithCollision}/{@link #moveYWithCollision}), enemy, or
+     * hazard (see {@code EnemyCollisionResolver}/{@code HazardCollisionResolver})
+     * whose bottom edge sits above his own {@link #DUCK_HEAD_ROOM_PX}/
+     * {@link #DUCK_OVERHEAD_CLEARANCE_PX} line - the original's crouch is a
+     * selective *collision* shrink, not an actual hitbox resize (confirmed:
+     * nothing in the original ever changes Mario's width/height while
+     * crouching, only which collisions register).
+     */
+    private boolean ducking;
+    /** Ported from {@code Player_Brick}'s own {@code p.getY() + 32} threshold. */
+    private static final float DUCK_HEAD_ROOM_PX = 32f;
+    /** Ported from {@code Player_EnemyGroup}/{@code Hammer_Player}'s own {@code p.getY() + 48} threshold. */
+    public static final float DUCK_OVERHEAD_CLEARANCE_PX = 48f;
+
     /** Ported from {@code Player}'s {@code invincible} field - post-hit/post-death, and the only one of the three that blinks (see {@link #paint}). */
     private float invincibleTimer;
     private float starTimer;
@@ -313,6 +342,8 @@ public class Player extends Layer {
 
         PlayerCommand command = forcedCommand != null ? forcedCommand : input.poll();
         lastCommand = command;
+        keyPressedDown = command.down;
+        ducking = keyPressedDown && powerState != PlayerPowerState.SMALL;
 
         applyHorizontalInput(command, frames);
         applyJump(command);
@@ -405,6 +436,18 @@ public class Player extends Layer {
 
     private void applyHorizontalInput(PlayerCommand command, float frames) {
         float maxSpeed = command.runHeld ? MAX_SPEED_TURBO : MAX_SPEED;
+        // Ported from GoToLeft/GoToRight's own `if (ControlleByKeyboard & !KeyPressedDown)`
+        // guard - holding down locks out new acceleration (existing speed
+        // still decays via the friction branch below) regardless of power
+        // state, see keyPressedDown's doc.
+        if (keyPressedDown) {
+            if (speed > 0) {
+                speed = Math.max(0, speed - FRICTION * frames);
+            } else if (speed < 0) {
+                speed = Math.min(0, speed + FRICTION * frames);
+            }
+            return;
+        }
         if (command.left) {
             facingRight = false;
             speed = Math.max(speed - ACCEL * frames, -maxSpeed);
@@ -444,11 +487,12 @@ public class Player extends Layer {
         int height = (int) getHeight();
         float newX = Math.max(0, getX() + dx);
         int tileSize = MarioConfiguration.TILE_SIZE;
+        float duckAboveY = ducking ? getY() + DUCK_HEAD_ROOM_PX : Float.NEGATIVE_INFINITY;
 
-        if (dx > 0 && world.containsImpassableArea(newX, getY(), width, height)) {
+        if (dx > 0 && world.containsImpassableArea(newX, getY(), width, height, duckAboveY)) {
             newX = (float) (((int) (newX + width) / tileSize) * tileSize - width);
             speed = 0;
-        } else if (dx < 0 && world.containsImpassableArea(newX, getY(), width, height)) {
+        } else if (dx < 0 && world.containsImpassableArea(newX, getY(), width, height, duckAboveY)) {
             newX = (float) (((int) newX / tileSize + 1) * tileSize);
             speed = 0;
         }
@@ -460,16 +504,17 @@ public class Player extends Layer {
         int height = (int) getHeight();
         float newY = getY() + dy;
         int tileSize = MarioConfiguration.TILE_SIZE;
+        float duckAboveY = ducking ? getY() + DUCK_HEAD_ROOM_PX : Float.NEGATIVE_INFINITY;
 
         if (dy > 0) {
-            if (world.containsImpassableArea(getX(), newY, width, height)) {
+            if (world.containsImpassableArea(getX(), newY, width, height, duckAboveY)) {
                 newY = (float) (((int) (newY + height) / tileSize) * tileSize - height);
                 gravity = 0;
                 onGround = true;
             } else {
                 onGround = false;
             }
-        } else if (dy < 0 && world.containsImpassableArea(getX(), newY, width, height)) {
+        } else if (dy < 0 && world.containsImpassableArea(getX(), newY, width, height, duckAboveY)) {
             InteractiveBrick hit = world.findActiveBrickAt(getX(), newY, width, height);
             if (hit != null) {
                 hit.hitFromBelow(this);
@@ -491,6 +536,15 @@ public class Player extends Layer {
      * cycle) rather than transcribing its exact accumulator bookkeeping.
      */
     private void updateAnimation(PlayerCommand command, float frames) {
+        // Ported from Player.update()'s own KeyPressedDown block - takes
+        // priority over every other pose, matching the original (its
+        // equivalent check runs last each tick, so it always wins). Frames
+        // 24/25 are the crouch pose in every Big/Fire strip - unused until
+        // now (see this class's own "4 cols x 7 rows" frame-layout doc).
+        if (ducking) {
+            setFrame(facingRight ? 24 : 25);
+            return;
+        }
         if (!onGround) {
             setFrame(facingRight ? 2 : 3);
             return;
@@ -726,6 +780,11 @@ public class Player extends Layer {
 
     public boolean isOnGround() {
         return onGround;
+    }
+
+    /** True for Big/Fire Mario while holding down - see {@link #ducking}'s doc. */
+    public boolean isDucking() {
+        return ducking;
     }
 
     /** Moving downward (or momentarily weightless at a jump's apex) - used by {@code LiftCollisionResolver}. */

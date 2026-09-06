@@ -450,58 +450,65 @@ turtle_shell_red
   orig: 32, 32
   offset: 0, 0
   index: -1
-flag_top
+axe
   rotate: false
   xy: 1152, 2
+  size: 128, 32
+  orig: 128, 32
+  offset: 0, 0
+  index: -1
+flag_top
+  rotate: false
+  xy: 1282, 2
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
 flag_sphere
   rotate: false
-  xy: 1186, 2
+  xy: 1316, 2
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
 flag_win
   rotate: false
-  xy: 1220, 2
+  xy: 1350, 2
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
 small_dead_mario
   rotate: false
-  xy: 1254, 2
+  xy: 1384, 2
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
 bw_hammer
   rotate: false
-  xy: 1288, 2
+  xy: 1418, 2
   size: 112, 28
   orig: 112, 28
   offset: 0, 0
   index: -1
 boss_fire
   rotate: false
-  xy: 1402, 2
+  xy: 1532, 2
   size: 96, 16
   orig: 96, 16
   offset: 0, 0
   index: -1
 fire_ball
   rotate: false
-  xy: 1500, 2
+  xy: 1630, 2
   size: 64, 16
   orig: 64, 16
   offset: 0, 0
   index: -1
 lift
   rotate: false
-  xy: 1566, 2
+  xy: 1696, 2
   size: 16, 16
   orig: 16, 16
   offset: 0, 0

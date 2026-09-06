@@ -24,8 +24,10 @@ import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioGamePlay;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.player.Player;
+import au.com.guidebee.morsetoolkit.activity.mario.collision.AxeResolver;
 import au.com.guidebee.morsetoolkit.activity.mario.collision.CheckpointResolver;
 import au.com.guidebee.morsetoolkit.activity.mario.collision.EnemyCollisionResolver;
+import au.com.guidebee.morsetoolkit.activity.mario.collision.HazardCollisionResolver;
 import au.com.guidebee.morsetoolkit.activity.mario.collision.LiftCollisionResolver;
 import au.com.guidebee.morsetoolkit.activity.mario.collision.PlayerCollisionResolver;
 import au.com.guidebee.morsetoolkit.activity.mario.collision.ProjectileCollisionResolver;
@@ -40,16 +42,19 @@ import au.com.guidebee.morsetoolkit.activity.mario.state.GameStateController;
 import au.com.guidebee.morsetoolkit.activity.mario.world.CameraController;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioWorld;
+import au.com.guidebee.morsetoolkit.activity.mario.world.OscillatorClock;
 
 /**
  * Steps 5-8 vertical slice: a level's interactive bricks, items,
  * ground-walking enemies (stomp/shell/kick, Fire Mario's fireballs), moving
  * platforms, level-end flag/pipe checkpoints, and score/lives/pause/game-over
- * all work on top of Step 4's movement/collision. See
- * docs/MARIO_PORT_PLAN.md Step 5.4/6.1-6.3/7.1/8. Not yet covered:
- * flying/patrol enemy variants, Boss, same-level teleports (unused by any
- * World-1 level), bomb/flying-fish {@code SpawnController} (Step 7.2 - also
- * unused by any World-1 level, see {@code LevelLoader}).
+ * all work on top of Step 4's movement/collision, plus (as of
+ * docs/MARIO_PORT_PLAN_PHASE2.md Step P2.0) Level 14's castle finale - the
+ * boss, its fire/hammer throws, fire-bar rings, the axe wall, and
+ * Levels 12/13's patrol turtles. See docs/MARIO_PORT_PLAN.md
+ * Step 5.4/6.1-6.3/7.1/8. Not yet covered: same-level teleports (unused by
+ * any World-1 level), bomb/flying-fish {@code SpawnController} (Step 7.2 -
+ * also unused by any World-1 level, see {@code LevelLoader}).
  *
  * <h2>Level completion</h2>
  * {@link #levelState} is a tiny state machine driving what happens once the
@@ -271,10 +276,12 @@ public class MarioGameScreen extends ScreenAdapter {
         // and layerManager - see LevelLoader.spawnBricks and MarioContext's class doc.
         // Scenery goes first so bricks/enemies/the player draw in front of it.
         MarioContext.init(layerManager, world, gamePlay.gameState());
+        OscillatorClock.reset();
         LevelLoader.spawnScenery(level);
         LevelLoader.spawnBricks(level);
         LevelLoader.spawnEnemies(level);
         LevelLoader.spawnLifts(level);
+        LevelLoader.spawnHazards(level);
 
         gameController = createGameController();
         backButton = createBackButton();
@@ -299,6 +306,7 @@ public class MarioGameScreen extends ScreenAdapter {
         player = new Player(startTileX * MarioConfiguration.TILE_SIZE,
                 startTileY * MarioConfiguration.TILE_SIZE, world, input);
         layerManager.append(player);
+        MarioContext.setPlayer(player);
 
         camera = new CameraController(viewportWidth, viewportHeight,
                 world.getWidthPx(), world.getHeightPx());
@@ -490,10 +498,13 @@ public class MarioGameScreen extends ScreenAdapter {
         layerManager.act(paused ? 0f : delta);
 
         if (!paused) {
+            OscillatorClock.advance(delta);
             PlayerCollisionResolver.resolvePickups(player, world);
             EnemyCollisionResolver.resolve(player, world);
             ProjectileCollisionResolver.resolve(world);
             LiftCollisionResolver.resolve(player, world);
+            HazardCollisionResolver.resolve(player, world);
+            AxeResolver.resolve(player, world);
             updateLevelCompletion(delta);
 
             boolean hasStar = player.hasStar();

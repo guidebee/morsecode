@@ -38,8 +38,17 @@ public final class EnemyCollisionResolver {
         // Snapshot before iterating: a callback below (EnemyTurtle.onStomped
         // spawning a TurtleShell) appends to the live list, which would
         // otherwise throw ConcurrentModificationException mid-iteration.
+        // Ported from Player_EnemyGroup's own `p.getY() + 48` threshold -
+        // while ducking (Big/Fire Mario only), an enemy sitting entirely
+        // above that line passes over a crouching Mario harmlessly instead
+        // of stomping/hurting him - see Player#isDucking's doc.
+        float duckClearanceY = player.isDucking() ? py + Player.DUCK_OVERHEAD_CLEARANCE_PX : Float.NEGATIVE_INFINITY;
+
         for (Enemy enemy : new ArrayList<>(enemies)) {
             if (!enemy.isActive() || !enemy.overlaps(px, py, pw, ph)) {
+                continue;
+            }
+            if (enemy.getY() + enemy.getHeight() < duckClearanceY) {
                 continue;
             }
 

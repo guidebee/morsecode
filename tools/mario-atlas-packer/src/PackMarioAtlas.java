@@ -88,6 +88,9 @@ public class PackMarioAtlas {
             new AssetSpec("bw_hammer", "CloudsNight/Hammer.png", 4, 1),
             new AssetSpec("fire_ball", "FireBall.png", 4, 1),
             new AssetSpec("lava", "Lava.png", 1, 1),
+            // 4-frame strip (128x32, confirmed against the source PNG), cycled
+            // 0,1,2,3,2,1 by Axe.java - see actors.bricks.Axe.
+            new AssetSpec("axe", "Axe.png", 4, 1),
 
             // Scenery
             new AssetSpec("small_castle", "SmallCastle.png", 1, 1),

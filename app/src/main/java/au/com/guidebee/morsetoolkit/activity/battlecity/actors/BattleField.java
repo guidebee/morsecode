@@ -353,21 +353,47 @@ public class BattleField extends TiledLayer {
     }
 
     private void drawRandomArea(Random rnd) {
-        //The actually canvas can be larger than 13X13 . initialize the battle
-        //field with some random value.
+        //Clear the whole play area to the right of the morse-code display
+        //first (it used to only be filled near the bottom, leaving most of
+        //the field an empty void), then scatter obstacle clusters on a
+        //coarse grid so tanks and bullets always keep clear corridors
+        //between them instead of the field reading as pure noise.
+        int startX = leftLetterArea + 4;
+        int endX = WIDTH_IN_TILES;
+        int endY = HEIGHT_IN_TILES;
+        for (int i = startX; i < endX; i += 2) {
+            for (int j = 0; j < endY; j += 2) {
+                duplicateCell(i, j, 0);
+            }
+        }
 
-        for (int i = leftLetterArea+4; i < WIDTH_IN_TILES; i += 2) {
-            for (int j = 0; j < 8; j += 2) {
-                int value = Math.abs(rnd.nextInt()) % 24;
-                if (value > 17) {
-                    if (value == 21 || value == 22) {
-                        duplicateCell(i, j, -1 - ((i ^ j) & 1));
-                    } else {
-                        duplicateCell(i, j, value - 17);
-
-                    }
+        //3 full tiles between cluster anchors leaves room to drive around
+        //them; the loop bounds also keep both the home approach (low j)
+        //and the enemy spawn row (near endY) clear of clutter.
+        int clusterStride = 6;
+        for (int j = clusterStride; j < endY - 2; j += clusterStride) {
+            for (int i = startX; i < endX - 2; i += clusterStride) {
+                if (rnd.nextInt(100) >= 45) continue;
+                int roll = rnd.nextInt(100);
+                int tile;
+                if (roll < 55) {
+                    tile = BRICK_WALL;
+                } else if (roll < 75) {
+                    tile = FOREST;
+                } else if (roll < 92) {
+                    tile = -1 - ((i ^ j) & 1); //water
+                } else if (roll < 97) {
+                    tile = SNOW;
                 } else {
-                    duplicateCell(i, j, 0);
+                    tile = CONCRETE_WALL;
+                }
+                duplicateCell(i, j, tile);
+                //grow most clusters by one tile so cover reads as a
+                //deliberate obstacle rather than a single random speck.
+                if (tile != CONCRETE_WALL && rnd.nextBoolean()) {
+                    int di = rnd.nextBoolean() ? 2 : 0;
+                    int dj = di == 0 ? 2 : 0;
+                    duplicateCell(i + di, j + dj, tile);
                 }
             }
         }

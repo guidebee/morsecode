@@ -26,6 +26,8 @@ public class BattleCityGameActivity extends GameActivity {
 
         config.useAccelerometer = false;
         config.useCompass = false;
+        config.useImmersiveMode = true;
+        config.hideStatusBar = true;
 
         View gameView = initializeForView(new BattleCityGamePlay(), config);
         RelativeLayout mainLayout = new RelativeLayout(this);

@@ -31,6 +31,7 @@
             android:name=".flappybird.FlappyBirdGameActivity"
             android:label="FlappyBird"
             android:screenOrientation="landscape"
+            android:theme="@style/AppTheme.NoActionBar"
             android:configChanges="keyboard|keyboardHidden|orientation">
         </activity>
 
@@ -38,6 +39,7 @@
             android:name=".battlecity.BattleCityGameActivity"
             android:label="BattleCity"
             android:screenOrientation="landscape"
+            android:theme="@style/AppTheme.NoActionBar"
             android:configChanges="keyboard|keyboardHidden|orientation">
         </activity>
     </application>

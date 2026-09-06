@@ -196,6 +196,52 @@ public abstract class EnemyTank extends Tank {
 
 
     /**
+     * Check if moving one more step in the given direction would run into
+     * an impassable area (wall, water, screen edge, etc). Mirrors the checks
+     * {@link Tank#drive()} itself uses, so subclasses can steer away from
+     * walls instead of sitting stuck against them waiting for a random
+     * direction change.
+     *
+     * @param dir one of {@link BattleField}'s direction constants.
+     * @return true if the tank cannot move further in that direction now.
+     */
+    protected boolean isBlockedInDirection(int dir) {
+        int x = (int) getX();
+        int y = (int) getY();
+        int w = (int) getWidth();
+        int h = (int) getHeight();
+        switch (dir) {
+            case BattleField.NORTH:
+                return battleField.containsImpassableArea(x, y + h, w, speed);
+            case BattleField.SOUTH:
+                return battleField.containsImpassableArea(x, y - speed, w, speed);
+            case BattleField.EAST:
+                return battleField.containsImpassableArea(x + w, y, speed, h);
+            case BattleField.WEST:
+                return battleField.containsImpassableArea(x - speed, y, speed, h);
+            default:
+                return true;
+        }
+    }
+
+    /**
+     * Pick a direction that isn't currently blocked, so a tank that just
+     * hit a wall can immediately find another way through instead of idling.
+     *
+     * @return an open direction, or a random one if all four are blocked.
+     */
+    protected int pickOpenDirection() {
+        int start = Math.abs(rnd.nextInt()) % 4;
+        for (int i = 0; i < 4; i++) {
+            int dir = (start + i) % 4;
+            if (!isBlockedInDirection(dir)) {
+                return dir;
+            }
+        }
+        return Math.abs(rnd.nextInt()) % 4;
+    }
+
+    /**
      * Tank thinks before move. subclass shall call this as last statement in
      * this overridden function.
      */

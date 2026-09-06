@@ -39,6 +39,7 @@ public final class SmartTank extends EnemyTank {
      */
     protected SmartTank(boolean hasPrize) {
         super(hasPrize);
+        type = TYPE_SMART;
         direction = BattleField.SOUTH;
         speed = ResourceManager.TILE_WIDTH / 2;
         score = Score.SCORE_300;
@@ -71,7 +72,10 @@ public final class SmartTank extends EnemyTank {
         int width = (int) battleField.getWidth();
         int height = (int) battleField.getHeight();
         while (myx > 0 && myx < width && myy > 0 && myy < height) {
-            //if(battleField.hitWall(myx,myy,0)){return false;}
+            //don't claim to see the player through a wall.
+            if (battleField.containsImpassableArea(myx - 1, myy - 1, 2, 2)) {
+                return false;
+            }
             if (myx > playerX - speed && myx < playerX + speed && myy > playerY - speed && myy < playerY + speed) {
                 return true;
             }
@@ -278,8 +282,12 @@ public final class SmartTank extends EnemyTank {
                 newdir = Math.abs(rnd.nextInt()) % 4;
             }
         }
-        if(newdir!=BattleField.NONE) {
+        if (newdir != BattleField.NONE) {
             changeDirection(newdir);
+        } else if (direction != BattleField.NONE && isBlockedInDirection(direction)) {
+            //boxed in on every side that would help chase the player,
+            //don't just freeze against the wall.
+            changeDirection(pickOpenDirection());
         }
 
         shoot = false;

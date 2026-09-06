@@ -41,6 +41,8 @@ public class FlappyBirdGameActivity extends GameActivity {
 
         config.useAccelerometer = false;
         config.useCompass = false;
+        config.useImmersiveMode = true;
+        config.hideStatusBar = true;
 
         View gameView = initializeForView(new FlappyBirdGamePlay(this), config);
         RelativeLayout mainLayout = new RelativeLayout(this);

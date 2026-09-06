@@ -47,11 +47,16 @@ public class SimpleTank extends EnemyTank {
      * Tank thinks before move.
      */
     public void think() {
-        //Move blindly.
+        //Move blindly, but don't sit vibrating against a wall: if the
+        //current heading is blocked, immediately pick an open one instead
+        //of waiting on the random chance below.
+        boolean stuck = direction == BattleField.NONE || isBlockedInDirection(direction);
         int changeDirection = Math.abs(rnd.nextInt()) % 100;
-        if (changeDirection > 90) {
-            direction = Math.abs(rnd.nextInt()) % 4;
-        } else if (changeDirection > 80) {
+        if (stuck) {
+            direction = pickOpenDirection();
+        } else if (changeDirection > 90) {
+            direction = pickOpenDirection();
+        } else if (changeDirection > 80 && !isBlockedInDirection(BattleField.SOUTH)) {
             direction = BattleField.SOUTH;
         }
         int shooting = Math.abs(rnd.nextInt()) % 100;

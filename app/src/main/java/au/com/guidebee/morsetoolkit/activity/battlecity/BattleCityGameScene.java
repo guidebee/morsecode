@@ -25,12 +25,16 @@ import com.guidebee.game.ScreenAdapter;
 import com.guidebee.game.camera.viewports.FitViewport;
 import com.guidebee.game.camera.viewports.Viewport;
 import com.guidebee.game.graphics.Batch;
+import com.guidebee.game.graphics.Pixmap;
 import com.guidebee.game.graphics.Texture;
 import com.guidebee.game.graphics.TextureRegion;
 import com.guidebee.game.microedition.LayerManager;
 import com.guidebee.game.microedition.Sprite;
+import com.guidebee.game.ui.ClickListener;
 import com.guidebee.game.ui.GameController;
 import com.guidebee.game.ui.GameControllerListener;
+import com.guidebee.game.ui.ImageButton;
+import com.guidebee.game.ui.InputEvent;
 import com.guidebee.game.ui.Skin;
 import com.guidebee.game.ui.Touchpad;
 import com.guidebee.game.ui.drawable.TextureRegionDrawable;
@@ -115,6 +119,12 @@ public class BattleCityGameScene extends ScreenAdapter implements GameController
      * The battle field object.
      */
     private BattleField battleField = null;
+
+    /**
+     * Button to leave the game and return to the main app, since this
+     * screen is otherwise only reachable via the system back gesture/key.
+     */
+    private ImageButton backButton;
 
 
     /**
@@ -289,6 +299,17 @@ public class BattleCityGameScene extends ScreenAdapter implements GameController
         gameController.addGameControllerListener(this);
         layerManager.setGameController(gameController);
 
+        backButton = new ImageButton(createBackIcon(false), createBackIcon(true));
+        backButton.setSize(16, 16);
+        backButton.setPosition(gameWorldWidth / 2f - 8, gameWoldHeight - 16);
+        backButton.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                GameEngine.app.exit();
+            }
+        });
+        layerManager.addHUDComponent(backButton);
+
         sceneWidth = gameWorldWidth;
         sceneHeight = gameWoldHeight;
 
@@ -336,6 +357,23 @@ public class BattleCityGameScene extends ScreenAdapter implements GameController
     @Override
     public void resize(int w, int h) {
         layerManager.getViewport().update(w, h, false);
+    }
+
+    /**
+     * Draw a small round back-arrow icon at runtime, so the exit button
+     * doesn't need its own art asset. Pressed state is drawn more opaque
+     * for touch feedback.
+     */
+    private TextureRegionDrawable createBackIcon(boolean pressed) {
+        int size = 16;
+        Pixmap pixmap = new Pixmap(size, size, Pixmap.Format.RGBA8888);
+        pixmap.setColor(0f, 0f, 0f, pressed ? 0.85f : 0.55f);
+        pixmap.fillCircle(size / 2, size / 2, size / 2 - 1);
+        pixmap.setColor(1f, 1f, 1f, 1f);
+        pixmap.fillTriangle(size / 3, size / 2, size * 2 / 3, size / 4, size * 2 / 3, size * 3 / 4);
+        Texture texture = new Texture(pixmap);
+        pixmap.dispose();
+        return new TextureRegionDrawable(new TextureRegion(texture));
     }
 
     /**

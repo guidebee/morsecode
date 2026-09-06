@@ -44,6 +44,34 @@ public class TubePosition {
      * Block size
      */
     public final static int BLOCK_SIZE = 3; //pixels
+    /**
+     * Smallest gap (px) between the top and bottom tube of a random pair.
+     */
+    private final static int GAP_MIN = 90;
+    /**
+     * Largest gap (px) between the top and bottom tube of a random pair.
+     */
+    private final static int GAP_MAX = 115;
+    /**
+     * Minimum tube height kept clear at the very top/bottom of the playable
+     * area, so a gap never ends up hugging the screen edge or the ground.
+     */
+    private final static int EDGE_MARGIN = 55;
+    /**
+     * Base horizontal distance (px) between consecutive random pipes.
+     */
+    private final static int PIPE_SPACING = 380;
+    /**
+     * Random jitter applied to the pipe spacing, for visual variety.
+     */
+    private final static int SPACING_JITTER = 15;
+    /**
+     * Safety margin applied to the bird's theoretical best-case climb rate
+     * (see Bird.act()/Configuration.FLAP_VELOCITY) when bounding how far a
+     * gap may rise from one pipe to the next -- leaves room for reaction
+     * time so a real player, not just a perfect one, can always make it.
+     */
+    private final static float CLIMB_SAFETY_FACTOR = 0.7f;
     private final static Random random = new Random();
     private static int tubeLength;
     private static int initialSpace;
@@ -240,43 +268,44 @@ public class TubePosition {
         Array<TubePosition> tubePositionArray = new Array<TubePosition>();
         challengeLetters.clear();
 
-        int lastPosition = 0;
-        TubePosition lastTubePosition = new TubePosition();
+        int lastPosX = initialSpace;
+        int center = tubeLength / 2;
         for (int i = 0; i < howMany; i++) {
             TubePosition tubePosition = new TubePosition();
-            tubePosition.posX = Configuration.SCREEN_WIDTH / 2 * i
-                    + random.nextInt(BLOCK_SIZE * 5) + initialSpace;
-            tubePosition.width = tubePosition.posX - lastPosition;
-            lastPosition = tubePosition.posX;
-            tubePosition.topTubeHeight = random.nextInt(tubeLength);
-            if (tubePosition.topTubeHeight
-                    > maxTopTubeHeight - 10) {
-                tubePosition.topTubeHeight
-                        = maxTopTubeHeight - 10;
-            }
-            tubePosition.bottomTubeHeight = tubeLength
-                    - tubePosition.topTubeHeight
-                    - Configuration.MIN_GAP - random.nextInt(30);
-            if (tubePosition.bottomTubeHeight < 0) {
-                tubePosition.bottomTubeHeight = 10;
-            }
 
-            if (tubeLength - tubePosition.topTubeHeight
-                    - tubePosition.bottomTubeHeight
-                    < Configuration.MIN_GAP) {
-                tubePosition.topTubeHeight = 100 - random.nextInt(20);
-                tubePosition.bottomTubeHeight = 120 + random.nextInt(30);
+            int gap = GAP_MIN + random.nextInt(GAP_MAX - GAP_MIN + 1);
+            int spacing = PIPE_SPACING
+                    + random.nextInt(SPACING_JITTER * 2 + 1) - SPACING_JITTER;
+
+            int minCenter = EDGE_MARGIN + gap / 2;
+            int maxCenter = tubeLength - EDGE_MARGIN - gap / 2;
+
+            /*
+             * Pick the next gap centre independently at random, like the
+             * original Flappy Bird -- but if that puts it higher than the
+             * current one, clamp the rise to what the bird can actually
+             * climb in the time it takes to scroll from this pipe to the
+             * next (falling is never the limiting case: gravity alone
+             * covers far more distance than the gap can ever move down),
+             * so every generated layout stays passable.
+             */
+            int candidate = minCenter + random.nextInt(maxCenter - minCenter + 1);
+            if (i > 0 && candidate > center) {
+                float secondsAvailable = spacing / (Configuration.MOVE_SPEED * 60f);
+                int maxClimb = (int) (Configuration.FLAP_VELOCITY / 2f
+                        * secondsAvailable * CLIMB_SAFETY_FACTOR);
+                if (candidate - center > maxClimb) {
+                    candidate = center + maxClimb;
+                }
             }
+            center = candidate;
 
-            int deltaX = Math.abs(lastTubePosition.topTubeHeight
-                    - tubePosition.topTubeHeight);
+            tubePosition.topTubeHeight = center - gap / 2;
+            tubePosition.bottomTubeHeight = tubeLength - center - gap / 2;
 
-            int minDistance = deltaX * Configuration.MOVE_SPEED / 3;
-            if (tubePosition.width < minDistance) {
-                tubePosition.width = minDistance;
-                tubePosition.posX = lastTubePosition.posX + tubePosition.width;
-            }
-
+            tubePosition.posX = lastPosX + spacing;
+            tubePosition.width = spacing;
+            lastPosX = tubePosition.posX;
 
             if (generatePowerups) {
                 if (random.nextInt(100) < Configuration.POWERUP_PERCENTAGE) {
@@ -309,7 +338,6 @@ public class TubePosition {
             }
             randomGenerateLetter(tubePosition);
             tubePositionArray.add(tubePosition);
-            lastTubePosition = tubePosition;
         }
         return tubePositionArray;
     }

@@ -57,6 +57,16 @@ public class Configuration {
      */
     public final static int MIN_GAP = 60;
     /**
+     * Downward acceleration magnitude applied to the bird every second
+     * (px/s^2) -- positive; Bird.act() subtracts it from velocity.y.
+     */
+    public final static float GRAVITY = 1000f;
+    /**
+     * Upward velocity (px/s) the bird is given by a single tap, like the
+     * instantaneous "flap" impulse of the original Flappy Bird.
+     */
+    public final static float FLAP_VELOCITY = 300f;
+    /**
      * Preferences store name.
      */
     public final static String prefName = "flappybird";

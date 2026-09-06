@@ -53,7 +53,6 @@ public class Bird extends Actor {
     //public final static String RED="red";
     //public final static String PURPLE="yellow";
 
-    private static final int GRAVITY = -100;
     private static final int MOVEMENT = 100;
     /**
      * These variables are used when Bird (when big) hit the tubes and
@@ -76,12 +75,6 @@ public class Bird extends Actor {
     private boolean isBigger = false;
     private float shiftingPeriod = SHIFTING_PERIOD;
 
-
-    /**
-     * the variable is used to avoid sound be played to frequently and
-     * became sound like noises.
-     */
-    private float nextSoundPeriod;
 
     private boolean isLive = true;
 
@@ -241,36 +234,40 @@ public class Bird extends Actor {
     public void act(float delta) {
 
         elapsedTime += graphics.getDeltaTime();
-        nextSoundPeriod += graphics.getDeltaTime();
 
         if (!isBigger && isLive) {
             TextureRegion textureRegion = (flyAnimation.getKeyFrame(elapsedTime, true));
             setTextureRegion(textureRegion);
         }
-        /**
-         * calculate bird's new position --free fall.
-         */
-        velocity.add(0, GRAVITY, 0);
-        velocity.scl(delta);
-        position.add(MOVEMENT * delta, velocity.y, 0);
+
         if (isLive) {
 
             /**
-             * handle touch event, move the bird upward a bit
+             * Each tap gives the bird a single upward flap, exactly like
+             * the original Flappy Bird -- holding the screen down does
+             * not keep it aloft, it must be tapped again for another lift.
              */
-            if (input.isTouched()) {
-                rotateBy(30 * delta);
-                velocity.y = 250;
-                if (nextSoundPeriod > 0.3) {
-                    Helper.playSound(flapSound);
-
-                    nextSoundPeriod = 0;
-                }
-
-            } else {
-                rotateBy(-20 * delta);
-
+            if (input.justTouched()) {
+                velocity.y = Configuration.FLAP_VELOCITY;
+                setRotation(30);
+                Helper.playSound(flapSound);
             }
+        }
+
+        /**
+         * standard, frame-rate independent free-fall integration:
+         * velocity accumulates gravity, position moves by velocity.
+         */
+        velocity.y -= Configuration.GRAVITY * delta;
+        position.add(MOVEMENT * delta, velocity.y * delta, 0);
+
+        if (isLive) {
+
+            /**
+             * the nose gradually dips towards a dive the longer it's
+             * been since the last flap.
+             */
+            rotateBy(-120 * delta);
 
             /**
              * control the bird's turning angle.

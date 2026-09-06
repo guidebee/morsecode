@@ -36,7 +36,7 @@ public class StoreWindow extends BaseWindow {
             @Override
             public boolean handle(Event event) {
                 Intent browserIntent = new Intent(Intent.ACTION_VIEW,
-                        Uri.parse("http://www.guidebee.com.au/magento/flappy-bird-source-code.html"));
+                        Uri.parse("https://github.com/guidebee/morsecode"));
 
                 Configuration.gameActivity.startActivity(browserIntent);
 

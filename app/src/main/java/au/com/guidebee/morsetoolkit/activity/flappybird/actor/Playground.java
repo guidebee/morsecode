@@ -88,6 +88,11 @@ public class Playground extends Actor {
     private int tubeCount = -1;
     private int extraScore = 0;
     private float powerUpPeriod = POWERUP_PERIOD;
+    /**
+     * Drives the pulsing "safe to hit" highlight -- see isSafeToHit().
+     */
+    private float hintPulseTime = 0;
+    private static final float HINT_PULSE_SPEED = 6f;
 
     /**
      * Constructor.
@@ -240,29 +245,19 @@ public class Playground extends Actor {
                     if (collide) {
                         Helper.playSound(hitSound);
                         //check to see match challenge letters
-                        if(Configuration.userSettings.gameEncode){
-                            int ci=0;
-                            for( ci=0;ci<5;ci++){
-                                if(challengeLetters[ci]==tubePosition.letterOfMorseCode){
-                                    break;
+                        int matchIndex = matchingChallengeIndex(tubePosition.letterOfMorseCode);
+                        if (matchIndex >= 0) {
+                            if (Configuration.userSettings.gameEncode) {
+                                for (int j = matchIndex + 1; j < 5; j++) {
+                                    challengeLetters[j - 1] = challengeLetters[j];
                                 }
+                                challengeLetters[4] = randomLetterOrNumber();
+                            } else {
+                                challengeLetters[0] = randomLetterOrNumber();
                             }
-                            if(ci<5){
-                                for(int j=ci+1;j<5;j++){
-                                    challengeLetters[j-1]=challengeLetters[j];
-                                }
-                                challengeLetters[4]=randomLetterOrNumber();
-                                tubePosition.deleted = true;
-                                extraScore += 5;
-                                return false;
-                            }
-                        }else{
-                            if(challengeLetters[0]==tubePosition.letterOfMorseCode){
-                                challengeLetters[0]=randomLetterOrNumber();
-                                tubePosition.deleted = true;
-                                extraScore += 5;
-                                return false;
-                            }
+                            tubePosition.deleted = true;
+                            extraScore += 5;
+                            return false;
                         }
 
                         if (isBigger) {
@@ -289,6 +284,34 @@ public class Playground extends Actor {
 
         }
         return false;
+    }
+
+    /**
+     * Index (0-4) of the queued challenge letter that this character
+     * currently satisfies, or -1 if it doesn't match any of them. In
+     * "encode" mode any queued letter can be matched; otherwise only the
+     * very next one (index 0) counts.
+     */
+    private int matchingChallengeIndex(char letter) {
+        if (Configuration.userSettings.gameEncode) {
+            for (int i = 0; i < 5; i++) {
+                if (challengeLetters[i] == letter) {
+                    return i;
+                }
+            }
+            return -1;
+        } else {
+            return challengeLetters[0] == letter ? 0 : -1;
+        }
+    }
+
+    /**
+     * Whether flying straight into this tube right now would trigger the
+     * bonus "safe hit" (its letter matches the player's current
+     * morse-code target) instead of ending the game.
+     */
+    public boolean isSafeToHit(TubePosition tubePosition) {
+        return matchingChallengeIndex(tubePosition.letterOfMorseCode) >= 0;
     }
 
 
@@ -345,6 +368,7 @@ public class Playground extends Actor {
 
     @Override
     public void act(float delta) {
+        hintPulseTime += delta;
         if (!stopMoving) {
             for (int i = 0; i < tubePositionArray.size; i++) {
                 TubePosition tubePosition = tubePositionArray.get(i);
@@ -386,6 +410,19 @@ public class Playground extends Actor {
             if ((tubePosition.posX > -bottomTubeTextRegion.getRegionWidth()
                     && tubePosition.posX < Configuration.SCREEN_WIDTH)) {
                 if (!tubePosition.deleted) {
+                    boolean safe = isSafeToHit(tubePosition);
+
+                    if (safe) {
+                        /*
+                         * This pipe's letter currently matches the next
+                         * morse-code target (top left) -- flying into it
+                         * is a bonus, not a death, so give it a pulsing
+                         * gold tint to invite the player to go for it.
+                         */
+                        float pulse = 0.5f + 0.5f
+                                * (float) Math.sin(hintPulseTime * HINT_PULSE_SPEED);
+                        batch.setColor(1f, 0.8f + 0.2f * pulse, 0.35f + 0.35f * pulse, 1f);
+                    }
                     batch.draw(bottomTubeTextRegion, tubePosition.posX,
                             Configuration.groundHeight,
                             bottomTubeTextRegion.getRegionWidth(),
@@ -393,6 +430,9 @@ public class Playground extends Actor {
                     batch.draw(topTubeTextRegion, tubePosition.posX,
                             Configuration.SCREEN_HEIGHT
                                     - tubePosition.topTubeHeight);
+                    if (safe) {
+                        batch.setColor(1f, 1f, 1f, 1f);
+                    }
                     if (tubePosition.drawNumber) {
                         int num = String.valueOf(i + 1).length();
                         numbers.drawNumber(batch, i + 1,
@@ -408,16 +448,16 @@ public class Playground extends Actor {
                     }
 
                     if(Configuration.userSettings.gameEncode){
-                        drawMorseLetterEncode(batch, tubePosition);
+                        drawMorseLetterEncode(batch, tubePosition, safe);
                     }else{
-                        drawMorseLetter(batch, tubePosition);
+                        drawMorseLetter(batch, tubePosition, safe);
                     }
 
                     if(Configuration.userSettings.gameHint) {
                         if(Configuration.userSettings.gameEncode){
-                            drawMorseLetter(batch, tubePosition);
+                            drawMorseLetter(batch, tubePosition, safe);
                         }else{
-                            drawMorseLetterEncode(batch, tubePosition);
+                            drawMorseLetterEncode(batch, tubePosition, safe);
                         }
                     }
                 } else {
@@ -431,7 +471,7 @@ public class Playground extends Actor {
 
     }
 
-    private void drawMorseLetterEncode(Batch batch, TubePosition tubePosition) {
+    private void drawMorseLetterEncode(Batch batch, TubePosition tubePosition, boolean safe) {
         String morseString = MorseHelper.morseCodeData.get(tubePosition.letterOfMorseCode);
         int offsetX = tubePosition.posX - 50;
         int offsetY = Configuration.groundHeight;
@@ -440,7 +480,13 @@ public class Playground extends Actor {
 
         for (int i = 0; i < length; i++) {
             char ch = morseString.charAt(i);
+            if (safe) {
+                setHintColor(batch);
+            }
             batch.draw(imageDotAndDashBackground, offsetX, offsetY + i * 48);
+            if (safe) {
+                batch.setColor(1f, 1f, 1f, 1f);
+            }
             if (ch == '.') {
                 batch.draw(dotDashDrawables[0],
                         offsetX + 6, 6 + offsetY + (length - i - 1) * 48);
@@ -453,7 +499,7 @@ public class Playground extends Actor {
 
     }
 
-    private void drawMorseLetter(Batch batch, TubePosition tubePosition) {
+    private void drawMorseLetter(Batch batch, TubePosition tubePosition, boolean safe) {
         int offsetX = tubePosition.posX + 2;
         int offsetY = 0;
         if (tubePosition.topTubeHeight > tubePosition.bottomTubeHeight) {
@@ -465,7 +511,13 @@ public class Playground extends Actor {
             offsetY = Configuration.groundHeight + (tubePosition.bottomTubeHeight - 48) / 2;
 
         }
+        if (safe) {
+            setHintColor(batch);
+        }
         batch.draw(imageBackground, offsetX, offsetY);
+        if (safe) {
+            batch.setColor(1f, 1f, 1f, 1f);
+        }
         if (tubePosition.letterOfMorseCode >= 'a' && tubePosition.letterOfMorseCode <= 'z') {
             batch.draw(letterDrawables[tubePosition.letterOfMorseCode - 'a'],
                     offsetX + 6, offsetY + 6);
@@ -475,5 +527,14 @@ public class Playground extends Actor {
                     offsetX + 6, offsetY + 6);
 
         }
+    }
+
+    /**
+     * Pulsing gold tint used to mark whichever pipe/letter tag is
+     * currently safe to hit -- see isSafeToHit().
+     */
+    private void setHintColor(Batch batch) {
+        float pulse = 0.5f + 0.5f * (float) Math.sin(hintPulseTime * HINT_PULSE_SPEED);
+        batch.setColor(1f, 0.85f + 0.15f * pulse, 0.2f + 0.3f * pulse, 1f);
     }
 }

@@ -339,6 +339,7 @@ chocolate_castle
   orig: 32, 32
   offset: 0, 0
   index: -1
+
 mario1.png
 size: 2048,2048
 format: RGBA8888

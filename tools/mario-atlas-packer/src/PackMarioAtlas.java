@@ -253,6 +253,15 @@ public class PackMarioAtlas {
 
         StringBuilder atlas = new StringBuilder();
         for (int i = 0; i < pages.size(); i++) {
+            // A blank line is how TextureAtlas$TextureAtlasData's own parser
+            // (see its `line.trim().length() == 0` check) knows a new page's
+            // header is starting rather than another region of the current
+            // one - omitting it (as this loop did before) reads fine for a
+            // single-page atlas but corrupts parsing of every page after the
+            // first once there's more than one.
+            if (i > 0) {
+                atlas.append("\n");
+            }
             String pageFile = pages.size() == 1 ? baseName + ".png" : baseName + i + ".png";
             atlas.append(pageFile).append("\n");
             atlas.append("size: ").append(PAGE_SIZE).append(",").append(PAGE_SIZE).append("\n");

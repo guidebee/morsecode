@@ -1,0 +1,446 @@
+mario.png
+size: 2048,2048
+format: RGBA8888
+filter: Nearest,Nearest
+repeat: none
+info
+  rotate: false
+  xy: 2, 2
+  size: 640, 480
+  orig: 640, 480
+  offset: 0, 0
+  index: -1
+info2
+  rotate: false
+  xy: 644, 2
+  size: 640, 480
+  orig: 640, 480
+  offset: 0, 0
+  index: -1
+mountain
+  rotate: false
+  xy: 2, 484
+  size: 1536, 448
+  orig: 1536, 448
+  offset: 0, 0
+  index: -1
+clouds
+  rotate: false
+  xy: 2, 934
+  size: 1536, 448
+  orig: 1536, 448
+  offset: 0, 0
+  index: -1
+big_player
+  rotate: false
+  xy: 1540, 934
+  size: 128, 448
+  orig: 128, 448
+  offset: 0, 0
+  index: -1
+fire_player
+  rotate: false
+  xy: 1670, 934
+  size: 128, 448
+  orig: 128, 448
+  offset: 0, 0
+  index: -1
+big_castle
+  rotate: false
+  xy: 2, 1384
+  size: 304, 352
+  orig: 304, 352
+  offset: 0, 0
+  index: -1
+flag
+  rotate: false
+  xy: 308, 1384
+  size: 4, 288
+  orig: 4, 288
+  offset: 0, 0
+  index: -1
+player
+  rotate: false
+  xy: 314, 1384
+  size: 128, 224
+  orig: 128, 224
+  offset: 0, 0
+  index: -1
+small_castle
+  rotate: false
+  xy: 444, 1384
+  size: 160, 160
+  orig: 160, 160
+  offset: 0, 0
+  index: -1
+enemy
+  rotate: false
+  xy: 606, 1384
+  size: 64, 128
+  orig: 64, 128
+  offset: 0, 0
+  index: -1
+boss
+  rotate: false
+  xy: 672, 1384
+  size: 192, 128
+  orig: 192, 128
+  offset: 0, 0
+  index: -1
+lava
+  rotate: false
+  xy: 866, 1384
+  size: 32, 128
+  orig: 32, 128
+  offset: 0, 0
+  index: -1
+another_castle_message
+  rotate: false
+  xy: 900, 1384
+  size: 384, 128
+  orig: 384, 128
+  offset: 0, 0
+  index: -1
+quest_complete
+  rotate: false
+  xy: 1286, 1384
+  size: 384, 128
+  orig: 384, 128
+  offset: 0, 0
+  index: -1
+pump_top
+  rotate: false
+  xy: 1672, 1384
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: -1
+pump_top_castle
+  rotate: false
+  xy: 1738, 1384
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: -1
+hori_image
+  rotate: false
+  xy: 1804, 1384
+  size: 128, 64
+  orig: 128, 64
+  offset: 0, 0
+  index: -1
+tree
+  rotate: false
+  xy: 2, 1738
+  size: 160, 64
+  orig: 160, 64
+  offset: 0, 0
+  index: -1
+small_to_big_mario
+  rotate: false
+  xy: 164, 1738
+  size: 384, 64
+  orig: 384, 64
+  offset: 0, 0
+  index: -1
+big_to_fire_mario
+  rotate: false
+  xy: 550, 1738
+  size: 320, 64
+  orig: 320, 64
+  offset: 0, 0
+  index: -1
+big_to_small_mario
+  rotate: false
+  xy: 872, 1738
+  size: 320, 64
+  orig: 320, 64
+  offset: 0, 0
+  index: -1
+fire_to_small_mario
+  rotate: false
+  xy: 1194, 1738
+  size: 320, 64
+  orig: 320, 64
+  offset: 0, 0
+  index: -1
+small_to_big_star_mario
+  rotate: false
+  xy: 1516, 1738
+  size: 384, 64
+  orig: 384, 64
+  offset: 0, 0
+  index: -1
+plant
+  rotate: false
+  xy: 1902, 1738
+  size: 64, 48
+  orig: 64, 48
+  offset: 0, 0
+  index: -1
+plant_dark
+  rotate: false
+  xy: 1968, 1738
+  size: 64, 48
+  orig: 64, 48
+  offset: 0, 0
+  index: -1
+turtle
+  rotate: false
+  xy: 2, 1804
+  size: 128, 48
+  orig: 128, 48
+  offset: 0, 0
+  index: -1
+turtle_dark
+  rotate: false
+  xy: 132, 1804
+  size: 128, 48
+  orig: 128, 48
+  offset: 0, 0
+  index: -1
+enemy_turtle_patrol
+  rotate: false
+  xy: 262, 1804
+  size: 128, 48
+  orig: 128, 48
+  offset: 0, 0
+  index: -1
+flying_turtle_patrol
+  rotate: false
+  xy: 392, 1804
+  size: 128, 48
+  orig: 128, 48
+  offset: 0, 0
+  index: -1
+font
+  rotate: false
+  xy: 522, 1804
+  size: 256, 48
+  orig: 256, 48
+  offset: 0, 0
+  index: -1
+brick
+  rotate: false
+  xy: 780, 1804
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+brick_underground
+  rotate: false
+  xy: 814, 1804
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+brick_castle
+  rotate: false
+  xy: 848, 1804
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+stone
+  rotate: false
+  xy: 882, 1804
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+stone_underground
+  rotate: false
+  xy: 916, 1804
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+stone_castle
+  rotate: false
+  xy: 950, 1804
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+chocolate
+  rotate: false
+  xy: 984, 1804
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+chocolate_underground
+  rotate: false
+  xy: 1018, 1804
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+chocolate_castle
+  rotate: false
+  xy: 1052, 1804
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+pump
+  rotate: false
+  xy: 1086, 1804
+  size: 64, 32
+  orig: 64, 32
+  offset: 0, 0
+  index: -1
+pump_castle
+  rotate: false
+  xy: 1152, 1804
+  size: 64, 32
+  orig: 64, 32
+  offset: 0, 0
+  index: -1
+question_mark
+  rotate: false
+  xy: 1218, 1804
+  size: 96, 32
+  orig: 96, 32
+  offset: 0, 0
+  index: -1
+mashroom
+  rotate: false
+  xy: 1316, 1804
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+mashrooms
+  rotate: false
+  xy: 1350, 1804
+  size: 64, 32
+  orig: 64, 32
+  offset: 0, 0
+  index: -1
+flower
+  rotate: false
+  xy: 1416, 1804
+  size: 128, 32
+  orig: 128, 32
+  offset: 0, 0
+  index: -1
+coin_anim
+  rotate: false
+  xy: 1546, 1804
+  size: 128, 32
+  orig: 128, 32
+  offset: 0, 0
+  index: -1
+star
+  rotate: false
+  xy: 1676, 1804
+  size: 128, 32
+  orig: 128, 32
+  offset: 0, 0
+  index: -1
+one_up
+  rotate: false
+  xy: 1806, 1804
+  size: 64, 32
+  orig: 64, 32
+  offset: 0, 0
+  index: -1
+coin
+  rotate: false
+  xy: 1872, 1804
+  size: 96, 32
+  orig: 96, 32
+  offset: 0, 0
+  index: -1
+iron
+  rotate: false
+  xy: 2, 1854
+  size: 128, 32
+  orig: 128, 32
+  offset: 0, 0
+  index: -1
+bridge_blocks
+  rotate: false
+  xy: 132, 1854
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+turtle_shell
+  rotate: false
+  xy: 166, 1854
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+turtle_shell_dark
+  rotate: false
+  xy: 200, 1854
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+turtle_shell_red
+  rotate: false
+  xy: 234, 1854
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+flag_top
+  rotate: false
+  xy: 268, 1854
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+flag_sphere
+  rotate: false
+  xy: 302, 1854
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+flag_win
+  rotate: false
+  xy: 336, 1854
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+small_dead_mario
+  rotate: false
+  xy: 370, 1854
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+bw_hammer
+  rotate: false
+  xy: 404, 1854
+  size: 112, 28
+  orig: 112, 28
+  offset: 0, 0
+  index: -1
+boss_fire
+  rotate: false
+  xy: 518, 1854
+  size: 96, 16
+  orig: 96, 16
+  offset: 0, 0
+  index: -1
+fire_ball
+  rotate: false
+  xy: 616, 1854
+  size: 64, 16
+  orig: 64, 16
+  offset: 0, 0
+  index: -1
+lift
+  rotate: false
+  xy: 682, 1854
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: -1

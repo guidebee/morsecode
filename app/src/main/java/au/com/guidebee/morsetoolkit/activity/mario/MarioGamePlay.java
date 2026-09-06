@@ -8,8 +8,8 @@ import au.com.guidebee.morsetoolkit.activity.mario.screen.MarioPlaceholderScreen
  * Mario Game Play. Owns cross-screen state and shared asset loading, following
  * the same pattern as {@code FlappyBirdGamePlay}/{@code BattleCityGamePlay}.
  *
- * Asset loading and the real menu/gameplay screens land in later steps of
- * docs/MARIO_PORT_PLAN.md; for now this only proves the launch chain works.
+ * The real menu/gameplay screens land in later steps of docs/MARIO_PORT_PLAN.md;
+ * for now this loads World-1's assets (Step 2) and shows a placeholder screen.
  */
 public class MarioGamePlay extends GamePlay {
 
@@ -21,6 +21,7 @@ public class MarioGamePlay extends GamePlay {
 
     @Override
     public void create() {
+        MarioResourceManager.load();
         setScreen(new MarioPlaceholderScreen());
     }
 

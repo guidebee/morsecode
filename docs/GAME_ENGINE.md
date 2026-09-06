@@ -362,11 +362,12 @@ See the main [README](../README.md#building) for full build/requirements details
 
 ## Upstream tutorials
 
-The original engine's wiki has narrower, engine-only tutorials that still apply to the
+The original engine's tutorials go deeper on engine-only topics that still apply to the
 copy in `gameengine/` (graphics, input, sound, tiled maps, SVG, the microedition API,
 UI/HUD components, cameras/viewports, Actions) plus a separate Box2D series (bodies,
-shapes, joints, ray casts, sensors, collision filters):
-[GuidebeeGameEngine wiki](https://github.com/GuidebeeGameEngine/GuidebeeGameEngine/wiki).
-This document instead grounds every concept in the two games actually shipping in this
-repo — treat the wiki as the deeper reference for engine features Flappy Bird and
-Battle City don't happen to exercise.
+shapes, joints, ray casts, sensors, collision filters). The `GuidebeeGameEngine` org is
+end-of-life and its GitHub wikis may not stick around, so the full set is mirrored
+locally: [docs/tutorials](tutorials/README.md). This document instead grounds every
+concept in the two games actually shipping in this repo — treat the tutorial mirror as
+the deeper reference for engine features Flappy Bird and Battle City don't happen to
+exercise.

@@ -130,7 +130,7 @@ Tapping **Replay app tour** in Settings resets every one of the flags above at o
 
 - `app/` — the Android application (Compose UI, transmit/receive/decoder screens, navigation drawer, ViewModels).
 - `decoder/` — a pure-JVM (no Android dependencies) library module holding the audio-to-Morse decoding core: the timing state machine, the broadband and narrowband tone detectors, and the shared Morse lookup tables. Extracted from `app/` so the decoding logic can be unit tested with plain JUnit and reasoned about independently of Android. `app/` depends on it for the actual mic-capture/UI plumbing.
-- `gameengine/` — an in-tree Android library module containing the Guidebee Game Engine (Java game framework + JNI/OpenGL ES 2.0 + Box2D native code, built via `ndkBuild`). The two games in `app/` depend on this module directly; there is no external `game-engine` artifact. See [docs/GAME_ENGINE.md](docs/GAME_ENGINE.md) for an engine walkthrough using Flappy Bird and Battle City as examples.
+- `gameengine/` — an in-tree Android library module containing the Guidebee Game Engine (Java game framework + JNI/OpenGL ES 2.0 + Box2D native code, built via `ndkBuild`). The two games in `app/` depend on this module directly; there is no external `game-engine` artifact. See [docs/GAME_ENGINE.md](docs/GAME_ENGINE.md) for an engine walkthrough using Flappy Bird and Battle City as examples, and [docs/tutorials](docs/tutorials/README.md) for a full local mirror of the (now end-of-life) upstream engine and Box2D tutorial series.
 
 ### Decoder architecture
 

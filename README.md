@@ -49,3 +49,4 @@ Gradle wrapper is pinned to Gradle 9.7.1; the Android Gradle Plugin version is s
 - `minSdk 21`, `compileSdk`/`targetSdk 37`.
 - `RECORD_AUDIO` permission is required for the Decoder screen.
 - The `gameengine` module builds its native library via `externalNativeBuild { ndkBuild { ... } }` pointing at `gameengine/src/main/jni/Android.mk`; no manual native build step is needed — Gradle invokes `ndkBuild` automatically as part of the normal build.
+- Native game-engine libraries are linked with 16 KB ELF LOAD-segment alignment for compatibility with Android devices using 16 KB memory pages.

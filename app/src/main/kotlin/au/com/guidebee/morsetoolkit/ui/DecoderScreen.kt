@@ -49,7 +49,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -93,11 +92,12 @@ import kotlin.math.sin
  *
  * The panel below the app bar is styled as a classic bench oscilloscope -
  * a dark instrument bezel, a phosphor-green graticule screen, and a single
- * compact control strip with LED/rocker style POWER and ANALOG toggles
- * alongside rotary-look X-POS/Y-POS knobs with vertical fader sliders, so
- * most of the panel's height goes to the scope screen and the decoded-text
- * terminal below it. The screen locks itself to portrait for the sake of
- * this compact layout - landscape isn't handled yet.
+ * compact control bank above the screen holding X-POS/Y-POS (rotary-look
+ * dial + horizontal fader) and POWER/ANALOG (LED + switch), all stacked in
+ * one tight column, so most of the panel's height still goes to the scope
+ * screen and the decoded-text terminal beneath. The screen locks itself to
+ * portrait for the sake of this compact layout - landscape isn't handled
+ * yet.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -153,8 +153,8 @@ fun DecoderScreen(onBack: () -> Unit) {
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
             }
-            ScopeDisplay(state = state, modifier = Modifier.fillMaxWidth().height(170.dp))
             ReadoutRow(state = state, viewModel = viewModel)
+            ScopeDisplay(state = state, modifier = Modifier.fillMaxWidth().height(170.dp))
             ControlPanel(state = state, viewModel = viewModel)
             OutputTerminal(text = state.outputText, modifier = Modifier.fillMaxWidth().weight(1f))
             ActionButtonRow(state = state, viewModel = viewModel)
@@ -260,13 +260,15 @@ private fun ReadoutRow(state: DecoderViewModel.UiState, viewModel: DecoderViewMo
                 selected = state.detectionMode == AudioMorseCodeDecoder.DetectionMode.BROADBAND,
                 onClick = { viewModel.switchDetectionMode(AudioMorseCodeDecoder.DetectionMode.BROADBAND) },
                 shape = SegmentedButtonDefaults.itemShape(0, 2),
-                colors = scopeSegmentedColors()
+                colors = scopeSegmentedColors(),
+                icon = {}
             ) { Text(stringResource(R.string.decoder_mode_classic), style = MaterialTheme.typography.labelSmall) }
             SegmentedButton(
                 selected = state.detectionMode == AudioMorseCodeDecoder.DetectionMode.NARROWBAND,
                 onClick = { viewModel.switchDetectionMode(AudioMorseCodeDecoder.DetectionMode.NARROWBAND) },
                 shape = SegmentedButtonDefaults.itemShape(1, 2),
-                colors = scopeSegmentedColors()
+                colors = scopeSegmentedColors(),
+                icon = {}
             ) { Text(stringResource(R.string.decoder_mode_narrowband), style = MaterialTheme.typography.labelSmall) }
         }
     }
@@ -283,61 +285,79 @@ private fun scopeSegmentedColors() = SegmentedButtonDefaults.colors(
 )
 
 /**
- * One compact instrument strip holding every control: the X-POS/Y-POS
- * knob+fader pairs and the POWER/ANALOG rockers, all in a single row so the
- * rest of the panel's height can go to the scope screen and the decoded
- * text terminal.
+ * The instrument's control bank, three tight rows: POWER and ANALOG toggles
+ * side by side on top, then X-POS and Y-POS each on their own full-width
+ * row below.
  */
 @Composable
-private fun ControlPanel(state: DecoderViewModel.UiState, viewModel: DecoderViewModel) {
-    Row(
-        modifier = Modifier
+private fun ControlPanel(
+    state: DecoderViewModel.UiState,
+    viewModel: DecoderViewModel,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(6.dp))
             .background(ScopeBezel)
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-        horizontalArrangement = Arrangement.SpaceEvenly,
-        verticalAlignment = Alignment.CenterVertically
+            .padding(horizontal = 12.dp, vertical = 4.dp)
     ) {
-        ScopeKnob(
+        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            ScopeToggleRow(
+                label = stringResource(R.string.power),
+                checked = state.isRecording,
+                enabled = state.hasPermission,
+                onCheckedChange = { viewModel.setRecording(it) },
+                modifier = Modifier.weight(1f)
+            )
+            ScopeToggleRow(
+                label = stringResource(R.string.analog),
+                checked = state.showAnalog,
+                onCheckedChange = { viewModel.setShowAnalog(it) },
+                modifier = Modifier.weight(1f)
+            )
+        }
+        ScopeKnobRow(
             label = stringResource(R.string.x_pos),
             value = state.xStep,
             valueRange = 1f..5f,
             onValueChange = { viewModel.setXStep(it) }
         )
-        ScopeKnob(
+        ScopeKnobRow(
             label = stringResource(R.string.y_pos),
             value = state.yScale,
             valueRange = 0.2f..2f,
             onValueChange = { viewModel.setYScale(it) }
         )
-        ScopeToggle(
-            label = stringResource(R.string.power),
-            checked = state.isRecording,
-            enabled = state.hasPermission,
-            onCheckedChange = { viewModel.setRecording(it) }
-        )
-        ScopeToggle(
-            label = stringResource(R.string.analog),
-            checked = state.showAnalog,
-            onCheckedChange = { viewModel.setShowAnalog(it) }
-        )
     }
 }
 
-/** A rotary-look knob: a static dial readout of the current value, paired with a compact vertical fader for input. */
+private val ControlLabelWidth = 50.dp
+
+/** One row of the control bank: a fixed-width label, a small rotary-look dial, and a horizontal fader for input. */
 @Composable
-private fun ScopeKnob(
+private fun ScopeKnobRow(
     label: String,
     value: Float,
     valueRange: ClosedFloatingPointRange<Float>,
-    onValueChange: (Float) -> Unit,
-    modifier: Modifier = Modifier
+    onValueChange: (Float) -> Unit
 ) {
-    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(label, style = MaterialTheme.typography.labelSmall, color = ScopePanelTextDim)
-        Spacer(Modifier.height(4.dp))
-        Canvas(modifier = Modifier.size(34.dp)) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text(
+            label,
+            style = MaterialTheme.typography.labelMedium,
+            color = ScopePanelTextDim,
+            maxLines = 1,
+            softWrap = false,
+            modifier = Modifier.width(ControlLabelWidth)
+        )
+        Canvas(modifier = Modifier.size(26.dp)) {
             val fraction = ((value - valueRange.start) / (valueRange.endInclusive - valueRange.start)).coerceIn(0f, 1f)
             val startDeg = 135f
             val sweepDeg = 270f
@@ -350,63 +370,59 @@ private fun ScopeKnob(
                 radius = radius,
                 center = center
             )
-            drawCircle(color = Color.Black.copy(alpha = 0.5f), radius = radius, center = center, style = Stroke(width = 1.5f))
+            drawCircle(color = Color.Black.copy(alpha = 0.5f), radius = radius, center = center, style = Stroke(width = 1f))
 
-            for (t in 0..10) {
-                val tickDeg = startDeg + sweepDeg * t / 10
-                val tickRad = Math.toRadians(tickDeg.toDouble())
-                val inner = radius * 0.82f
-                val outer = radius * 0.98f
-                drawLine(
-                    ScopePanelTextDim.copy(alpha = 0.6f),
-                    Offset(center.x + inner * cos(tickRad).toFloat(), center.y + inner * sin(tickRad).toFloat()),
-                    Offset(center.x + outer * cos(tickRad).toFloat(), center.y + outer * sin(tickRad).toFloat()),
-                    strokeWidth = 1f
-                )
-            }
-
-            val pointerLen = radius * 0.68f
+            val pointerLen = radius * 0.75f
             drawLine(
                 ScopeAmber,
                 center,
                 Offset(center.x + pointerLen * cos(angleRad).toFloat(), center.y + pointerLen * sin(angleRad).toFloat()),
-                strokeWidth = 2.5f
+                strokeWidth = 2f
             )
-            drawCircle(ScopeBezelDark, radius = radius * 0.15f, center = center)
+            drawCircle(ScopeBezelDark, radius = radius * 0.18f, center = center)
         }
-        Spacer(Modifier.height(4.dp))
-        Box(modifier = Modifier.size(width = 32.dp, height = 64.dp), contentAlignment = Alignment.Center) {
-            Slider(
-                value = value,
-                onValueChange = onValueChange,
-                valueRange = valueRange,
-                modifier = Modifier.width(64.dp).rotate(-90f),
-                colors = SliderDefaults.colors(
-                    thumbColor = ScopeAmber,
-                    activeTrackColor = ScopeAmber,
-                    inactiveTrackColor = ScopeBezelDark
-                )
+        Slider(
+            value = value,
+            onValueChange = onValueChange,
+            valueRange = valueRange,
+            modifier = Modifier.weight(1f).height(20.dp),
+            colors = SliderDefaults.colors(
+                thumbColor = ScopeAmber,
+                activeTrackColor = ScopeAmber,
+                inactiveTrackColor = ScopeBezelDark
             )
-        }
+        )
     }
 }
 
-/** A power-panel style toggle: an LED indicator above a switch, matching the scope's POWER/ANALOG rockers. */
+/** One row of the control bank: a fixed-width label, an LED indicator, and a switch, matching the scope's POWER/ANALOG rockers. */
 @Composable
-private fun ScopeToggle(
+private fun ScopeToggleRow(
     label: String,
     checked: Boolean,
     enabled: Boolean = true,
-    onCheckedChange: (Boolean) -> Unit
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+    Row(
+        modifier = modifier.padding(vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text(
+            label,
+            style = MaterialTheme.typography.labelMedium,
+            color = ScopePanelText,
+            maxLines = 1,
+            softWrap = false,
+            modifier = Modifier.width(ControlLabelWidth)
+        )
         Box(
             modifier = Modifier
-                .size(9.dp)
+                .size(8.dp)
                 .clip(CircleShape)
                 .background(if (checked) ScopePhosphor else ScopeLedOff)
         )
-        Spacer(Modifier.height(6.dp))
         Switch(
             checked = checked,
             enabled = enabled,
@@ -420,8 +436,6 @@ private fun ScopeToggle(
                 uncheckedBorderColor = ScopePanelTextDim
             )
         )
-        Spacer(Modifier.height(2.dp))
-        Text(label, style = MaterialTheme.typography.labelSmall, color = ScopePanelText)
     }
 }
 

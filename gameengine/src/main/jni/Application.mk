@@ -1,3 +1,5 @@
 APP_ABI := armeabi-v7a arm64-v8a x86 x86_64
 APP_PLATFORM := android-21
 APP_STL := c++_static
+# NDK r21 does not use 16 KB ELF LOAD-segment alignment by default.
+APP_LDFLAGS := -Wl,-z,max-page-size=16384

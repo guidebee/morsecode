@@ -89,6 +89,10 @@ public class Player extends Layer {
     private float invincibleTimer;
     private float starTimer;
 
+    /** Set while a level-complete/pipe-entry sequence drives Mario instead of the player - see {@code MarioGameScreen}. */
+    private PlayerCommand forcedCommand;
+    private PlayerCommand lastCommand;
+
     public Player(float x, float y, MarioWorld world, MarioInputController input) {
         super(x, y, PlayerPowerState.SMALL.width, PlayerPowerState.SMALL.height, true);
         this.world = world;
@@ -126,7 +130,8 @@ public class Player extends Layer {
             starTimer -= delta;
         }
 
-        PlayerCommand command = input.poll();
+        PlayerCommand command = forcedCommand != null ? forcedCommand : input.poll();
+        lastCommand = command;
         float frames = delta * PHYSICS_FPS;
 
         applyHorizontalInput(command, frames);
@@ -350,5 +355,55 @@ public class Player extends Layer {
 
     public boolean isOnGround() {
         return onGround;
+    }
+
+    /** Moving downward (or momentarily weightless at a jump's apex) - used by {@code LiftCollisionResolver}. */
+    public boolean isFalling() {
+        return gravity >= 0;
+    }
+
+    /**
+     * Snaps onto a lift's top surface, ported from {@code Player_Lift.collided}'s
+     * {@code isFalling()} branch. Unlike tile ground contact (re-derived from
+     * {@code MarioWorld}'s grid every frame in {@link #moveYWithCollision}), a
+     * lift moves, so {@code LiftCollisionResolver} re-supplies its current top
+     * and this frame's horizontal drift every frame instead.
+     *
+     * @param topY the lift's current top edge, in world pixels
+     * @param dx    the lift's horizontal movement this frame, to carry a rider along
+     */
+    public void landOnLift(float topY, float dx) {
+        setY(topY - getHeight());
+        setX(getX() + dx);
+        gravity = 0;
+        onGround = true;
+    }
+
+    /**
+     * Overrides {@code input.poll()} for one or more frames - used to drive
+     * Mario through a scripted sequence (walking into a level-complete flag,
+     * standing still while entering a pipe) without the player's own input.
+     * Pass {@code null} to release control back to {@code input}.
+     */
+    public void setForcedCommand(PlayerCommand command) {
+        forcedCommand = command;
+    }
+
+    public void clearForcedCommand() {
+        forcedCommand = null;
+    }
+
+    /** Extends (never shortens) the invincibility window - used to shield Mario during a level-complete sequence. */
+    public void setInvincibleFor(float seconds) {
+        invincibleTimer = Math.max(invincibleTimer, seconds);
+    }
+
+    /** This frame's input intent, for checkpoints that gate on a held direction (e.g. a pipe entrance). */
+    public boolean wantsRight() {
+        return lastCommand != null && lastCommand.right;
+    }
+
+    public boolean wantsDown() {
+        return lastCommand != null && lastCommand.down;
     }
 }

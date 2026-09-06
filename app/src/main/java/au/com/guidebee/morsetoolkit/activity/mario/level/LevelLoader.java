@@ -1,6 +1,7 @@
 package au.com.guidebee.morsetoolkit.activity.mario.level;
 
 import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
+import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.Bank;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.Brick;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.BrickWithStar;
@@ -12,6 +13,8 @@ import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.QuestionMark;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.Enemy;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.EnemyMashroom;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.EnemyTurtle;
+import au.com.guidebee.morsetoolkit.activity.mario.actors.lifts.Lift;
+import au.com.guidebee.morsetoolkit.activity.mario.actors.scenery.Scenery;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioWorld;
 
@@ -28,10 +31,17 @@ import au.com.guidebee.morsetoolkit.activity.mario.world.MarioWorld;
  *   docs/MARIO_PORT_PLAN.md Step 5.1 and {@code InteractiveBrick}.
  *   <li>Ground-walking enemies (EnemyMashroom/EnemyTurtle) become Sprite
  *   actors too - see docs/MARIO_PORT_PLAN.md Step 6.1 and {@code Enemy}.
+ *   <li>Moving platforms ({@code Lift_*}/{@code LiftUP}/{@code LiftDown})
+ *   and the level-end flagpole/castles become Sprite actors - see
+ *   docs/MARIO_PORT_PLAN.md Step 7.1, {@link #spawnLifts} and
+ *   {@link #spawnScenery}. Checkpoints (level-end/pipe-entry triggers)
+ *   aren't tiles at all - they're read straight off {@code LevelDefinition}
+ *   by {@code CheckpointResolver}.
  * </ul>
  *
- * Every other tile type (checkpoints, decorations, flying/patrol enemies...)
- * is still left untouched here - later steps.
+ * Every other tile type (decorative background art, flying/patrol enemies,
+ * Level 14's boss-castle hazards...) is still left untouched here - later
+ * steps.
  */
 public final class LevelLoader {
 
@@ -158,6 +168,72 @@ public final class LevelLoader {
         }
     }
 
+    /**
+     * Spawns every moving platform. Same {@link MarioContext} requirement as
+     * {@link #spawnBricks}. A tile's {@code patrolLength} field carries the
+     * original's "Points" constructor argument - not a patrol distance for
+     * this tile type, but how many source tiles wide to build the platform
+     * (see {@code Lift}'s class doc) - see docs/MARIO_PORT_PLAN.md Step 7.1.
+     */
+    public static void spawnLifts(LevelDefinition level) {
+        int tileSize = MarioConfiguration.TILE_SIZE;
+        for (LevelDefinition.Tile tile : level.tiles) {
+            Lift.Motion motion = liftMotion(tile.type);
+            if (motion == null) {
+                continue;
+            }
+            addLift(new Lift(tile.x * tileSize, tile.y * tileSize, motion, tile.patrolLength));
+        }
+    }
+
+    private static Lift.Motion liftMotion(String type) {
+        switch (type) {
+            case "Lift_UpDown":
+                return Lift.Motion.UP_DOWN;
+            case "Lift_LeftRight":
+                return Lift.Motion.LEFT_RIGHT;
+            case "Lift_LeftRightInvert":
+                return Lift.Motion.LEFT_RIGHT_INVERT;
+            case "LiftUP":
+                return Lift.Motion.UP;
+            case "LiftDown":
+                return Lift.Motion.DOWN;
+            default:
+                return null;
+        }
+    }
+
+    /**
+     * Spawns the level-end flagpole and castles - purely decorative, no
+     * collision of their own (see {@code Scenery}'s class doc). Every other
+     * background tile type (tree/mountain/clouds) is still left unrendered -
+     * visual polish outside Step 7.1's "world mechanics" scope.
+     */
+    public static void spawnScenery(LevelDefinition level) {
+        int tileSize = MarioConfiguration.TILE_SIZE;
+        for (LevelDefinition.Tile tile : level.tiles) {
+            String regionName = sceneryRegion(tile.type);
+            if (regionName == null) {
+                continue;
+            }
+            MarioContext.spawn(new Scenery(tile.x * tileSize, tile.y * tileSize,
+                    MarioResourceManager.region(regionName)));
+        }
+    }
+
+    private static String sceneryRegion(String type) {
+        switch (type) {
+            case "Flag":
+                return "flag";
+            case "SmallCastle":
+                return "small_castle";
+            case "BigCastle":
+                return "big_castle";
+            default:
+                return null;
+        }
+    }
+
     private interface CellSpawner {
         void spawn(float x, float y);
     }
@@ -179,5 +255,10 @@ public final class LevelLoader {
     private static void addEnemy(Enemy enemy) {
         MarioContext.world().addEnemy(enemy);
         MarioContext.spawn(enemy);
+    }
+
+    private static void addLift(Lift lift) {
+        MarioContext.world().addLift(lift);
+        MarioContext.spawn(lift);
     }
 }

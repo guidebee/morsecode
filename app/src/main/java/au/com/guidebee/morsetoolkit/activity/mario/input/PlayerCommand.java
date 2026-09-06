@@ -8,6 +8,8 @@ public final class PlayerCommand {
 
     public boolean left;
     public boolean right;
+    /** Held, not edge-triggered - gates a vertical pipe's entry (see {@code CheckpointResolver}). */
+    public boolean down;
 
     /** Edge-triggered: true only on the frame the jump input started. */
     public boolean jumpPressed;

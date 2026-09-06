@@ -5,7 +5,8 @@ import com.guidebee.game.InputProcessor;
 import com.guidebee.game.ScreenAdapter;
 import com.guidebee.game.audio.Music;
 import com.guidebee.game.camera.OrthographicCamera;
-import com.guidebee.game.camera.viewports.FitViewport;
+import com.guidebee.game.camera.viewports.ExtendViewport;
+import com.guidebee.game.camera.viewports.Viewport;
 import com.guidebee.game.graphics.Pixmap;
 import com.guidebee.game.graphics.Texture;
 import com.guidebee.game.graphics.TextureRegion;
@@ -111,6 +112,9 @@ public class MarioGameScreen extends ScreenAdapter {
     private final LevelDefinition level;
     private final LayerManager layerManager;
     private final OrthographicCamera gdxCamera;
+    /** The camera window's actual size, in world pixels - see the constructor's {@code ExtendViewport} note. */
+    private final int viewportWidth;
+    private final int viewportHeight;
     private final MarioWorld world;
     private final Player player;
     private final CameraController camera;
@@ -146,9 +150,29 @@ public class MarioGameScreen extends ScreenAdapter {
         levelAttribute = level.attribute;
         world = LevelLoader.createWorld(level);
 
-        layerManager = new LayerManager(new FitViewport(
+        // FitViewport (Step 3's original choice) letterboxes/pillarboxes
+        // whenever the device screen's aspect ratio isn't exactly
+        // MarioConfiguration.VIEWPORT_WIDTH:HEIGHT's 4:3 - every landscape
+        // phone (much wider than 4:3) got permanent empty bars down both
+        // sides. ExtendViewport instead keeps the configured size as a
+        // MINIMUM and stretches the world in the shorter dimension (here,
+        // width - phone height is the constraining side) until it fills the
+        // screen, showing more of the level side-to-side instead of leaving
+        // it blank - no letterboxing, no distortion (see its own class doc).
+        layerManager = new LayerManager(new ExtendViewport(
                 MarioConfiguration.VIEWPORT_WIDTH, MarioConfiguration.VIEWPORT_HEIGHT));
         layerManager.append(world);
+
+        // Stage's constructor already resolved the extended size above
+        // against the real screen (see UIWindow's constructor, which calls
+        // Viewport.update() immediately) - read it back instead of assuming
+        // it's still exactly MarioConfiguration.VIEWPORT_WIDTH/HEIGHT, and use
+        // it everywhere below a screen size is needed (CameraController's
+        // clamp bounds, the HUD's screen-edge anchors) so they match
+        // whatever this device actually extended to.
+        Viewport viewport = layerManager.getViewport();
+        viewportWidth = Math.round(viewport.getWorldWidth());
+        viewportHeight = Math.round(viewport.getWorldHeight());
 
         // The engine's camera defaults to the standard libGDX Y-up convention
         // (increasing Y = up-screen), but every other piece of this port -
@@ -158,8 +182,8 @@ public class MarioGameScreen extends ScreenAdapter {
         // came from. Reconfiguring the camera to Y-down here, once, keeps that
         // one assumption consistent everywhere instead of inverting Y in every
         // piece of gameplay code that touches a Y coordinate.
-        gdxCamera = (OrthographicCamera) layerManager.getViewport().getCamera();
-        gdxCamera.setToOrtho(true, MarioConfiguration.VIEWPORT_WIDTH, MarioConfiguration.VIEWPORT_HEIGHT);
+        gdxCamera = (OrthographicCamera) viewport.getCamera();
+        gdxCamera.setToOrtho(true, viewportWidth, viewportHeight);
 
         // Bricks/items spawned below register themselves into MarioContext.world()
         // and layerManager - see LevelLoader.spawnBricks and MarioContext's class doc.
@@ -190,7 +214,7 @@ public class MarioGameScreen extends ScreenAdapter {
                 startTileY * MarioConfiguration.TILE_SIZE, world, input);
         layerManager.append(player);
 
-        camera = new CameraController(MarioConfiguration.VIEWPORT_WIDTH, MarioConfiguration.VIEWPORT_HEIGHT,
+        camera = new CameraController(viewportWidth, viewportHeight,
                 world.getWidthPx(), world.getHeightPx());
         camera.centerOn(player.getX(), player.getY());
         repositionHud();
@@ -259,12 +283,12 @@ public class MarioGameScreen extends ScreenAdapter {
         // so it must stay flush against the screen's left edge for those
         // offsets to land at the intended screen edges; scrollY increases
         // downward (see the class doc's Y-down note), so the bottom edge is
-        // scrollY + VIEWPORT_HEIGHT, and subtracting the controller's own
+        // scrollY + viewportHeight, and subtracting the controller's own
         // height anchors it there instead of the screen's top-left corner.
         gameController.setPosition(scrollX,
-                scrollY + MarioConfiguration.VIEWPORT_HEIGHT - gameController.getHeight() - MARGIN);
-        backButton.setPosition(scrollX + MarioConfiguration.VIEWPORT_WIDTH / 2f - BACK_BUTTON_SIZE / 2f,
-                scrollY + MarioConfiguration.VIEWPORT_HEIGHT - BACK_BUTTON_SIZE - MARGIN / 2f);
+                scrollY + viewportHeight - gameController.getHeight() - MARGIN);
+        backButton.setPosition(scrollX + viewportWidth / 2f - BACK_BUTTON_SIZE / 2f,
+                scrollY + viewportHeight - BACK_BUTTON_SIZE - MARGIN / 2f);
     }
 
     private static TextureRegionDrawable createBackIcon(int size, boolean pressed) {
@@ -345,8 +369,8 @@ public class MarioGameScreen extends ScreenAdapter {
         // it), not for an arbitrarily large, continuously moving scroll
         // target, and using it that way was the bug behind a blank screen:
         // the camera ended up looking at a world position with nothing in it.
-        gdxCamera.position.set(camera.getX() + MarioConfiguration.VIEWPORT_WIDTH / 2f,
-                camera.getY() + MarioConfiguration.VIEWPORT_HEIGHT / 2f, 0);
+        gdxCamera.position.set(camera.getX() + viewportWidth / 2f,
+                camera.getY() + viewportHeight / 2f, 0);
 
         GameEngine.graphics.clearScreen(clearR, clearG, clearB, 1f);
         layerManager.draw();

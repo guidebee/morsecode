@@ -235,7 +235,7 @@ public class PackMarioAtlas {
                     continue;
                 }
                 BufferedImage img = findImage(loaded, pr.spec());
-                g.drawImage(img, pr.x(), pr.y(), null);
+                drawFlippedPerCell(g, img, pr.x(), pr.y(), pr.spec().cols(), pr.spec().rows());
             }
             g.dispose();
             String pageFile = pages.size() == 1 ? baseName + ".png" : baseName + i + ".png";
@@ -302,6 +302,46 @@ public class PackMarioAtlas {
 
     private static int ceilDiv(int a, int b) {
         return (a + b - 1) / b;
+    }
+
+    /**
+     * Draws {@code img} into the page at (destX,destY), flipping each
+     * cols x rows frame cell vertically IN PLACE (cell positions unchanged).
+     *
+     * <p>Why per-cell and not "flip the whole image": {@code MarioGameScreen}
+     * configures the camera Y-down to match this port's Y-down world
+     * convention (see that class's comment), but the engine's
+     * {@code SpriteBatch.draw(TextureRegion,...)} hard-codes a UV-to-vertex
+     * mapping tuned for the opposite, default Y-up camera - so every sprite's
+     * texture ends up sampled upside-down unless corrected. Flipping the
+     * source pixels here (once, offline) is the fix; runtime
+     * {@code TextureRegion.flip()} doesn't work because both
+     * {@code TiledLayer} and {@code microedition.Sprite} internally call
+     * {@code TextureRegion.split()} to slice a strip into per-frame regions,
+     * and {@code split()}'s own docs say a pre-flipped parent region isn't
+     * supported - it recomputes fresh, unflipped sub-regions regardless.
+     * Flipping *within* each frame cell (not the whole multi-row image as
+     * one block) is what keeps a strip's frame order intact - a whole-image
+     * flip would reverse row order (e.g. "player"'s 4x7 grid, where each row
+     * is a different animation, would end up with row 0 and row 6 swapped).
+     */
+    private static void drawFlippedPerCell(Graphics2D g, BufferedImage img, int destX, int destY,
+                                            int cols, int rows) {
+        int cellWidth = img.getWidth() / cols;
+        int cellHeight = img.getHeight() / rows;
+        for (int row = 0; row < rows; row++) {
+            for (int col = 0; col < cols; col++) {
+                int sx = col * cellWidth;
+                int sy = row * cellHeight;
+                int dx = destX + sx;
+                int dy = destY + sy;
+                // Dest y-coordinates given bottom-then-top (reversed) flips this cell vertically.
+                g.drawImage(img,
+                        dx, dy + cellHeight, dx + cellWidth, dy,
+                        sx, sy, sx + cellWidth, sy + cellHeight,
+                        null);
+            }
+        }
     }
 
     private static BufferedImage buildTileSheet(List<LoadedAsset> loaded) {

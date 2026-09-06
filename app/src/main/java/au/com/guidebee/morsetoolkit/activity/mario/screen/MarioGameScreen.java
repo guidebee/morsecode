@@ -4,6 +4,7 @@ import com.guidebee.game.GameEngine;
 import com.guidebee.game.InputProcessor;
 import com.guidebee.game.ScreenAdapter;
 import com.guidebee.game.audio.Music;
+import com.guidebee.game.camera.OrthographicCamera;
 import com.guidebee.game.camera.viewports.FitViewport;
 import com.guidebee.game.microedition.LayerManager;
 
@@ -28,6 +29,7 @@ import au.com.guidebee.morsetoolkit.activity.mario.world.MarioWorld;
 public class MarioGameScreen extends ScreenAdapter {
 
     private final LayerManager layerManager;
+    private final OrthographicCamera gdxCamera;
     private final MarioWorld world;
     private final Player player;
     private final CameraController camera;
@@ -49,6 +51,17 @@ public class MarioGameScreen extends ScreenAdapter {
         layerManager = new LayerManager(new FitViewport(
                 MarioConfiguration.VIEWPORT_WIDTH, MarioConfiguration.VIEWPORT_HEIGHT));
         layerManager.append(world);
+
+        // The engine's camera defaults to the standard libGDX Y-up convention
+        // (increasing Y = up-screen), but every other piece of this port -
+        // TiledLayer/Sprite's row/y math, LevelDefinition's tile y-coordinates,
+        // Player's gravity (increasing Y = falling) - assumes Y-down, matching
+        // the original engine's AWT/Java2D coordinate system the level data
+        // came from. Reconfiguring the camera to Y-down here, once, keeps that
+        // one assumption consistent everywhere instead of inverting Y in every
+        // piece of gameplay code that touches a Y coordinate.
+        gdxCamera = (OrthographicCamera) layerManager.getViewport().getCamera();
+        gdxCamera.setToOrtho(true, MarioConfiguration.VIEWPORT_WIDTH, MarioConfiguration.VIEWPORT_HEIGHT);
 
         // Bricks/items spawned below register themselves into MarioContext.world()
         // and layerManager - see LevelLoader.spawnBricks and MarioContext's class doc.
@@ -128,7 +141,17 @@ public class MarioGameScreen extends ScreenAdapter {
 
         camera.centerOn(player.getX() + player.getWidth() / 2f, player.getY() + player.getHeight() / 2f);
 
+        // Set the camera's absolute world position directly rather than going
+        // through LayerManager.draw(int,int)'s relative "translate from
+        // wherever the camera currently sits, then restore" trick - that trick
+        // is meant for a small constant centering nudge (as Battle City uses
+        // it), not for an arbitrarily large, continuously moving scroll
+        // target, and using it that way was the bug behind a blank screen:
+        // the camera ended up looking at a world position with nothing in it.
+        gdxCamera.position.set(camera.getX() + MarioConfiguration.VIEWPORT_WIDTH / 2f,
+                camera.getY() + MarioConfiguration.VIEWPORT_HEIGHT / 2f, 0);
+
         GameEngine.graphics.clearScreen(clearR, clearG, clearB, 1f);
-        layerManager.draw(camera.getX(), camera.getY());
+        layerManager.draw();
     }
 }

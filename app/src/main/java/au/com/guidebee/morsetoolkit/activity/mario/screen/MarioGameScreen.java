@@ -1,6 +1,7 @@
 package au.com.guidebee.morsetoolkit.activity.mario.screen;
 
 import com.guidebee.game.GameEngine;
+import com.guidebee.game.InputMultiplexer;
 import com.guidebee.game.InputProcessor;
 import com.guidebee.game.ScreenAdapter;
 import com.guidebee.game.audio.Music;
@@ -10,11 +11,13 @@ import com.guidebee.game.camera.viewports.Viewport;
 import com.guidebee.game.graphics.Pixmap;
 import com.guidebee.game.graphics.Texture;
 import com.guidebee.game.graphics.TextureRegion;
+import com.guidebee.game.input.GestureDetector;
 import com.guidebee.game.microedition.LayerManager;
 import com.guidebee.game.ui.ClickListener;
 import com.guidebee.game.ui.GameController;
 import com.guidebee.game.ui.ImageButton;
 import com.guidebee.game.ui.InputEvent;
+import com.guidebee.game.ui.UIComponent;
 import com.guidebee.game.ui.drawable.TextureRegionDrawable;
 
 import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
@@ -79,6 +82,39 @@ import au.com.guidebee.morsetoolkit.activity.mario.world.MarioWorld;
  * each button's world position by that same amount every frame, keeping
  * them visually (and, since hit-testing goes through the same camera, also
  * interactively) fixed on screen.
+ *
+ * <h2>Pinch-to-zoom</h2>
+ * A two-finger pinch adjusts {@link #zoom}, applied to the shared camera as
+ * {@code gdxCamera.zoom} in {@link #render}. It's detected by a raw
+ * {@code com.guidebee.game.input.GestureDetector} ({@link #zoomDetector}) run
+ * through an {@link InputMultiplexer} alongside {@link #layerManager} in
+ * {@link #show} - not the {@code com.guidebee.game.ui.GestureListener}/
+ * {@code addListener} route every other touch handler in this class uses.
+ * {@code Layer}/{@code Actor} (the world layer, the player, every brick and
+ * enemy) has no {@code addListener} of its own to hang a listener off of, and
+ * attaching one to a HUD widget instead would sit in front of
+ * {@code GameController}'s own touchpad/buttons in the hit-test order (see
+ * {@code Stage}'s {@code tableGameControl}, always the first child added and
+ * so always the *last* checked) and swallow their touches. A multiplexed raw
+ * {@link GestureDetector} sees every screen touch directly, bypassing actor
+ * hit-testing entirely, and (since {@link #zoomDetector}'s callbacks all
+ * return {@code false}, never claiming an event) never stops
+ * {@link #layerManager} from also seeing and handling the same touch.
+ *
+ * <p>{@link #camera} (see its own class doc) is told the current zoom every
+ * frame before it re-centers on the player, so its ground/level-edge clamp -
+ * and hence the ground staying flush with the screen's bottom edge, and the
+ * player never scrolling out of view - accounts for how much world the
+ * current zoom actually shows, not the nominal, un-zoomed amount.
+ *
+ * <p>Since the shared camera is also what the HUD renders through (see
+ * above), zooming it would zoom the joystick/buttons/back button right along
+ * with the world; {@link #repositionHud} counters this by computing each HUD
+ * element's target position from {@link #camera}'s already-zoom-scaled
+ * current edges ({@code getX()/getY()/getEffectiveWidth()/getEffectiveHeight()})
+ * and giving it {@code setScale(zoom)} - the shared camera is about to divide
+ * that rendered size back down by the same factor, netting zero visible
+ * change for the HUD while the world underneath still zooms.
  */
 public class MarioGameScreen extends ScreenAdapter {
 
@@ -106,6 +142,14 @@ public class MarioGameScreen extends ScreenAdapter {
     /** Comfortably longer than either delay above, so a stray hit can't interrupt the sequence - see {@code Player#setInvincibleFor}. */
     private static final float TRANSITION_INVINCIBILITY_SECONDS = 5f;
 
+    // Kept conservative (rather than, say, 0.25-4) - CameraController's own
+    // clamp (see its class doc) keeps the camera window within the level at
+    // any zoom, but a level narrower/shorter than the zoomed-out window would
+    // still show empty space past its edges once the window itself is bigger
+    // than the level. See the class doc's "Pinch-to-zoom" section.
+    private static final float MIN_ZOOM = 0.6f;
+    private static final float MAX_ZOOM = 1.6f;
+
     private enum LevelState {PLAYING, ENTERING, ADVANCING}
 
     private final MarioGamePlay gamePlay;
@@ -122,6 +166,8 @@ public class MarioGameScreen extends ScreenAdapter {
 
     private final GameController gameController;
     private final ImageButton backButton;
+    /** See the class doc's "Pinch-to-zoom" section for why this is a raw {@code GestureDetector}, not a {@code GestureListener} on an actor. */
+    private final GestureDetector zoomDetector;
 
     private final float clearR;
     private final float clearG;
@@ -134,6 +180,12 @@ public class MarioGameScreen extends ScreenAdapter {
     private LevelState levelState = LevelState.PLAYING;
     private LevelDefinition.Checkpoint pendingCheckpoint;
     private float transitionTimer;
+
+    private float zoom = 1f;
+    /** The gesture's {@code initialDistance} last seen - a change means a new pinch began. */
+    private float zoomGestureBaselineDistance = -1f;
+    /** {@link #zoom} as of the start of the current pinch, so each callback computes an absolute (not incremental) zoom. */
+    private float zoomAtGestureStart = 1f;
 
     public MarioGameScreen(int levelNumber, MarioGamePlay gamePlay) {
         this(levelNumber, gamePlay, -1, -1);
@@ -196,6 +248,7 @@ public class MarioGameScreen extends ScreenAdapter {
 
         gameController = createGameController();
         backButton = createBackButton(gamePlay);
+        zoomDetector = createZoomDetector();
         MarioInputController input = new MarioInputController(gameController);
 
         // The original engine's per-level "pos" field (BasicLevel.pos) is never
@@ -260,6 +313,30 @@ public class MarioGameScreen extends ScreenAdapter {
         return new TextureRegionDrawable(new TextureRegion(MarioResourceManager.controllerTexture(assetPath)));
     }
 
+    /** See the class doc's "Pinch-to-zoom" section for why this is a raw detector run through {@link #show}'s {@link InputMultiplexer}. */
+    private GestureDetector createZoomDetector() {
+        return new GestureDetector(new GestureDetector.GestureAdapter() {
+            @Override
+            public boolean zoom(float initialDistance, float distance) {
+                applyPinchZoom(initialDistance, distance);
+                return false;
+            }
+        });
+    }
+
+    private void applyPinchZoom(float initialDistance, float distance) {
+        if (initialDistance != zoomGestureBaselineDistance) {
+            // A fresh pinch (GestureDetector holds initialDistance constant
+            // for the life of one continuous 2-finger drag) - snapshot the
+            // zoom it starts from so this stays an absolute, not
+            // incremental/compounding, computation.
+            zoomGestureBaselineDistance = initialDistance;
+            zoomAtGestureStart = zoom;
+        }
+        float requested = zoomAtGestureStart * (initialDistance / distance);
+        zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, requested));
+    }
+
     /** Exits to the main menu - otherwise this screen has no other way back. */
     private ImageButton createBackButton(MarioGamePlay gamePlay) {
         ImageButton back = new ImageButton(createBackIcon(BACK_BUTTON_SIZE, false), createBackIcon(BACK_BUTTON_SIZE, true));
@@ -276,19 +353,41 @@ public class MarioGameScreen extends ScreenAdapter {
 
     /** Re-anchors the HUD to a fixed screen position - see the class doc. */
     private void repositionHud() {
+        // camera.getX()/getY() are already the true current (zoom-scaled)
+        // screen edges - see CameraController's class doc - so no separate
+        // "center to scale the offset around" is needed here the way an
+        // earlier version of this method needed; only each element's own
+        // margin/size terms (MARGIN, BACK_BUTTON_SIZE, the controller's own
+        // getHeight()) need scaling by zoom, since those stay constant,
+        // nominal world-pixel values regardless of zoom.
         float scrollX = camera.getX();
         float scrollY = camera.getY();
+        float effectiveWidth = camera.getEffectiveWidth();
+        float effectiveHeight = camera.getEffectiveHeight();
+
         // GameController positions its own knob/buttons relative to its
         // parent's width (see com.guidebee.game.ui.GameController.layout()),
         // so it must stay flush against the screen's left edge for those
         // offsets to land at the intended screen edges; scrollY increases
         // downward (see the class doc's Y-down note), so the bottom edge is
-        // scrollY + viewportHeight, and subtracting the controller's own
-        // height anchors it there instead of the screen's top-left corner.
-        gameController.setPosition(scrollX,
-                scrollY + viewportHeight - gameController.getHeight() - MARGIN);
-        backButton.setPosition(scrollX + viewportWidth / 2f - BACK_BUTTON_SIZE / 2f,
-                scrollY + viewportHeight - BACK_BUTTON_SIZE - MARGIN / 2f);
+        // scrollY + effectiveHeight, and subtracting the controller's own
+        // (zoom-scaled) height anchors it there instead of the screen's
+        // top-left corner.
+        positionHudElement(gameController, scrollX,
+                scrollY + effectiveHeight - gameController.getHeight() * zoom - MARGIN * zoom);
+        positionHudElement(backButton, scrollX + effectiveWidth / 2f - BACK_BUTTON_SIZE * zoom / 2f,
+                scrollY + effectiveHeight - BACK_BUTTON_SIZE * zoom - MARGIN * zoom / 2f);
+    }
+
+    /**
+     * Places a HUD component at an already zoom-scaled screen position, and
+     * scales the component itself by {@link #zoom} so its own rendered size
+     * stays constant on screen regardless of it - see the class doc's
+     * "Pinch-to-zoom" section.
+     */
+    private void positionHudElement(UIComponent component, float x, float y) {
+        component.setScale(zoom);
+        component.setPosition(x, y);
     }
 
     private static TextureRegionDrawable createBackIcon(int size, boolean pressed) {
@@ -322,7 +421,10 @@ public class MarioGameScreen extends ScreenAdapter {
     @Override
     public void show() {
         savedInputProcessor = GameEngine.input.getInputProcessor();
-        GameEngine.input.setInputProcessor(layerManager);
+        // See the class doc's "Pinch-to-zoom" section - zoomDetector always
+        // returns false, so this never stops layerManager from also seeing
+        // and handling the same touch.
+        GameEngine.input.setInputProcessor(new InputMultiplexer(zoomDetector, layerManager));
         startMusic(levelAttribute);
     }
 
@@ -359,6 +461,10 @@ public class MarioGameScreen extends ScreenAdapter {
             startMusic(hasStar ? "Star" : levelAttribute);
         }
 
+        // See CameraController's class doc - setZoom before centerOn so this
+        // frame's clamp/re-centering uses the current zoom's effective
+        // window size, not the nominal one.
+        camera.setZoom(zoom);
         camera.centerOn(player.getX() + player.getWidth() / 2f, player.getY() + player.getHeight() / 2f);
         repositionHud();
 
@@ -369,8 +475,11 @@ public class MarioGameScreen extends ScreenAdapter {
         // it), not for an arbitrarily large, continuously moving scroll
         // target, and using it that way was the bug behind a blank screen:
         // the camera ended up looking at a world position with nothing in it.
-        gdxCamera.position.set(camera.getX() + viewportWidth / 2f,
-                camera.getY() + viewportHeight / 2f, 0);
+        gdxCamera.position.set(camera.getX() + camera.getEffectiveWidth() / 2f,
+                camera.getY() + camera.getEffectiveHeight() / 2f, 0);
+        // See the class doc's "Pinch-to-zoom" section - repositionHud already
+        // pre-compensated the HUD for whatever zoom is about to apply here.
+        gdxCamera.zoom = zoom;
 
         GameEngine.graphics.clearScreen(clearR, clearG, clearB, 1f);
         layerManager.draw();

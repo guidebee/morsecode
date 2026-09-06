@@ -2,14 +2,14 @@ package au.com.guidebee.morsetoolkit.activity.mario;
 
 import com.guidebee.game.GamePlay;
 
-import au.com.guidebee.morsetoolkit.activity.mario.screen.MarioPlaceholderScreen;
+import au.com.guidebee.morsetoolkit.activity.mario.screen.MarioGameScreen;
 
 /**
  * Mario Game Play. Owns cross-screen state and shared asset loading, following
  * the same pattern as {@code FlappyBirdGamePlay}/{@code BattleCityGamePlay}.
  *
- * The real menu/gameplay screens land in later steps of docs/MARIO_PORT_PLAN.md;
- * for now this loads World-1's assets (Step 2) and shows a placeholder screen.
+ * The real level-select menu ({@code MarioMenuScreen}) lands in Step 8; for now
+ * this always opens Level 11 directly, per Step 3.3's vertical slice.
  */
 public class MarioGamePlay extends GamePlay {
 
@@ -22,7 +22,7 @@ public class MarioGamePlay extends GamePlay {
     @Override
     public void create() {
         MarioResourceManager.load();
-        setScreen(new MarioPlaceholderScreen());
+        setScreen(new MarioGameScreen(11));
     }
 
     public void finish() {

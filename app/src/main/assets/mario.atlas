@@ -108,23 +108,30 @@ quest_complete
   orig: 384, 128
   offset: 0, 0
   index: -1
-pump_top
+tiles
   rotate: false
   xy: 1672, 1384
+  size: 96, 96
+  orig: 96, 96
+  offset: 0, 0
+  index: -1
+pump_top
+  rotate: false
+  xy: 1770, 1384
   size: 64, 64
   orig: 64, 64
   offset: 0, 0
   index: -1
 pump_top_castle
   rotate: false
-  xy: 1738, 1384
+  xy: 1836, 1384
   size: 64, 64
   orig: 64, 64
   offset: 0, 0
   index: -1
 hori_image
   rotate: false
-  xy: 1804, 1384
+  xy: 1902, 1384
   size: 128, 64
   orig: 128, 64
   offset: 0, 0

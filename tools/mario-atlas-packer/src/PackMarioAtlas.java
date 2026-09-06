@@ -121,6 +121,31 @@ public class PackMarioAtlas {
             new AssetSpec("info2", "Info2.png", 1, 1)
     );
 
+    /**
+     * The World-1 static-terrain tiles, in the exact order they're packed into the
+     * composite "tiles" region below - a uniform 32x32 grid that {@code TiledLayer}
+     * requires (unlike every other region, which is packed as a standalone image).
+     * Index into this list + 1 = the TiledLayer cell value (index 0 means "empty").
+     *
+     * NOTE: "pump" and its variants are deliberately excluded, even though they're
+     * conceptually static terrain - pump.png etc. are 64x32 (2 tiles wide, drawn as
+     * freely-positioned/overlapping sprites in the original engine, not tile-grid
+     * cells), which TiledLayer's uniform grid can't represent without distorting
+     * them. This matches docs/MARIO_PORT_PLAN.md's own package layout (SS5), which
+     * groups Pump with the Sprite-based actors/bricks/* classes, not static geometry
+     * - it becomes a Sprite actor in Step 5, like Bank/QuestionMark.
+     *
+     * Kept in lockstep with {@code MarioConfiguration}'s TILE_* constants and
+     * {@code LevelLoader}'s attribute -> tile-index mapping.
+     */
+    private static final List<String> TILE_SHEET_ORDER = List.of(
+            "brick", "brick_underground", "brick_castle",
+            "stone", "stone_underground", "stone_castle",
+            "chocolate", "chocolate_underground", "chocolate_castle"
+    );
+    private static final int TILE_SHEET_COLS = 3;
+    private static final int TILE_SIZE = 32;
+
     private static final int PAGE_SIZE = 2048;
     private static final int PADDING = 2;
 
@@ -165,6 +190,11 @@ public class PackMarioAtlas {
             }
             loaded.add(new LoadedAsset(spec, img));
         }
+
+        loaded.add(new LoadedAsset(
+                new AssetSpec("tiles", null, TILE_SHEET_COLS, ceilDiv(TILE_SHEET_ORDER.size(), TILE_SHEET_COLS)),
+                buildTileSheet(loaded)));
+
         // Tallest-first shelf packing keeps shelves tightly packed.
         loaded.sort((a, b) -> b.image.getHeight() - a.image.getHeight());
 
@@ -240,6 +270,9 @@ public class PackMarioAtlas {
         for (AssetSpec spec : ASSETS) {
             System.out.println("  " + spec.regionName() + " -> " + spec.cols() + "x" + spec.rows());
         }
+        System.out.println("  tiles -> " + TILE_SHEET_COLS + "x" + ceilDiv(TILE_SHEET_ORDER.size(), TILE_SHEET_COLS)
+                + " (composite TiledLayer tile set; cell value = 1 + index into TILE_SHEET_ORDER = "
+                + TILE_SHEET_ORDER + ")");
     }
 
     private static BufferedImage findImage(List<LoadedAsset> loaded, AssetSpec spec) {
@@ -249,5 +282,37 @@ public class PackMarioAtlas {
             }
         }
         throw new IllegalStateException("Unreachable: " + spec.regionName());
+    }
+
+    private static BufferedImage findImageByRegionName(List<LoadedAsset> loaded, String regionName) {
+        for (LoadedAsset asset : loaded) {
+            if (asset.spec().regionName().equals(regionName)) {
+                return asset.image();
+            }
+        }
+        throw new IllegalStateException("No such source asset for tile sheet: " + regionName);
+    }
+
+    private static int ceilDiv(int a, int b) {
+        return (a + b - 1) / b;
+    }
+
+    private static BufferedImage buildTileSheet(List<LoadedAsset> loaded) {
+        int rows = ceilDiv(TILE_SHEET_ORDER.size(), TILE_SHEET_COLS);
+        BufferedImage sheet = new BufferedImage(
+                TILE_SHEET_COLS * TILE_SIZE, rows * TILE_SIZE, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = sheet.createGraphics();
+        for (int i = 0; i < TILE_SHEET_ORDER.size(); i++) {
+            BufferedImage tile = findImageByRegionName(loaded, TILE_SHEET_ORDER.get(i));
+            if (tile.getWidth() != TILE_SIZE || tile.getHeight() != TILE_SIZE) {
+                throw new IllegalStateException("Tile sheet source must be " + TILE_SIZE + "x"
+                        + TILE_SIZE + ": " + TILE_SHEET_ORDER.get(i));
+            }
+            int col = i % TILE_SHEET_COLS;
+            int row = i / TILE_SHEET_COLS;
+            g.drawImage(tile, col * TILE_SIZE, row * TILE_SIZE, null);
+        }
+        g.dispose();
+        return sheet;
     }
 }

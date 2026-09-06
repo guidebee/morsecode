@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -31,6 +32,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
@@ -77,16 +79,14 @@ fun SettingsScreen(
     var showResetConfirm by remember { mutableStateOf(false) }
     fun persist() = ConfigInfo.saveConfiguration(context)
 
+    Scaffold(
+        topBar = { MorseTopBar(title = stringResource(R.string.settings_title)) },
+        contentWindowInsets = WindowInsets(0, 0, 0, 0)
+    ) { padding ->
     Column(
-        modifier = Modifier.fillMaxSize().padding(20.dp).verticalScroll(rememberScrollState()),
+        modifier = Modifier.fillMaxSize().padding(padding).padding(20.dp).verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text(
-            text = stringResource(R.string.settings_title),
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.SemiBold
-        )
-
         SettingsCard(stringResource(R.string.settings_theme), Icons.Filled.Palette) {
             SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
                 ThemeMode.entries.forEachIndexed { index, mode ->
@@ -210,6 +210,7 @@ fun SettingsScreen(
                 Text(stringResource(R.string.settings_reset_button))
             }
         }
+    }
     }
 
     if (showResetConfirm) {

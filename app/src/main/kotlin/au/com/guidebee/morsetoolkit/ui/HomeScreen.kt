@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -26,8 +27,10 @@ import androidx.compose.material.icons.filled.Style
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -36,7 +39,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import au.com.guidebee.morsetoolkit.activity.R
@@ -44,6 +46,7 @@ import au.com.guidebee.morsetoolkit.training.KochOrder
 import au.com.guidebee.morsetoolkit.training.KochProgression
 import au.com.guidebee.morsetoolkit.training.StreakTracker
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     onOpenKoch: () -> Unit,
@@ -73,35 +76,39 @@ fun HomeScreen(
         ToolItem(stringResource(R.string.battlecity), Icons.Filled.SportsEsports, onOpenBattleCity)
     )
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp)
-    ) {
-        Text(
-            text = stringResource(R.string.app_name),
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.SemiBold
-        )
+    Scaffold(
+        topBar = { MorseTopBar(title = stringResource(R.string.app_name)) },
+        // The bottom tab bar (a sibling Scaffold in MorseApp) already reserves
+        // exactly its own height for this content; this screen's own topBar
+        // already bakes in the status bar inset. Nothing left for this
+        // Scaffold to add on either edge.
+        contentWindowInsets = WindowInsets(0, 0, 0, 0)
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(padding)
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
+        ) {
+            StreakCard(
+                streak = streakTracker.currentStreak,
+                xp = streakTracker.totalXp,
+                level = streakTracker.level,
+                xpIntoLevel = streakTracker.xpIntoLevel
+            )
 
-        StreakCard(
-            streak = streakTracker.currentStreak,
-            xp = streakTracker.totalXp,
-            level = streakTracker.level,
-            xpIntoLevel = streakTracker.xpIntoLevel
-        )
+            ContinueTrainingCard(
+                unlockedCount = progression.unlockedCharacters.size,
+                totalCount = KochOrder.sequence.size,
+                onClick = onOpenKoch
+            )
 
-        ContinueTrainingCard(
-            unlockedCount = progression.unlockedCharacters.size,
-            totalCount = KochOrder.sequence.size,
-            onClick = onOpenKoch
-        )
+            Text(stringResource(R.string.home_section_tools), style = MaterialTheme.typography.titleMedium)
 
-        Text(stringResource(R.string.home_section_tools), style = MaterialTheme.typography.titleMedium)
-
-        ToolGrid(toolItems)
+            ToolGrid(toolItems)
+        }
     }
 }
 

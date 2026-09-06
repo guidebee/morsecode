@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.PlayArrow
@@ -22,7 +21,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -82,16 +80,7 @@ fun FlashcardScreen(onBack: () -> Unit) {
     }
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.flashcard)) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
-                    }
-                }
-            )
-        }
+        topBar = { MorseTopBar(title = stringResource(R.string.flashcard), onBack = onBack) }
     ) { padding ->
         Column(
             modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp),

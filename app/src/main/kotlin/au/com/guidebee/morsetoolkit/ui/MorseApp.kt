@@ -1,5 +1,6 @@
 package au.com.guidebee.morsetoolkit.ui
 
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
@@ -54,6 +55,14 @@ fun MorseApp(
     val showBottomBar = currentRoute == Routes.HOME || currentRoute == Routes.LIBRARY || currentRoute == Routes.SETTINGS
 
     Scaffold(
+        // This Scaffold has no topBar of its own, so by default it would
+        // reserve a full status-bar-height gap for the content on every
+        // route - on top of the identical status-bar inset each pushed
+        // screen's own Scaffold+TopAppBar already reserves for itself. That
+        // double reservation was the "extra empty space above the title" on
+        // Transmit/Receive/Decoder. Zeroing it here leaves inset handling to
+        // whichever screen-level Scaffold actually owns it.
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
             if (showBottomBar) {
                 NavigationBar {

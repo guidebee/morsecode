@@ -13,7 +13,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Style
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -23,6 +25,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -32,6 +35,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
@@ -39,6 +43,7 @@ import au.com.guidebee.morsetoolkit.ConfigInfo
 import au.com.guidebee.morsetoolkit.activity.R
 import au.com.guidebee.morsetoolkit.helper.MorseEncoder
 import au.com.guidebee.morsetoolkit.helper.MorseHelper
+import au.com.guidebee.morsetoolkit.training.TutorialPreference
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlin.random.Random
@@ -53,9 +58,18 @@ import kotlin.random.Random
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FlashcardScreen(onBack: () -> Unit) {
+    val context = LocalContext.current
     val encoder = remember { MorseEncoder(2) }
     DisposableEffect(Unit) { onDispose { encoder.release() } }
     val scope = rememberCoroutineScope()
+
+    var showTutorial by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        if (!TutorialPreference.hasSeen(context, "flashcard")) {
+            showTutorial = true
+            TutorialPreference.markSeen(context, "flashcard")
+        }
+    }
 
     val letters = remember {
         MorseHelper.initTestLetters(
@@ -80,7 +94,17 @@ fun FlashcardScreen(onBack: () -> Unit) {
     }
 
     Scaffold(
-        topBar = { MorseTopBar(title = stringResource(R.string.flashcard), onBack = onBack) }
+        topBar = {
+            MorseTopBar(
+                title = stringResource(R.string.flashcard),
+                onBack = onBack,
+                actions = {
+                    IconButton(onClick = { showTutorial = true }) {
+                        Icon(Icons.Filled.HelpOutline, contentDescription = stringResource(R.string.action_help))
+                    }
+                }
+            )
+        }
     ) { padding ->
         Column(
             modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp),
@@ -128,6 +152,18 @@ fun FlashcardScreen(onBack: () -> Unit) {
 
             Spacer(modifier = Modifier.weight(1f))
         }
+    }
+
+    if (showTutorial) {
+        TutorialDialog(
+            title = stringResource(R.string.flashcard),
+            tips = listOf(
+                TutorialTip(Icons.Filled.Style, stringResource(R.string.tutorial_flashcard_tip1)),
+                TutorialTip(Icons.AutoMirrored.Filled.KeyboardArrowRight, stringResource(R.string.tutorial_flashcard_tip2)),
+                TutorialTip(Icons.Filled.PlayArrow, stringResource(R.string.tutorial_flashcard_tip3))
+            ),
+            onDismiss = { showTutorial = false }
+        )
     }
 }
 

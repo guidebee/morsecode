@@ -9,10 +9,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.HelpOutline
+import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -44,6 +48,7 @@ import au.com.guidebee.morsetoolkit.helper.MorseHelper
 import au.com.guidebee.morsetoolkit.training.LetterDrill
 import au.com.guidebee.morsetoolkit.training.LetterDrillResult
 import au.com.guidebee.morsetoolkit.training.LetterRoundState
+import au.com.guidebee.morsetoolkit.training.TutorialPreference
 import au.com.guidebee.morsetoolkit.training.WordDrill
 import au.com.guidebee.morsetoolkit.training.WordLetterResult
 import au.com.guidebee.morsetoolkit.ui.theme.CorrectGreen
@@ -63,6 +68,7 @@ private enum class ReceiveTab { LETTER, WORD, FREE }
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReceiveScreen(onBack: () -> Unit) {
+    val context = LocalContext.current
     var tab by remember { mutableStateOf(ReceiveTab.LETTER) }
     val encoder = remember { MorseEncoder(ConfigInfo.morseReceiveWPM) }
     DisposableEffect(Unit) { onDispose { encoder.release() } }
@@ -71,8 +77,26 @@ fun ReceiveScreen(onBack: () -> Unit) {
         scope.launch(Dispatchers.Default) { encoder.playMorseCode(text) }
     }
 
+    var showTutorial by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        if (!TutorialPreference.hasSeen(context, "receive")) {
+            showTutorial = true
+            TutorialPreference.markSeen(context, "receive")
+        }
+    }
+
     Scaffold(
-        topBar = { MorseTopBar(title = stringResource(R.string.receive), onBack = onBack) }
+        topBar = {
+            MorseTopBar(
+                title = stringResource(R.string.receive),
+                onBack = onBack,
+                actions = {
+                    IconButton(onClick = { showTutorial = true }) {
+                        Icon(Icons.Filled.HelpOutline, contentDescription = stringResource(R.string.action_help))
+                    }
+                }
+            )
+        }
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
             SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
@@ -98,6 +122,18 @@ fun ReceiveScreen(onBack: () -> Unit) {
                 ReceiveTab.FREE -> ReceiveFreeTextPlayback(onPlay = ::play)
             }
         }
+    }
+
+    if (showTutorial) {
+        TutorialDialog(
+            title = stringResource(R.string.receive),
+            tips = listOf(
+                TutorialTip(Icons.Filled.SwapHoriz, stringResource(R.string.tutorial_receive_tip1)),
+                TutorialTip(Icons.Filled.VolumeUp, stringResource(R.string.tutorial_receive_tip2)),
+                TutorialTip(Icons.Filled.Key, stringResource(R.string.tutorial_receive_tip3))
+            ),
+            onDismiss = { showTutorial = false }
+        )
     }
 }
 

@@ -7,8 +7,15 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.HelpOutline
+import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
@@ -24,6 +31,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -34,6 +42,7 @@ import au.com.guidebee.morsetoolkit.helper.MorseHelper
 import au.com.guidebee.morsetoolkit.training.LetterDrill
 import au.com.guidebee.morsetoolkit.training.LetterDrillResult
 import au.com.guidebee.morsetoolkit.training.LetterRoundState
+import au.com.guidebee.morsetoolkit.training.TutorialPreference
 import au.com.guidebee.morsetoolkit.training.WordDrill
 import au.com.guidebee.morsetoolkit.training.WordLetterResult
 import au.com.guidebee.morsetoolkit.ui.theme.CorrectGreen
@@ -52,10 +61,29 @@ private enum class TransmitTab { LETTER, WORD, FREE }
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TransmitScreen(onBack: () -> Unit, onOpenSendPractice: () -> Unit) {
+    val context = LocalContext.current
     var tab by remember { mutableStateOf(TransmitTab.LETTER) }
 
+    var showTutorial by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        if (!TutorialPreference.hasSeen(context, "transmit")) {
+            showTutorial = true
+            TutorialPreference.markSeen(context, "transmit")
+        }
+    }
+
     Scaffold(
-        topBar = { MorseTopBar(title = stringResource(R.string.transmit), onBack = onBack) }
+        topBar = {
+            MorseTopBar(
+                title = stringResource(R.string.transmit),
+                onBack = onBack,
+                actions = {
+                    IconButton(onClick = { showTutorial = true }) {
+                        Icon(Icons.Filled.HelpOutline, contentDescription = stringResource(R.string.action_help))
+                    }
+                }
+            )
+        }
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
             SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
@@ -81,6 +109,18 @@ fun TransmitScreen(onBack: () -> Unit, onOpenSendPractice: () -> Unit) {
                 TransmitTab.FREE -> FreeTextRouteCard(onOpenSendPractice)
             }
         }
+    }
+
+    if (showTutorial) {
+        TutorialDialog(
+            title = stringResource(R.string.transmit),
+            tips = listOf(
+                TutorialTip(Icons.Filled.SwapHoriz, stringResource(R.string.tutorial_transmit_tip1)),
+                TutorialTip(Icons.Filled.Key, stringResource(R.string.tutorial_transmit_tip2)),
+                TutorialTip(Icons.Filled.Send, stringResource(R.string.tutorial_transmit_tip3))
+            ),
+            onDismiss = { showTutorial = false }
+        )
     }
 }
 

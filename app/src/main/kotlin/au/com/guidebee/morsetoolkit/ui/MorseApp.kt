@@ -13,7 +13,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -23,8 +25,10 @@ import au.com.guidebee.morsetoolkit.activity.R
 import au.com.guidebee.morsetoolkit.activity.battlecity.BattleCityGameActivity
 import au.com.guidebee.morsetoolkit.activity.flappybird.FlappyBirdGameActivity
 import au.com.guidebee.morsetoolkit.training.ThemeMode
+import au.com.guidebee.morsetoolkit.training.TutorialPreference
 
 private object Routes {
+    const val ONBOARDING = "onboarding"
     const val HOME = "home"
     const val KOCH = "koch"
     const val SEND = "send"
@@ -49,10 +53,14 @@ fun MorseApp(
     themeMode: ThemeMode,
     onThemeModeChange: (ThemeMode) -> Unit
 ) {
+    val context = LocalContext.current
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     val showBottomBar = currentRoute == Routes.HOME || currentRoute == Routes.LIBRARY || currentRoute == Routes.SETTINGS
+    val startDestination = remember {
+        if (TutorialPreference.hasSeenOnboarding(context)) Routes.HOME else Routes.ONBOARDING
+    }
 
     Scaffold(
         // This Scaffold has no topBar of its own, so by default it would
@@ -90,9 +98,19 @@ fun MorseApp(
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = Routes.HOME,
+            startDestination = startDestination,
             modifier = Modifier.padding(innerPadding)
         ) {
+            composable(Routes.ONBOARDING) {
+                OnboardingScreen(
+                    onFinish = {
+                        TutorialPreference.markOnboardingSeen(context)
+                        navController.navigate(Routes.HOME) {
+                            popUpTo(Routes.ONBOARDING) { inclusive = true }
+                        }
+                    }
+                )
+            }
             composable(Routes.HOME) {
                 HomeScreen(
                     onOpenKoch = { navController.navigate(Routes.KOCH) },
@@ -137,7 +155,11 @@ fun MorseApp(
             composable(Routes.SETTINGS) {
                 SettingsScreen(
                     themeMode = themeMode,
-                    onThemeModeChange = onThemeModeChange
+                    onThemeModeChange = onThemeModeChange,
+                    onReplayTutorials = {
+                        TutorialPreference.resetAll(context)
+                        navController.navigate(Routes.ONBOARDING) { launchSingleTop = true }
+                    }
                 )
             }
         }

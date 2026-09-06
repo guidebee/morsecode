@@ -9,10 +9,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Hearing
+import androidx.compose.material.icons.filled.HelpOutline
+import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
@@ -38,6 +43,7 @@ import au.com.guidebee.morsetoolkit.training.FarnsworthTone
 import au.com.guidebee.morsetoolkit.training.KochProgression
 import au.com.guidebee.morsetoolkit.training.SessionScheduler
 import au.com.guidebee.morsetoolkit.training.StreakTracker
+import au.com.guidebee.morsetoolkit.training.TutorialPreference
 import au.com.guidebee.morsetoolkit.ui.theme.CorrectGreen
 import au.com.guidebee.morsetoolkit.ui.theme.WrongRed
 import kotlinx.coroutines.delay
@@ -62,6 +68,14 @@ fun KochTrainerScreen(onBack: () -> Unit) {
     var correctCount by remember { mutableIntStateOf(0) }
     var roundCount by remember { mutableIntStateOf(0) }
     var unlockedSize by remember { mutableIntStateOf(progression.unlockedCharacters.size) }
+
+    var showTutorial by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        if (!TutorialPreference.hasSeen(context, "koch")) {
+            showTutorial = true
+            TutorialPreference.markSeen(context, "koch")
+        }
+    }
 
     fun playTarget() {
         tone.play(target.toString(), characterWpm.toInt(), effectiveWpm.toInt().coerceAtMost(characterWpm.toInt()))
@@ -97,7 +111,17 @@ fun KochTrainerScreen(onBack: () -> Unit) {
     }
 
     Scaffold(
-        topBar = { MorseTopBar(title = stringResource(R.string.koch_title), onBack = onBack) }
+        topBar = {
+            MorseTopBar(
+                title = stringResource(R.string.koch_title),
+                onBack = onBack,
+                actions = {
+                    IconButton(onClick = { showTutorial = true }) {
+                        Icon(Icons.Filled.HelpOutline, contentDescription = stringResource(R.string.action_help))
+                    }
+                }
+            )
+        }
     ) { padding ->
         Column(
             modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp),
@@ -162,5 +186,17 @@ fun KochTrainerScreen(onBack: () -> Unit) {
                 )
             }
         }
+    }
+
+    if (showTutorial) {
+        TutorialDialog(
+            title = stringResource(R.string.koch_title),
+            tips = listOf(
+                TutorialTip(Icons.Filled.Hearing, stringResource(R.string.tutorial_koch_tip1)),
+                TutorialTip(Icons.Filled.Key, stringResource(R.string.tutorial_koch_tip2)),
+                TutorialTip(Icons.Filled.Tune, stringResource(R.string.tutorial_koch_tip3))
+            ),
+            onDismiss = { showTutorial = false }
+        )
     }
 }

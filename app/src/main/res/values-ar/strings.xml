@@ -133,4 +133,53 @@
     <string name="receive_free_text_label">نص لتشغيله</string>
     <string name="decoder_wpm">ك/د: %.1f</string>
     <string name="decoder_permission_denied">لا يمكن لوحدة فك شفرة مورس العمل دون إذن الميكروفون.</string>
+
+    <!-- In-app tutorials: onboarding pager, Home coach-mark tour, and per-screen tip dialogs -->
+    <string name="action_help">مساعدة</string>
+    <string name="tutorial_got_it">حسنًا</string>
+    <string name="onboarding_skip">تخطي</string>
+    <string name="onboarding_get_started">ابدأ الآن</string>
+    <string name="onboarding_title_1">مرحبًا بك في Morse Code Toolkit</string>
+    <string name="onboarding_body_1">تعلّم إرسال شفرة مورس واستقبالها من خلال دروس موجّهة وأدوات تدريب عملية وبعض الألعاب.</string>
+    <string name="onboarding_title_2">درّب أذنك بطريقة كوخ</string>
+    <string name="onboarding_body_2">يشغّل مدرّب كوخ أحرفًا حقيقية بالسرعة الكاملة منذ البداية. أجب بشكل صحيح بما يكفي ليُفتح الحرف التالي.</string>
+    <string name="onboarding_title_3">تدرّب على الإرسال والاستقبال</string>
+    <string name="onboarding_body_3">أرسل رسائل يدويًا في تدريب الإرسال، أو تدرّب عبر شاشات الإرسال والاستقبال وفاكّ شفرة الصوت المباشر.</string>
+    <string name="onboarding_title_4">تابع تقدّمك</string>
+    <string name="onboarding_body_4">حافظ على سلسلة أيامك، واكسب نقاط خبرة، وتصفّح رموز Q والبادئات التشغيلية ونداءات المحطات في مكتبة المحتوى. يمكنك إعادة هذه الجولة في أي وقت من الإعدادات.</string>
+
+    <string name="home_tour_streak_title">سلسلة أيامك</string>
+    <string name="home_tour_streak_body">تدرّب يوميًا للحفاظ على سلسلة أيامك وكسب نقاط خبرة نحو المستوى التالي.</string>
+    <string name="home_tour_continue_title">متابعة التدريب</string>
+    <string name="home_tour_continue_body">عد مباشرة إلى مدرّب كوخ من حيث توقفت.</string>
+    <string name="home_tour_tools_title">جميع أدواتك</string>
+    <string name="home_tour_tools_body">تدريب الإرسال، الإرسال، الاستقبال، فاكّ الشفرة، البطاقات التعليمية والمزيد — كل شيء هنا في هذه الشبكة.</string>
+
+    <string name="settings_tutorials_title">الدروس والمساعدة</string>
+    <string name="settings_tutorials_subtitle">أعد جولة الترحيب ونصائح كل شاشة</string>
+    <string name="settings_tutorials_button">إعادة جولة التطبيق</string>
+
+    <string name="tutorial_koch_tip1">تشغّل كل جولة حرفًا واحدًا بالسرعة الكاملة — استمع فقط.</string>
+    <string name="tutorial_koch_tip2">أرسل ما سمعته باستخدام المفتاح أدناه؛ لا يوجد نص لتقرأه.</string>
+    <string name="tutorial_koch_tip3">أجب بشكل صحيح على عدد كافٍ من الأحرف لفتح الحرف التالي. استخدم المنزلقات لضبط سرعة الحرف والسرعة الفعلية.</string>
+
+    <string name="tutorial_send_tip1">تظهر كلمة أو نداء هدف في الأعلى — أرسله باستخدام المفتاح المستقيم على الشاشة.</string>
+    <string name="tutorial_send_tip2">يُفكّ إرسالك مباشرة أدناه أثناء العمل.</string>
+    <string name="tutorial_send_tip3">اضغط هدف جديد للحصول على كلمة جديدة، أو مسح لبدء الحالية من جديد.</string>
+
+    <string name="tutorial_transmit_tip1">اختر حرف أو كلمة أو نص حر في الأعلى.</string>
+    <string name="tutorial_transmit_tip2">لا توجد تلميحة صوتية هنا — أرسل من الذاكرة، وإذا نفدت محاولاتك يظهر الحل.</string>
+    <string name="tutorial_transmit_tip3">يحيلك النص الحر إلى تدريب الإرسال للإرسال الحر المفتوح.</string>
+
+    <string name="tutorial_receive_tip1">اختر حرف أو كلمة أو نص حر في الأعلى.</string>
+    <string name="tutorial_receive_tip2">يُشغَّل كل هدف كصوت أولًا — اضغط إعادة لسماعه مرة أخرى.</string>
+    <string name="tutorial_receive_tip3">أرسل ما سمعته باستخدام المفتاح على الشاشة؛ النص الحر يكتفي بتشغيل النص المكتوب صوتيًا.</string>
+
+    <string name="tutorial_decoder_tip1">يحتاج إلى إذن الميكروفون — امنح الإذن لتفعيل فكّ الشفرة المباشر.</string>
+    <string name="tutorial_decoder_tip2">فعّل POWER ليرسم الراسم الشفوي الصوت الوارد؛ يظهر النص المفكوك في الطرفية أدناه.</string>
+    <string name="tutorial_decoder_tip3">جرّب تشغيل عينة للحصول على عرض توضيحي، وبدّل بين الكلاسيكي والنطاق الضيق إذا لم تُفَك إشارة صاخبة جيدًا.</string>
+
+    <string name="tutorial_flashcard_tip1">اضغط على البطاقة للتبديل بين الحرف ونمط مورس الخاص به.</string>
+    <string name="tutorial_flashcard_tip2">استخدم الأسهم للانتقال إلى البطاقة التالية — يُضبط الترتيب أو العشوائية من الإعدادات.</string>
+    <string name="tutorial_flashcard_tip3">اضغط على أيقونة التشغيل لسماع النمط منطوقًا.</string>
 </resources>

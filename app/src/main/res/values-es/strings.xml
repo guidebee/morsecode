@@ -133,4 +133,53 @@
     <string name="receive_free_text_label">Texto para reproducir</string>
     <string name="decoder_wpm">PPM: %.1f</string>
     <string name="decoder_permission_denied">El decodificador de código Morse no puede funcionar sin permiso de micrófono.</string>
+
+    <!-- In-app tutorials: onboarding pager, Home coach-mark tour, and per-screen tip dialogs -->
+    <string name="action_help">Ayuda</string>
+    <string name="tutorial_got_it">Entendido</string>
+    <string name="onboarding_skip">Omitir</string>
+    <string name="onboarding_get_started">Comenzar</string>
+    <string name="onboarding_title_1">Bienvenido a Morse Code Toolkit</string>
+    <string name="onboarding_body_1">Aprende a enviar y recibir código Morse con lecciones guiadas, herramientas de práctica y un par de juegos.</string>
+    <string name="onboarding_title_2">Entrena tu oído con el método Koch</string>
+    <string name="onboarding_body_2">El Entrenador Koch reproduce caracteres reales a velocidad completa desde el principio. Acierta lo suficiente y se desbloquea el siguiente carácter.</string>
+    <string name="onboarding_title_3">Practica el envío y la recepción</string>
+    <string name="onboarding_body_3">Transmite mensajes a mano en Práctica de envío, o trabaja con Transmitir, Recibir y el Decodificador de audio en vivo.</string>
+    <string name="onboarding_title_4">Sigue tu progreso</string>
+    <string name="onboarding_body_4">Mantén tu racha, gana XP y explora códigos Q, prosignos y indicativos en la Biblioteca de contenido. Puedes repetir este recorrido cuando quieras desde Ajustes.</string>
+
+    <string name="home_tour_streak_title">Tu racha</string>
+    <string name="home_tour_streak_body">Practica a diario para mantener tu racha viva y ganar XP hacia el siguiente nivel.</string>
+    <string name="home_tour_continue_title">Continuar entrenamiento</string>
+    <string name="home_tour_continue_body">Vuelve directamente al Entrenador Koch donde lo dejaste.</string>
+    <string name="home_tour_tools_title">Todas tus herramientas</string>
+    <string name="home_tour_tools_body">Práctica de envío, Transmitir, Recibir, Decodificador, tarjetas y más: todo está en esta cuadrícula.</string>
+
+    <string name="settings_tutorials_title">Tutoriales y ayuda</string>
+    <string name="settings_tutorials_subtitle">Repite el recorrido de bienvenida y los consejos de cada pantalla</string>
+    <string name="settings_tutorials_button">Repetir recorrido</string>
+
+    <string name="tutorial_koch_tip1">Cada ronda reproduce un carácter a velocidad completa: solo escucha.</string>
+    <string name="tutorial_koch_tip2">Transmite lo que escuchaste con la llave de abajo; no hay texto que leer.</string>
+    <string name="tutorial_koch_tip3">Acierta lo suficiente para desbloquear el siguiente carácter. Usa los deslizadores para ajustar la velocidad de carácter y la efectiva.</string>
+
+    <string name="tutorial_send_tip1">Aparece una palabra o indicativo objetivo arriba: transmítelo con la llave en pantalla.</string>
+    <string name="tutorial_send_tip2">Lo que transmites se decodifica en vivo debajo, a medida que avanzas.</string>
+    <string name="tutorial_send_tip3">Toca Nuevo objetivo para una palabra nueva, o Borrar para reiniciar la actual.</string>
+
+    <string name="tutorial_transmit_tip1">Elige Letra, Palabra o Texto libre arriba.</string>
+    <string name="tutorial_transmit_tip2">No hay pista de audio: transmite de memoria; si se agotan los intentos, se revela la respuesta.</string>
+    <string name="tutorial_transmit_tip3">Texto libre te lleva a Práctica de envío para transmitir libremente.</string>
+
+    <string name="tutorial_receive_tip1">Elige Letra, Palabra o Texto libre arriba.</string>
+    <string name="tutorial_receive_tip2">Cada objetivo se reproduce primero como sonido: toca Repetir para escucharlo de nuevo.</string>
+    <string name="tutorial_receive_tip3">Transmite lo que escuchaste con la llave en pantalla; Texto libre solo reproduce en voz el texto escrito.</string>
+
+    <string name="tutorial_decoder_tip1">Necesita acceso al micrófono: concede el permiso para habilitar la decodificación en vivo.</string>
+    <string name="tutorial_decoder_tip2">Activa POWER y el osciloscopio traza el audio entrante; el texto decodificado aparece en la terminal de abajo.</string>
+    <string name="tutorial_decoder_tip3">Prueba Reproducir muestra para una demostración, y cambia entre Clásico/Banda estrecha si una señal ruidosa no se decodifica bien.</string>
+
+    <string name="tutorial_flashcard_tip1">Toca la tarjeta para alternar entre la letra y su patrón Morse.</string>
+    <string name="tutorial_flashcard_tip2">Usa las flechas para pasar a la siguiente tarjeta: el orden o el azar se ajusta en Ajustes.</string>
+    <string name="tutorial_flashcard_tip3">Toca el icono de reproducir para escuchar el patrón en voz alta.</string>
 </resources>

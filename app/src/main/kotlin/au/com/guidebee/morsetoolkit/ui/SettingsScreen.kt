@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Dialpad
 import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.Hearing
+import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Send
@@ -73,7 +74,8 @@ import au.com.guidebee.morsetoolkit.training.ThemeMode
 @Composable
 fun SettingsScreen(
     themeMode: ThemeMode,
-    onThemeModeChange: (ThemeMode) -> Unit
+    onThemeModeChange: (ThemeMode) -> Unit,
+    onReplayTutorials: () -> Unit
 ) {
     val context = LocalContext.current
     var showResetConfirm by remember { mutableStateOf(false) }
@@ -208,6 +210,18 @@ fun SettingsScreen(
             OutlinedButton(onClick = { showResetConfirm = true }) {
                 Icon(Icons.Filled.RestartAlt, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
                 Text(stringResource(R.string.settings_reset_button))
+            }
+        }
+
+        SettingsCard(stringResource(R.string.settings_tutorials_title), Icons.Filled.HelpOutline) {
+            Text(
+                text = stringResource(R.string.settings_tutorials_subtitle),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            OutlinedButton(onClick = onReplayTutorials) {
+                Icon(Icons.Filled.HelpOutline, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
+                Text(stringResource(R.string.settings_tutorials_button))
             }
         }
     }

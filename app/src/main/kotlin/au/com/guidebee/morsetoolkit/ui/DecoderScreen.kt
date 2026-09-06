@@ -26,9 +26,16 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.GraphicEq
+import androidx.compose.material.icons.filled.HelpOutline
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -46,6 +53,9 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -63,6 +73,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import au.com.guidebee.morsetoolkit.activity.R
 import au.com.guidebee.morsetoolkit.decoder.AudioMorseCodeDecoder
 import au.com.guidebee.morsetoolkit.training.DecoderViewModel
+import au.com.guidebee.morsetoolkit.training.TutorialPreference
 import au.com.guidebee.morsetoolkit.ui.theme.ScopeAmber
 import au.com.guidebee.morsetoolkit.ui.theme.ScopeBezel
 import au.com.guidebee.morsetoolkit.ui.theme.ScopeBezelDark
@@ -125,6 +136,14 @@ fun DecoderScreen(onBack: () -> Unit) {
         }
     }
 
+    var showTutorial by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        if (!TutorialPreference.hasSeen(context, "decoder")) {
+            showTutorial = true
+            TutorialPreference.markSeen(context, "decoder")
+        }
+    }
+
     Scaffold(
         topBar = {
             MorseTopBar(
@@ -133,8 +152,14 @@ fun DecoderScreen(onBack: () -> Unit) {
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = ScopeBezelDark,
                     titleContentColor = ScopePanelText,
-                    navigationIconContentColor = ScopePanelText
-                )
+                    navigationIconContentColor = ScopePanelText,
+                    actionIconContentColor = ScopePanelText
+                ),
+                actions = {
+                    IconButton(onClick = { showTutorial = true }) {
+                        Icon(Icons.Filled.HelpOutline, contentDescription = stringResource(R.string.action_help))
+                    }
+                }
             )
         },
         containerColor = ScopeBezelDark
@@ -159,6 +184,18 @@ fun DecoderScreen(onBack: () -> Unit) {
             OutputTerminal(text = state.outputText, modifier = Modifier.fillMaxWidth().weight(1f))
             ActionButtonRow(state = state, viewModel = viewModel)
         }
+    }
+
+    if (showTutorial) {
+        TutorialDialog(
+            title = stringResource(R.string.decoder),
+            tips = listOf(
+                TutorialTip(Icons.Filled.Mic, stringResource(R.string.tutorial_decoder_tip1)),
+                TutorialTip(Icons.Filled.GraphicEq, stringResource(R.string.tutorial_decoder_tip2)),
+                TutorialTip(Icons.Filled.Tune, stringResource(R.string.tutorial_decoder_tip3))
+            ),
+            onDismiss = { showTutorial = false }
+        )
     }
 }
 

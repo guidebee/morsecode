@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.Hearing
+import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.MenuBook
@@ -27,13 +28,18 @@ import androidx.compose.material.icons.filled.Style
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -45,6 +51,7 @@ import au.com.guidebee.morsetoolkit.activity.R
 import au.com.guidebee.morsetoolkit.training.KochOrder
 import au.com.guidebee.morsetoolkit.training.KochProgression
 import au.com.guidebee.morsetoolkit.training.StreakTracker
+import au.com.guidebee.morsetoolkit.training.TutorialPreference
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -64,6 +71,15 @@ fun HomeScreen(
     val streakTracker = remember { StreakTracker(context) }
     val progression = remember { KochProgression(context) }
 
+    val coachMarkState = remember { CoachMarkState() }
+    var showTour by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        if (!TutorialPreference.hasSeen(context, "home_tour")) {
+            showTour = true
+            TutorialPreference.markSeen(context, "home_tour")
+        }
+    }
+
     val toolItems = listOf(
         ToolItem(stringResource(R.string.home_tool_send), Icons.Filled.Key, onOpenSend),
         ToolItem(stringResource(R.string.home_tool_library), Icons.Filled.MenuBook, onOpenLibrary),
@@ -77,44 +93,81 @@ fun HomeScreen(
     )
 
     Scaffold(
-        topBar = { MorseTopBar(title = stringResource(R.string.app_name)) },
+        topBar = {
+            MorseTopBar(
+                title = stringResource(R.string.app_name),
+                actions = {
+                    IconButton(onClick = { showTour = true }) {
+                        Icon(Icons.Filled.HelpOutline, contentDescription = stringResource(R.string.action_help))
+                    }
+                }
+            )
+        },
         // The bottom tab bar (a sibling Scaffold in MorseApp) already reserves
         // exactly its own height for this content; this screen's own topBar
         // already bakes in the status bar inset. Nothing left for this
         // Scaffold to add on either edge.
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(padding)
-                .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
-        ) {
-            StreakCard(
-                streak = streakTracker.currentStreak,
-                xp = streakTracker.totalXp,
-                level = streakTracker.level,
-                xpIntoLevel = streakTracker.xpIntoLevel
-            )
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(padding)
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp)
+            ) {
+                StreakCard(
+                    streak = streakTracker.currentStreak,
+                    xp = streakTracker.totalXp,
+                    level = streakTracker.level,
+                    xpIntoLevel = streakTracker.xpIntoLevel,
+                    modifier = Modifier.coachMarkAnchor(coachMarkState, "streak")
+                )
 
-            ContinueTrainingCard(
-                unlockedCount = progression.unlockedCharacters.size,
-                totalCount = KochOrder.sequence.size,
-                onClick = onOpenKoch
-            )
+                ContinueTrainingCard(
+                    unlockedCount = progression.unlockedCharacters.size,
+                    totalCount = KochOrder.sequence.size,
+                    onClick = onOpenKoch,
+                    modifier = Modifier.coachMarkAnchor(coachMarkState, "continue")
+                )
 
-            Text(stringResource(R.string.home_section_tools), style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.home_section_tools), style = MaterialTheme.typography.titleMedium)
 
-            ToolGrid(toolItems)
+                ToolGrid(toolItems, modifier = Modifier.coachMarkAnchor(coachMarkState, "tools"))
+            }
+
+            if (showTour) {
+                CoachMarkOverlay(
+                    steps = listOf(
+                        CoachMarkStep(
+                            anchorKey = "streak",
+                            title = stringResource(R.string.home_tour_streak_title),
+                            description = stringResource(R.string.home_tour_streak_body)
+                        ),
+                        CoachMarkStep(
+                            anchorKey = "continue",
+                            title = stringResource(R.string.home_tour_continue_title),
+                            description = stringResource(R.string.home_tour_continue_body)
+                        ),
+                        CoachMarkStep(
+                            anchorKey = "tools",
+                            title = stringResource(R.string.home_tour_tools_title),
+                            description = stringResource(R.string.home_tour_tools_body)
+                        )
+                    ),
+                    state = coachMarkState,
+                    onFinish = { showTour = false }
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun StreakCard(streak: Int, xp: Int, level: Int, xpIntoLevel: Int) {
-    Card(shape = RoundedCornerShape(20.dp)) {
+private fun StreakCard(streak: Int, xp: Int, level: Int, xpIntoLevel: Int, modifier: Modifier = Modifier) {
+    Card(modifier = modifier, shape = RoundedCornerShape(20.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(20.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -146,9 +199,10 @@ private fun StreakCard(streak: Int, xp: Int, level: Int, xpIntoLevel: Int) {
 }
 
 @Composable
-private fun ContinueTrainingCard(unlockedCount: Int, totalCount: Int, onClick: () -> Unit) {
+private fun ContinueTrainingCard(unlockedCount: Int, totalCount: Int, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Card(
         onClick = onClick,
+        modifier = modifier,
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
     ) {
@@ -180,8 +234,8 @@ private fun ContinueTrainingCard(unlockedCount: Int, totalCount: Int, onClick: (
 private data class ToolItem(val label: String, val icon: ImageVector, val onClick: () -> Unit)
 
 @Composable
-private fun ToolGrid(items: List<ToolItem>) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+private fun ToolGrid(items: List<ToolItem>, modifier: Modifier = Modifier) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
         items.chunked(3).forEach { rowItems ->
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
                 rowItems.forEach { item ->

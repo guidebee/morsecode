@@ -139,4 +139,53 @@
     <string name="decoder_algorithm">Algorithm</string>
     <string name="decoder_mode_classic">Classic</string>
     <string name="decoder_mode_narrowband">Narrowband</string>
+
+    <!-- In-app tutorials: onboarding pager, Home coach-mark tour, and per-screen tip dialogs -->
+    <string name="action_help">Help</string>
+    <string name="tutorial_got_it">Got it</string>
+    <string name="onboarding_skip">Skip</string>
+    <string name="onboarding_get_started">Get Started</string>
+    <string name="onboarding_title_1">Welcome to Morse Code Toolkit</string>
+    <string name="onboarding_body_1">Learn to send and receive Morse code with guided lessons, hands-on practice tools, and a couple of games.</string>
+    <string name="onboarding_title_2">Train your ear with the Koch method</string>
+    <string name="onboarding_body_2">Koch Trainer plays real characters at full speed from the start. Answer enough correctly and the next character unlocks.</string>
+    <string name="onboarding_title_3">Practice sending &amp; receiving</string>
+    <string name="onboarding_body_3">Key messages by hand in Send Practice, or work through Transmit, Receive and the live audio Decoder.</string>
+    <string name="onboarding_title_4">Track your progress</string>
+    <string name="onboarding_body_4">Build a streak, earn XP, and browse Q-codes, prosigns and callsigns in the Content Library. Replay this tour anytime from Settings.</string>
+
+    <string name="home_tour_streak_title">Your streak</string>
+    <string name="home_tour_streak_body">Practice daily to keep your streak alive and earn XP toward the next level.</string>
+    <string name="home_tour_continue_title">Continue training</string>
+    <string name="home_tour_continue_body">Jump straight back into the Koch Trainer where you left off.</string>
+    <string name="home_tour_tools_title">All your tools</string>
+    <string name="home_tour_tools_body">Send Practice, Transmit, Receive, Decoder, Flashcards and more — everything lives in this grid.</string>
+
+    <string name="settings_tutorials_title">Tutorials &amp; Help</string>
+    <string name="settings_tutorials_subtitle">Replay the welcome tour and every screen\'s tips</string>
+    <string name="settings_tutorials_button">Replay app tour</string>
+
+    <string name="tutorial_koch_tip1">Each round plays one character at full speed — just listen.</string>
+    <string name="tutorial_koch_tip2">Tap out what you heard on the key below; there\'s no text to read.</string>
+    <string name="tutorial_koch_tip3">Answer enough characters correctly to unlock the next one. Use the sliders to adjust character and effective speed.</string>
+
+    <string name="tutorial_send_tip1">A target word or callsign appears at the top — key it out using the on-screen straight key.</string>
+    <string name="tutorial_send_tip2">Your keyed input is decoded live below as you go.</string>
+    <string name="tutorial_send_tip3">Tap New Target for a fresh word, or Clear to start the current one over.</string>
+
+    <string name="tutorial_transmit_tip1">Choose Letter, Word or Free Text at the top.</string>
+    <string name="tutorial_transmit_tip2">There\'s no audio hint — key from memory, then a reveal shows the answer if you run out of tries.</string>
+    <string name="tutorial_transmit_tip3">Free Text hands off to Send Practice for open-ended keying.</string>
+
+    <string name="tutorial_receive_tip1">Choose Letter, Word or Free Text at the top.</string>
+    <string name="tutorial_receive_tip2">Each target plays as sound first — tap Replay to hear it again.</string>
+    <string name="tutorial_receive_tip3">Key back what you heard on the on-screen key; Free Text just plays typed text aloud.</string>
+
+    <string name="tutorial_decoder_tip1">Needs microphone access — grant the permission prompt to enable live decoding.</string>
+    <string name="tutorial_decoder_tip2">Flip POWER on and the scope traces incoming audio; decoded text appears in the terminal below.</string>
+    <string name="tutorial_decoder_tip3">Try Play Sample for a demo, and switch Classic/Narrowband if a noisy signal isn\'t decoding well.</string>
+
+    <string name="tutorial_flashcard_tip1">Tap the card to flip between the letter and its Morse pattern.</string>
+    <string name="tutorial_flashcard_tip2">Use the arrows to move to the next card — order or shuffle is set in Settings.</string>
+    <string name="tutorial_flashcard_tip3">Tap the play icon to hear the pattern spoken aloud.</string>
 </resources>

@@ -11,6 +11,7 @@ import com.guidebee.game.graphics.Texture;
 import com.guidebee.game.graphics.TextureRegion;
 import com.guidebee.game.microedition.LayerManager;
 import com.guidebee.game.ui.ClickListener;
+import com.guidebee.game.ui.GameController;
 import com.guidebee.game.ui.ImageButton;
 import com.guidebee.game.ui.InputEvent;
 import com.guidebee.game.ui.drawable.TextureRegionDrawable;
@@ -54,13 +55,15 @@ import au.com.guidebee.morsetoolkit.activity.mario.world.MarioWorld;
  * original's {@code Player_CheckPoint.collided}/{@code Player_Flag.collided}
  * or {@code IncreaseLevel} - see {@link #beginTransition}.
  *
- * <p>On-screen controls (left/right/down/jump/fire + a back button) are
- * drawn procedurally via {@code Pixmap} and wired up as {@code ImageButton}s
- * added via {@code addHUDComponent} - the same pattern Battle City uses for
- * its own controls (see {@code BattleCityGameScene.createBackIcon}), rather
- * than Battle City's full 8-direction {@code GameController}/{@code Touchpad}
- * (overkill for Mario's needs, and it needs its own background/knob art this
- * project doesn't have for Mario).
+ * <p>On-screen controls are the same {@code GameController} (touchpad +
+ * button A/B) widget Battle City uses for its own controls, loading the same
+ * "style 08" joystick art (see {@code MarioResourceManager}'s
+ * {@code CONTROLLER_TEXTURES} and {@code BattleCityGameScene}'s constructor)
+ * from this project's {@code assets/controller/} tree - button A is jump,
+ * button B is fire, and the touchpad's knob drives left/right/down (see
+ * {@code MarioInputController}). A separate small back button, drawn
+ * procedurally via {@code Pixmap} exactly like
+ * {@code BattleCityGameScene.createBackIcon}, exits to the main menu.
  *
  * <h2>Why the HUD buttons are repositioned every frame</h2>
  * {@code Stage} draws its main layer and its HUD layer (added via
@@ -78,10 +81,22 @@ import au.com.guidebee.morsetoolkit.activity.mario.world.MarioWorld;
  */
 public class MarioGameScreen extends ScreenAdapter {
 
-    private static final int BUTTON_SIZE = 28;
-    private static final int JUMP_BUTTON_SIZE = 32;
     private static final int BACK_BUTTON_SIZE = 16;
     private static final int MARGIN = 8;
+
+    // The same "style 08" joystick art Battle City loads for its own
+    // GameController - see MarioResourceManager.CONTROLLER_TEXTURES. Button A
+    // reuses Battle City's own fire-button icon ("Shoot" - BattleCityGameScene
+    // wires BUTTON_A to the tank's fire key), now Mario's fire button too;
+    // button B reuses Battle City's unused button ("Virgin" - built by
+    // BattleCityGameScene's GameController but never acted on), repurposed
+    // here as Mario's jump button.
+    private static final String CONTROLLER_BACKGROUND = "controller/Backgrounds/Back_08.png";
+    private static final String CONTROLLER_KNOB = "controller/Joystick/Joystick_08.png";
+    private static final String CONTROLLER_BUTTON_A_NORMAL = "controller/Buttons/Button_08_Normal_Shoot.png";
+    private static final String CONTROLLER_BUTTON_A_PRESSED = "controller/Buttons/Button_08_Pressed_Shoot.png";
+    private static final String CONTROLLER_BUTTON_B_NORMAL = "controller/Buttons/Button_08_Normal_Virgin.png";
+    private static final String CONTROLLER_BUTTON_B_PRESSED = "controller/Buttons/Button_08_Pressed_Virgin.png";
 
     /** How long the "walk into the flag/castle" sequence plays before the next level loads - {@code "CheckPoints"} kind only. */
     private static final float FLAG_WALK_SECONDS = 1.2f;
@@ -101,11 +116,7 @@ public class MarioGameScreen extends ScreenAdapter {
     private final CameraController camera;
     private final String levelAttribute;
 
-    private final ImageButton leftButton;
-    private final ImageButton rightButton;
-    private final ImageButton downButton;
-    private final ImageButton jumpButton;
-    private final ImageButton fireButton;
+    private final GameController gameController;
     private final ImageButton backButton;
 
     private final float clearR;
@@ -159,15 +170,9 @@ public class MarioGameScreen extends ScreenAdapter {
         LevelLoader.spawnEnemies(level);
         LevelLoader.spawnLifts(level);
 
-        ImageButton[] hudButtons = createOnScreenControls(gamePlay);
-        leftButton = hudButtons[0];
-        rightButton = hudButtons[1];
-        downButton = hudButtons[2];
-        jumpButton = hudButtons[3];
-        fireButton = hudButtons[4];
-        backButton = hudButtons[5];
-        MarioInputController input = new MarioInputController(
-                leftButton, rightButton, downButton, jumpButton, fireButton);
+        gameController = createGameController();
+        backButton = createBackButton(gamePlay);
+        MarioInputController input = new MarioInputController(gameController);
 
         // The original engine's per-level "pos" field (BasicLevel.pos) is never
         // actually read anywhere in Mario.java - the shipped game only reaches a
@@ -197,31 +202,42 @@ public class MarioGameScreen extends ScreenAdapter {
     }
 
     /**
-     * Left/right/down/jump/fire on-screen buttons, plus a back button - see
-     * the class doc. Returns the buttons so the constructor can assign them
-     * to final fields; {@link #repositionHud} re-anchors them to the screen
-     * every frame.
+     * The on-screen joystick + A/B buttons - see the class doc. Button A
+     * (the "Shoot" icon) is fire, button B (the "Virgin" icon) is jump;
+     * {@code MarioInputController} polls both plus the touchpad knob.
      */
-    private ImageButton[] createOnScreenControls(MarioGamePlay gamePlay) {
-        ImageButton left = new ImageButton(
-                createArrowIcon(BUTTON_SIZE, false, Arrow.LEFT), createArrowIcon(BUTTON_SIZE, true, Arrow.LEFT));
-        left.setSize(BUTTON_SIZE, BUTTON_SIZE);
+    private GameController createGameController() {
+        Texture background = MarioResourceManager.controllerTexture(CONTROLLER_BACKGROUND);
+        GameController controller = new GameController(
+                new TextureRegionDrawable(new TextureRegion(background)),
+                controllerDrawable(CONTROLLER_KNOB),
+                controllerDrawable(CONTROLLER_BUTTON_A_NORMAL),
+                controllerDrawable(CONTROLLER_BUTTON_A_PRESSED),
+                controllerDrawable(CONTROLLER_BUTTON_B_NORMAL),
+                controllerDrawable(CONTROLLER_BUTTON_B_PRESSED));
+        // GameController never sizes itself from its own touchpad (see
+        // repositionHud) - set explicitly here so repositionHud can anchor it
+        // to the screen's bottom edge.
+        controller.setSize(background.getWidth(), background.getHeight());
+        controller.setAlpha(MarioResourceManager.controllerAlpha());
+        // Battle City's own GameController.layout() positions button A/B from
+        // getParent().getWidth() - that only resolves to the real screen
+        // width when the parent is the engine's dedicated, always-full-screen
+        // tableGameControl (set up by Stage's constructor - see
+        // setGameController's doc), which is exactly what setGameController
+        // (rather than addHUDComponent, used for every other HUD widget here)
+        // wires it into. Without this, that width read back as 0, pushing
+        // both buttons off-screen.
+        layerManager.setGameController(controller);
+        return controller;
+    }
 
-        ImageButton right = new ImageButton(
-                createArrowIcon(BUTTON_SIZE, false, Arrow.RIGHT), createArrowIcon(BUTTON_SIZE, true, Arrow.RIGHT));
-        right.setSize(BUTTON_SIZE, BUTTON_SIZE);
+    private static TextureRegionDrawable controllerDrawable(String assetPath) {
+        return new TextureRegionDrawable(new TextureRegion(MarioResourceManager.controllerTexture(assetPath)));
+    }
 
-        ImageButton down = new ImageButton(
-                createArrowIcon(BUTTON_SIZE, false, Arrow.DOWN), createArrowIcon(BUTTON_SIZE, true, Arrow.DOWN));
-        down.setSize(BUTTON_SIZE, BUTTON_SIZE);
-
-        ImageButton jump = new ImageButton(
-                createArrowIcon(JUMP_BUTTON_SIZE, false, Arrow.UP), createArrowIcon(JUMP_BUTTON_SIZE, true, Arrow.UP));
-        jump.setSize(JUMP_BUTTON_SIZE, JUMP_BUTTON_SIZE);
-
-        ImageButton fire = new ImageButton(createFireIcon(BUTTON_SIZE, false), createFireIcon(BUTTON_SIZE, true));
-        fire.setSize(BUTTON_SIZE, BUTTON_SIZE);
-
+    /** Exits to the main menu - otherwise this screen has no other way back. */
+    private ImageButton createBackButton(MarioGamePlay gamePlay) {
         ImageButton back = new ImageButton(createBackIcon(BACK_BUTTON_SIZE, false), createBackIcon(BACK_BUTTON_SIZE, true));
         back.setSize(BACK_BUTTON_SIZE, BACK_BUTTON_SIZE);
         back.addListener(new ClickListener() {
@@ -230,69 +246,25 @@ public class MarioGameScreen extends ScreenAdapter {
                 gamePlay.finish();
             }
         });
-
-        layerManager.addHUDComponent(left);
-        layerManager.addHUDComponent(right);
-        layerManager.addHUDComponent(down);
-        layerManager.addHUDComponent(jump);
-        layerManager.addHUDComponent(fire);
         layerManager.addHUDComponent(back);
-
-        return new ImageButton[]{left, right, down, jump, fire, back};
+        return back;
     }
 
-    /** Re-anchors the HUD buttons to a fixed screen position - see the class doc. */
+    /** Re-anchors the HUD to a fixed screen position - see the class doc. */
     private void repositionHud() {
         float scrollX = camera.getX();
         float scrollY = camera.getY();
-        // Left/right/down form a small D-pad (down sits below-left); jump/fire
-        // sit together on the right, matching where a thumb naturally rests.
-        leftButton.setPosition(scrollX + MARGIN, scrollY + MARGIN);
-        rightButton.setPosition(scrollX + MARGIN * 2 + BUTTON_SIZE, scrollY + MARGIN);
-        downButton.setPosition(scrollX + MARGIN, scrollY + MARGIN * 2 + BUTTON_SIZE);
-        jumpButton.setPosition(scrollX + MarioConfiguration.VIEWPORT_WIDTH - JUMP_BUTTON_SIZE - MARGIN, scrollY + MARGIN);
-        fireButton.setPosition(scrollX + MarioConfiguration.VIEWPORT_WIDTH - JUMP_BUTTON_SIZE - MARGIN * 2 - BUTTON_SIZE,
-                scrollY + MARGIN);
+        // GameController positions its own knob/buttons relative to its
+        // parent's width (see com.guidebee.game.ui.GameController.layout()),
+        // so it must stay flush against the screen's left edge for those
+        // offsets to land at the intended screen edges; scrollY increases
+        // downward (see the class doc's Y-down note), so the bottom edge is
+        // scrollY + VIEWPORT_HEIGHT, and subtracting the controller's own
+        // height anchors it there instead of the screen's top-left corner.
+        gameController.setPosition(scrollX,
+                scrollY + MarioConfiguration.VIEWPORT_HEIGHT - gameController.getHeight() - MARGIN);
         backButton.setPosition(scrollX + MarioConfiguration.VIEWPORT_WIDTH / 2f - BACK_BUTTON_SIZE / 2f,
                 scrollY + MarioConfiguration.VIEWPORT_HEIGHT - BACK_BUTTON_SIZE - MARGIN / 2f);
-    }
-
-    private enum Arrow {LEFT, RIGHT, UP, DOWN}
-
-    private static TextureRegionDrawable createArrowIcon(int size, boolean pressed, Arrow direction) {
-        Pixmap pixmap = new Pixmap(size, size, Pixmap.Format.RGBA8888);
-        pixmap.setColor(0f, 0f, 0f, pressed ? 0.85f : 0.45f);
-        pixmap.fillCircle(size / 2, size / 2, size / 2 - 1);
-        pixmap.setColor(1f, 1f, 1f, 1f);
-        switch (direction) {
-            case LEFT:
-                pixmap.fillTriangle(size * 2 / 3, size / 4, size * 2 / 3, size * 3 / 4, size / 3, size / 2);
-                break;
-            case RIGHT:
-                pixmap.fillTriangle(size / 3, size / 4, size / 3, size * 3 / 4, size * 2 / 3, size / 2);
-                break;
-            case UP:
-                pixmap.fillTriangle(size / 4, size * 2 / 3, size * 3 / 4, size * 2 / 3, size / 2, size / 3);
-                break;
-            case DOWN:
-                pixmap.fillTriangle(size / 4, size / 3, size * 3 / 4, size / 3, size / 2, size * 2 / 3);
-                break;
-        }
-        Texture texture = new Texture(pixmap);
-        pixmap.dispose();
-        return new TextureRegionDrawable(new TextureRegion(texture));
-    }
-
-    /** A plain filled dot on the same button background as the arrows - Fire Mario's shoot button. */
-    private static TextureRegionDrawable createFireIcon(int size, boolean pressed) {
-        Pixmap pixmap = new Pixmap(size, size, Pixmap.Format.RGBA8888);
-        pixmap.setColor(0f, 0f, 0f, pressed ? 0.85f : 0.45f);
-        pixmap.fillCircle(size / 2, size / 2, size / 2 - 1);
-        pixmap.setColor(1f, 1f, 1f, 1f);
-        pixmap.fillCircle(size / 2, size / 2, size / 4);
-        Texture texture = new Texture(pixmap);
-        pixmap.dispose();
-        return new TextureRegionDrawable(new TextureRegion(texture));
     }
 
     private static TextureRegionDrawable createBackIcon(int size, boolean pressed) {

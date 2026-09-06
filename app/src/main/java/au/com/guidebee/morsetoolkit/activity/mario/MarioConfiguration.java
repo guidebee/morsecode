@@ -33,9 +33,26 @@ public final class MarioConfiguration {
     public static final int TILE_CHOCOLATE_UNDERGROUND = 5;
     public static final int TILE_CHOCOLATE_CASTLE = 6;
 
-    /** The default "camera window" size, in world pixels - see {@code CameraController}. */
-    public static final int VIEWPORT_WIDTH = 12 * TILE_SIZE;
-    public static final int VIEWPORT_HEIGHT = 7 * TILE_SIZE;
+    /**
+     * The default "camera window" size, in world pixels - see
+     * {@code CameraController}. 20x15 tiles, matching the original desktop
+     * game's own window ({@code GameLoader.setup(..., new Dimension(640, 480),
+     * ...)} in {@code MarioRun}/{@code WholeGame}) tile-for-tile, rather than
+     * an arbitrary, much more zoomed-in 12x7 - on a phone screen the old
+     * narrower window blew up every tile/sprite far larger relative to the
+     * screen than the desktop game ever looked, leaving too little of the
+     * level visible at once to play comfortably.
+     *
+     * <p>The on-screen joystick/buttons are deliberately exempt from this -
+     * unlike world tiles/sprites, they need to stay a constant, comfortably
+     * tappable size no matter how far this "camera window" is zoomed in or
+     * out, so {@code MarioResourceManager}'s {@code CONTROLLER_TEXTURES}
+     * scales them to compensate for whatever this constant is currently set
+     * to, keeping their on-screen footprint fixed instead of shrinking or
+     * growing along with the world.
+     */
+    public static final int VIEWPORT_WIDTH = 20 * TILE_SIZE;
+    public static final int VIEWPORT_HEIGHT = 15 * TILE_SIZE;
 
     /**
      * The largest per-frame delta any physics code should ever act on, in

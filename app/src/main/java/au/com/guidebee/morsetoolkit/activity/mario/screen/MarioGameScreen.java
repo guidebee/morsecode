@@ -208,6 +208,8 @@ public class MarioGameScreen extends ScreenAdapter {
     private LevelState levelState = LevelState.PLAYING;
     private LevelDefinition.Checkpoint pendingCheckpoint;
     private float transitionTimer;
+    /** True during a flag checkpoint's fall-down-the-pole phase, before the walk-right phase starts - see {@link #beginTransition}. */
+    private boolean flagSliding;
 
     private float zoom = 1f;
     /** The gesture's {@code initialDistance} last seen - a change means a new pinch began. */
@@ -277,8 +279,8 @@ public class MarioGameScreen extends ScreenAdapter {
         gameController = createGameController();
         backButton = createBackButton();
         zoomDetector = createZoomDetector();
-        scoreHud = new ScoreHud(layerManager, MarioResourceManager.uiSkin());
-        pauseOverlay = new PauseOverlay(layerManager, MarioResourceManager.uiSkin(),
+        scoreHud = new ScoreHud(layerManager, MarioResourceManager.uiSkinYDown());
+        pauseOverlay = new PauseOverlay(layerManager, MarioResourceManager.uiSkinYDown(),
                 this::resumeGame, gamePlay::goToMenu);
         MarioInputController input = new MarioInputController(gameController);
 
@@ -541,6 +543,21 @@ public class MarioGameScreen extends ScreenAdapter {
                 }
                 break;
             case ENTERING:
+                if (flagSliding) {
+                    // Ported from the original's MarioSlidingDown, minus its
+                    // own separate overlay sprite/hardcoded pole-height tile
+                    // row: the forced-neutral command below already stops
+                    // Mario steering while letting normal gravity/collision
+                    // carry him down to this level's own ground line.
+                    if (player.isOnGround()) {
+                        flagSliding = false;
+                        PlayerCommand walkForward = new PlayerCommand();
+                        walkForward.right = true;
+                        player.setForcedCommand(walkForward);
+                        transitionTimer = FLAG_WALK_SECONDS;
+                    }
+                    break;
+                }
                 transitionTimer -= delta;
                 if (transitionTimer <= 0) {
                     advanceToNextLevel();
@@ -612,17 +629,20 @@ public class MarioGameScreen extends ScreenAdapter {
         levelState = LevelState.ENTERING;
         player.setInvincibleFor(TRANSITION_INVINCIBILITY_SECONDS);
 
-        PlayerCommand forced = new PlayerCommand();
         boolean isFlag = "CheckPoints".equals(checkpoint.kind);
-        forced.right = isFlag;
-        player.setForcedCommand(forced);
-        transitionTimer = isFlag ? FLAG_WALK_SECONDS : PIPE_ENTRY_SECONDS;
+        // Flag: fall down the pole first (see updateLevelCompletion's
+        // ENTERING case) before walking right into the castle. Pipe: hold
+        // still the whole time - both start from the same forced-neutral
+        // command.
+        flagSliding = isFlag;
+        player.setForcedCommand(new PlayerCommand());
+        transitionTimer = isFlag ? Float.MAX_VALUE : PIPE_ENTRY_SECONDS;
 
         if (currentMusic != null) {
             currentMusic.stop();
         }
         boolean isPipe = checkpoint.kind.startsWith("InsidePump");
-        MarioResourceManager.sound(isPipe ? "smb_pipe" : "smb_stage_clear").play();
+        MarioResourceManager.sound(isFlag ? "smb_flagpole" : (isPipe ? "smb_pipe" : "smb_stage_clear")).play();
     }
 
     private void advanceToNextLevel() {

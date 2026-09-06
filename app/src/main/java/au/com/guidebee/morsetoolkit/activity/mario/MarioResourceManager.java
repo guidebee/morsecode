@@ -3,11 +3,14 @@ package au.com.guidebee.morsetoolkit.activity.mario;
 import com.guidebee.game.GameEngine;
 import com.guidebee.game.audio.Music;
 import com.guidebee.game.audio.Sound;
+import com.guidebee.game.graphics.BitmapFont;
 import com.guidebee.game.graphics.Pixmap;
 import com.guidebee.game.graphics.Texture;
 import com.guidebee.game.graphics.TextureAtlas;
 import com.guidebee.game.graphics.TextureRegion;
+import com.guidebee.game.ui.Label;
 import com.guidebee.game.ui.Skin;
+import com.guidebee.game.ui.TextButton;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -198,15 +201,21 @@ public final class MarioResourceManager {
     }
 
     private static Skin uiSkin;
+    private static Skin uiSkinYDown;
 
     /**
      * The engine's bundled default font/skin (already used elsewhere in this
      * app - see {@code flappybird.ui.DesignWindow}/{@code OptionWindow}),
-     * lazily built once and cached here so {@code ScoreHud}/{@code PauseOverlay}/
-     * {@code MarioMenuScreen} don't each reload its texture on every screen
-     * construction. Used instead of sliced digit-sprite art (Battle City's
-     * and Flappy Bird's own HUD approach) because it needs no new atlas
-     * assets - see {@code ScoreHud}'s class doc.
+     * lazily built once and cached here so {@code MarioMenuScreen} doesn't
+     * reload its texture on every screen construction. Used instead of
+     * sliced digit-sprite art (Battle City's and Flappy Bird's own HUD
+     * approach) because it needs no new atlas assets - see {@code ScoreHud}'s
+     * class doc.
+     *
+     * <p>For a normal y-up camera only - {@code MarioMenuScreen}'s. See
+     * {@link #uiSkinYDown()} for the y-down-camera variant
+     * {@code MarioGameScreen}'s {@code ScoreHud}/{@code PauseOverlay} need
+     * instead.
      */
     public static Skin uiSkin() {
         if (uiSkin == null) {
@@ -214,5 +223,40 @@ public final class MarioResourceManager {
                     new TextureAtlas("skin/default/uiskin.atlas"));
         }
         return uiSkin;
+    }
+
+    /**
+     * Same skin as {@link #uiSkin()}, but with the "default" {@link
+     * Label.LabelStyle}/{@link TextButton.TextButtonStyle} fonts swapped for
+     * a separately-loaded, {@code flip=true} {@link BitmapFont} (see that
+     * class's own "flip" constructor doc - it exists for exactly this).
+     *
+     * <p>The bundled {@code default-font} is baked for a y-up projection -
+     * fine for {@link #uiSkin()}'s callers ({@code MarioMenuScreen}, Battle
+     * City, Flappy Bird all use a normal y-up camera), but
+     * {@code MarioGameScreen}'s {@code gdxCamera.setToOrtho(true, ...)} is
+     * y-down (matching the original Java2D engine's own coordinate
+     * convention - see {@code CameraController}), and its
+     * {@code ScoreHud}/{@code PauseOverlay} Labels render through that same
+     * shared camera (see {@code MarioGameScreen}'s "Pinch-to-zoom" section),
+     * so the unflipped font would render upside down there - as it did
+     * before this method existed, when everything shared {@link #uiSkin()}
+     * and flipping its font in place fixed the in-game HUD but broke
+     * {@code MarioMenuScreen}'s (upside-down there instead, since its
+     * y-up camera doesn't need the flip). A second, independently-loaded
+     * {@code Skin} instance (rather than mutating {@link #uiSkin()}'s
+     * shared "default" style objects, which every caller of {@link
+     * #uiSkin()} - including {@code MarioMenuScreen} - reads by reference)
+     * keeps the two contexts' fonts independent.
+     */
+    public static Skin uiSkinYDown() {
+        if (uiSkinYDown == null) {
+            uiSkinYDown = new Skin(GameEngine.files.internal("skin/default/uiskin.json"),
+                    new TextureAtlas("skin/default/uiskin.atlas"));
+            BitmapFont flippedFont = new BitmapFont(GameEngine.files.internal("skin/default/default.fnt"), true);
+            uiSkinYDown.get(Label.LabelStyle.class).font = flippedFont;
+            uiSkinYDown.get(TextButton.TextButtonStyle.class).font = flippedFont;
+        }
+        return uiSkinYDown;
     }
 }

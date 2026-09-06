@@ -53,6 +53,8 @@ public class Player extends Layer {
     private static final float ACCEL = 2f;
     private static final float FRICTION = 1f;
     private static final float MAX_SPEED = 60f;
+    /** Ported from {@code Player.GoToRight/Left}'s {@code turbo} branch - same acceleration, higher cap. */
+    private static final float MAX_SPEED_TURBO = 100f;
 
     private static final float GRAVITY_STEP = 0.42f;
     private static final float GRAVITY_CAP = 10f;
@@ -68,10 +70,36 @@ public class Player extends Layer {
     /** How far past the level's bottom edge counts as "fallen into a pit" - matches {@code FireBall}'s own fall-out margin. */
     private static final float FALL_OUT_MARGIN_PX = 200f;
 
+    /** Every growth/shrink strip's per-frame delay - matches e.g. {@code SmallToBigMarioAnim}'s {@code setAnimationTimer(new Timer(120))}. */
+    private static final float TRANSITION_FRAME_SECONDS = 120f / 1000f;
+    /** All 4 growth/shrink strips share this cell size (the "Big"/"Fire" box - even the small-mario-posed early frames of a growth strip use it), confirmed against the source PNGs' pixel dimensions. */
+    private static final int TRANSITION_FRAME_WIDTH = 32;
+    private static final int TRANSITION_FRAME_HEIGHT = 64;
+
+    /**
+     * ~100 original 60fps ticks of standing still before falling starts, then
+     * launching upward before gravity pulls it back down - ported from
+     * {@code Animations/FallingDeadMario.java}'s {@code delay}/{@code Gravity}
+     * fields (this is the enemy-hit-while-Small death; a pit-fall stays the
+     * original's instant, silent {@code Restart()} - see {@link #act}).
+     */
+    private static final float DEATH_INITIAL_DELAY_SECONDS = 100f / 60f;
+    private static final float DEATH_GRAVITY_START = -10f;
+    private static final float DEATH_GRAVITY_STEP = 0.5f;
+    private static final float DEATH_GRAVITY_CAP = 10f;
+
+    /**
+     * Ported from {@code Player.update}'s {@code Timer save = new Timer(1000)}
+     * checkpoint-save logic: while grounded, every second, if Mario has moved
+     * more than this far from the last saved point, it becomes the new
+     * respawn point - so a mid-level death doesn't always send him all the
+     * way back to the level's start.
+     */
+    private static final float CHECKPOINT_SAVE_INTERVAL_SECONDS = 1f;
+    private static final float CHECKPOINT_MIN_DISTANCE_PX = 1000f;
+
     private final MarioWorld world;
     private final MarioInputController input;
-    private final float spawnX;
-    private final float spawnY;
 
     private TextureRegion[][] frameRegions;
     private int frameCols;
@@ -88,22 +116,62 @@ public class Player extends Layer {
     private float walkCycleAccumulator;
     private int walkCyclePos;
 
+    /** Ported from {@code Player}'s {@code invincible} field - post-hit/post-death, and the only one of the three that blinks (see {@link #paint}). */
     private float invincibleTimer;
     private float starTimer;
+    /**
+     * A shield with no original-engine equivalent - {@code MarioGameScreen}'s
+     * level-complete/pipe-entry sequences use it (see
+     * {@link #setInvincibleFor}) to keep a stray touch from interrupting a
+     * scripted transition, which the original instead achieves by actually
+     * deactivating enemies. Kept separate from {@link #invincibleTimer} so it
+     * doesn't trigger that field's blink rendering during a transition -
+     * only {@link #isInvincible} treats them the same.
+     */
+    private float shieldTimer;
+    /** Toggled once per frame while {@code invincibleTimer > 0} - ported from {@code Player.render}'s {@code blink} field. */
+    private boolean blinkVisible = true;
 
     /** Set while a level-complete/pipe-entry sequence drives Mario instead of the player - see {@code MarioGameScreen}. */
     private PlayerCommand forcedCommand;
     private PlayerCommand lastCommand;
 
-    /** Set by {@link #die()}, cleared by {@link #consumeDeath()} - see that method's doc. */
+    /** Set by {@link #die()}/{@link #beginDeathAnimation()}, cleared by {@link #consumeDeath()} - see that method's doc. */
     private boolean justDied;
+
+    /** Non-null while a {@link #grow()}/{@link #shrink()} morph flipbook is playing - see {@link #beginTransition}. */
+    private TextureRegion[] transitionFrames;
+    private int transitionFrameIndex;
+    private float transitionFrameTimer;
+    private PlayerPowerState transitionTarget;
+
+    /** True while the enemy-hit-while-Small death (launch up, then fall) is playing - see {@link #beginDeathAnimation}. */
+    private boolean dyingAnimated;
+    private float deathDelayTimer;
+    private float deathGravity;
+
+    /** The current respawn point - starts at the level's spawn tile, advances via {@link #updateCheckpoint} while grounded. */
+    private float checkpointX;
+    private float checkpointY;
+    private float checkpointSaveTimer;
+
+    /** Lazily-split palette-swap frame grids for {@link #hasStar}'s color-cycle render - see {@link #paint}. */
+    private TextureRegion[][] smallBlackFrames;
+    private TextureRegion[][] smallGreenFrames;
+    private TextureRegion[][] smallRedFrames;
+    private TextureRegion[][] bigBlackFrames;
+    private TextureRegion[][] bigGreenFrames;
+    private TextureRegion[][] bigRedFrames;
+    /** 1..4, cycling Black/normal/Green/Red - ported from {@code Player.render}'s {@code currentFrame}. */
+    private int starColorIndex = 2;
+    private float starColorTimer;
 
     public Player(float x, float y, MarioWorld world, MarioInputController input) {
         super(x, y, PlayerPowerState.SMALL.width, PlayerPowerState.SMALL.height, true);
         this.world = world;
         this.input = input;
-        this.spawnX = x;
-        this.spawnY = y;
+        this.checkpointX = x;
+        this.checkpointY = y;
         initFrames(powerState);
     }
 
@@ -116,8 +184,99 @@ public class Player extends Layer {
 
     @Override
     public void paint(Batch g) {
+        if (dyingAnimated) {
+            g.draw(MarioResourceManager.region("small_dead_mario"), getX(), getY(),
+                    PlayerPowerState.SMALL.width, PlayerPowerState.SMALL.height);
+            return;
+        }
+        if (transitionFrames != null) {
+            g.draw(transitionFrames[transitionFrameIndex], getX(), getY(),
+                    TRANSITION_FRAME_WIDTH, TRANSITION_FRAME_HEIGHT);
+            return;
+        }
+        // Ported from Player.render(): a Star's color-cycle draw always wins
+        // over the plain post-hit invincibility blink below (the original
+        // draws both, in this order, onto the same spot every frame - the
+        // opaque Star sprite just happens to cover the base one).
+        if (hasStar()) {
+            g.draw(starColorRegion(), getX(), getY(), getWidth(), getHeight());
+            return;
+        }
+        // Ported from Player.render()'s `if (invincible > 0) { if (blink) ... }` -
+        // a plain on/off flicker, not a color-cycle.
+        if (invincibleTimer > 0 && !blinkVisible) {
+            return;
+        }
         TextureRegion region = frameRegions[frame / frameCols][frame % frameCols];
         g.draw(region, getX(), getY(), getWidth(), getHeight());
+    }
+
+    /** The current star-color-cycle frame, from whichever palette-swap grid matches {@link #powerState}. */
+    private TextureRegion starColorRegion() {
+        TextureRegion[][] frames;
+        switch (starColorIndex) {
+            case 1:
+                frames = powerState == PlayerPowerState.SMALL ? smallBlackFrames() : bigBlackFrames();
+                break;
+            case 3:
+                frames = powerState == PlayerPowerState.SMALL ? smallGreenFrames() : bigGreenFrames();
+                break;
+            case 4:
+                frames = powerState == PlayerPowerState.SMALL ? smallRedFrames() : bigRedFrames();
+                break;
+            default:
+                return frameRegions[frame / frameCols][frame % frameCols];
+        }
+        return frames[frame / frameCols][frame % frameCols];
+    }
+
+    private TextureRegion[][] smallBlackFrames() {
+        if (smallBlackFrames == null) {
+            smallBlackFrames = MarioResourceManager.region("small_black_mario")
+                    .split(PlayerPowerState.SMALL.width, PlayerPowerState.SMALL.height);
+        }
+        return smallBlackFrames;
+    }
+
+    private TextureRegion[][] smallGreenFrames() {
+        if (smallGreenFrames == null) {
+            smallGreenFrames = MarioResourceManager.region("small_green_mario")
+                    .split(PlayerPowerState.SMALL.width, PlayerPowerState.SMALL.height);
+        }
+        return smallGreenFrames;
+    }
+
+    private TextureRegion[][] smallRedFrames() {
+        if (smallRedFrames == null) {
+            smallRedFrames = MarioResourceManager.region("small_red_mario")
+                    .split(PlayerPowerState.SMALL.width, PlayerPowerState.SMALL.height);
+        }
+        return smallRedFrames;
+    }
+
+    /** Shared by Big and Fire (the original's own equivalent branch inexplicably always used Big-sized art here too, and no Fire-specific black/green/red art exists to port instead - see docs/MARIO_PORT_PLAN.md's asset survey). */
+    private TextureRegion[][] bigBlackFrames() {
+        if (bigBlackFrames == null) {
+            bigBlackFrames = MarioResourceManager.region("big_black_mario")
+                    .split(PlayerPowerState.BIG.width, PlayerPowerState.BIG.height);
+        }
+        return bigBlackFrames;
+    }
+
+    private TextureRegion[][] bigGreenFrames() {
+        if (bigGreenFrames == null) {
+            bigGreenFrames = MarioResourceManager.region("big_green_mario")
+                    .split(PlayerPowerState.BIG.width, PlayerPowerState.BIG.height);
+        }
+        return bigGreenFrames;
+    }
+
+    private TextureRegion[][] bigRedFrames() {
+        if (bigRedFrames == null) {
+            bigRedFrames = MarioResourceManager.region("big_red_mario")
+                    .split(PlayerPowerState.BIG.width, PlayerPowerState.BIG.height);
+        }
+        return bigRedFrames;
     }
 
     private void setFrame(int frame) {
@@ -127,17 +286,33 @@ public class Player extends Layer {
     @Override
     public void act(float delta) {
         super.act(delta);
+        float frames = delta * PHYSICS_FPS;
 
         if (invincibleTimer > 0) {
             invincibleTimer -= delta;
+            blinkVisible = !blinkVisible;
+        } else {
+            blinkVisible = true;
+        }
+        if (shieldTimer > 0) {
+            shieldTimer -= delta;
         }
         if (starTimer > 0) {
             starTimer -= delta;
+            updateStarColorCycle(delta);
+        }
+
+        if (dyingAnimated) {
+            updateDeathAnimation(delta, frames);
+            return;
+        }
+        if (transitionFrames != null) {
+            updateTransition(delta);
+            return;
         }
 
         PlayerCommand command = forcedCommand != null ? forcedCommand : input.poll();
         lastCommand = command;
-        float frames = delta * PHYSICS_FPS;
 
         applyHorizontalInput(command, frames);
         applyJump(command);
@@ -145,6 +320,7 @@ public class Player extends Layer {
 
         moveXWithCollision(speed / 20f * frames);
         moveYWithCollision(gravity * frames);
+        updateCheckpoint(delta);
 
         // A pit fall - ported from Mario.java's own `player.getY() > 500`
         // check, same idea as FireBall's own fall-out margin. Unconditional
@@ -156,6 +332,55 @@ public class Player extends Layer {
 
         applyFire(command);
         updateAnimation(command, frames);
+    }
+
+    /**
+     * Ported from {@code Player.update}'s {@code Timer save}-gated block:
+     * while grounded, every second, promote the current position to the
+     * respawn point if it's moved far enough from the last one - see
+     * {@link #CHECKPOINT_SAVE_INTERVAL_SECONDS}'s doc.
+     */
+    private void updateCheckpoint(float delta) {
+        if (!onGround) {
+            return;
+        }
+        checkpointSaveTimer += delta;
+        if (checkpointSaveTimer < CHECKPOINT_SAVE_INTERVAL_SECONDS) {
+            return;
+        }
+        checkpointSaveTimer = 0;
+        float dx = getX() - checkpointX;
+        float dy = getY() - checkpointY;
+        if (Math.sqrt(dx * dx + dy * dy) > CHECKPOINT_MIN_DISTANCE_PX) {
+            checkpointX = getX();
+            checkpointY = getY();
+        }
+    }
+
+    /**
+     * Ported from {@code Player.render}'s {@code Star} color-cycle block:
+     * cycles {@link #starColorIndex} through Black/normal/Green/Red, at a
+     * pace that quickens then eases as {@link #starTimer} counts down (the
+     * original re-derives the same thresholds off its own countdown field,
+     * {@code delay}; translated here into wall-clock seconds since one
+     * original tick was implicitly 1/60s).
+     */
+    private void updateStarColorCycle(float delta) {
+        float interval;
+        if (starTimer > 510f / 60f) {
+            interval = 0f;
+        } else if (starTimer > 200f / 60f) {
+            interval = 3f / 60f;
+        } else if (starTimer > 100f / 60f) {
+            interval = 6f / 60f;
+        } else {
+            interval = 11f / 60f;
+        }
+        starColorTimer += delta;
+        if (starColorTimer >= interval) {
+            starColorTimer = 0;
+            starColorIndex = starColorIndex % 4 + 1;
+        }
     }
 
     /** Ported from {@code Player.Fire()} - Fire Mario only, capped at 2 concurrent fireballs. */
@@ -179,12 +404,13 @@ public class Player extends Layer {
     }
 
     private void applyHorizontalInput(PlayerCommand command, float frames) {
+        float maxSpeed = command.runHeld ? MAX_SPEED_TURBO : MAX_SPEED;
         if (command.left) {
             facingRight = false;
-            speed = Math.max(speed - ACCEL * frames, -MAX_SPEED);
+            speed = Math.max(speed - ACCEL * frames, -maxSpeed);
         } else if (command.right) {
             facingRight = true;
-            speed = Math.min(speed + ACCEL * frames, MAX_SPEED);
+            speed = Math.min(speed + ACCEL * frames, maxSpeed);
         } else if (speed > 0) {
             speed = Math.max(0, speed - FRICTION * frames);
         } else if (speed < 0) {
@@ -288,48 +514,151 @@ public class Player extends Layer {
     }
 
     /**
-     * Small -> Big -> Fire, ported from {@code Player.Grow()}. Already-Fire
-     * is a no-op (matches the original). The original's multi-frame morph
-     * animation (which also briefly pauses enemies) is skipped - a cosmetic
-     * simplification, not a mechanic.
+     * Small -> Big -> Fire, ported from {@code Player.Grow()}: plays the
+     * matching morph flipbook (see {@link #beginTransition}) before the power
+     * state actually changes. Already-Fire is a no-op (matches the original,
+     * including that it still plays the powerup jingle).
      */
     public void grow() {
         if (powerState == PlayerPowerState.SMALL) {
-            changePowerState(PlayerPowerState.BIG);
+            beginTransition(hasStar() ? "small_to_big_star_mario" : "small_to_big_mario",
+                    PlayerPowerState.BIG, true);
         } else if (powerState == PlayerPowerState.BIG) {
-            changePowerState(PlayerPowerState.FIRE);
+            beginTransition("big_to_fire_mario", PlayerPowerState.FIRE, false);
         }
         MarioResourceManager.sound("smb_powerup").play();
     }
 
     /**
-     * Fire -> Big -> Small -> (death), ported from {@code Player.Decerease()}.
-     * No-ops while invincible, matching the original.
+     * Fire -> Small, Big -> Small, or Small -> (death), ported from
+     * {@code Player.Decerease()}. No-ops while invincible, matching the
+     * original. Note Fire drops straight to Small, not to Big first - the
+     * original's own {@code ID==3} branch calls {@code setID(1)} (Small)
+     * despite a stale "big mario" comment beside it.
      */
     public void shrink() {
         if (isInvincible()) {
             return;
         }
         if (powerState == PlayerPowerState.FIRE) {
-            changePowerState(PlayerPowerState.BIG);
+            beginTransition("fire_to_small_mario", PlayerPowerState.SMALL, false);
             invincibleTimer = INVINCIBLE_SECONDS;
             MarioResourceManager.sound("smb_pipe").play();
         } else if (powerState == PlayerPowerState.BIG) {
-            changePowerState(PlayerPowerState.SMALL);
+            beginTransition("big_to_small_mario", PlayerPowerState.SMALL, false);
             invincibleTimer = INVINCIBLE_SECONDS;
             MarioResourceManager.sound("smb_pipe").play();
         } else {
-            die();
+            beginDeathAnimation();
         }
     }
 
     /**
-     * Small Mario's death - either a hit while already Small ({@link #shrink()}),
-     * or falling into a pit (see {@link #act}'s fall-out check, which unlike
-     * {@code shrink()} can fire at any power state, so this resets back to
-     * Small itself rather than assuming it already is). Respawns immediately
-     * at the level's spawn point, matching the original's instant
-     * {@code Restart()} - no death animation/delay.
+     * Starts a {@link #grow()}/{@link #shrink()} morph flipbook - ported from
+     * {@code Player.Grow()}/{@code Decerease()}'s {@code AnimationGroup.add(new
+     * ...MarioAnim(...))} calls. Unlike the original (a separate overlay
+     * sprite drawn on top of the frozen real player, with the whole world
+     * paused via {@code pauseEnemys()} until it finishes), this drives
+     * {@link #paint}'s render directly and only freezes the player itself
+     * (via {@link #act}'s early return while {@link #transitionFrames} is
+     * set) - simpler, and enemies are rendered harmless anyway since
+     * {@link #shrink()} already grants {@link #INVINCIBLE_SECONDS} up front
+     * for the shrink case (the grow case was never in danger either way,
+     * since nothing in this port damages Mario while growing).
+     *
+     * @param preShiftUp32 true only for Small -> Big: the strip's cells are
+     *                     all Big-sized (32x64, confirmed against the source
+     *                     PNGs) even for its small-mario-posed early frames,
+     *                     so the box needs the extra headroom immediately,
+     *                     not just once {@link #changePowerState} applies at
+     *                     the end - matches the original's own immediate
+     *                     {@code this.setY(this.getY() - 32)} in this one case.
+     */
+    private void beginTransition(String regionName, PlayerPowerState target, boolean preShiftUp32) {
+        TextureRegion[] rowFrames = MarioResourceManager.region(regionName)
+                .split(TRANSITION_FRAME_WIDTH, TRANSITION_FRAME_HEIGHT)[0];
+        transitionFrames = new TextureRegion[rowFrames.length];
+        for (int i = 0; i < rowFrames.length; i++) {
+            TextureRegion copy = new TextureRegion(rowFrames[i]);
+            if (!facingRight) {
+                copy.flip(true, false);
+            }
+            transitionFrames[i] = copy;
+        }
+        transitionFrameIndex = 0;
+        transitionFrameTimer = 0;
+        transitionTarget = target;
+        if (preShiftUp32) {
+            setY(getY() - (PlayerPowerState.BIG.height - PlayerPowerState.SMALL.height));
+        }
+        speed = 0;
+        gravity = 0;
+    }
+
+    private void updateTransition(float delta) {
+        transitionFrameTimer += delta;
+        if (transitionFrameTimer < TRANSITION_FRAME_SECONDS) {
+            return;
+        }
+        transitionFrameTimer = 0;
+        transitionFrameIndex++;
+        if (transitionFrameIndex >= transitionFrames.length) {
+            PlayerPowerState target = transitionTarget;
+            transitionFrames = null;
+            transitionTarget = null;
+            changePowerState(target);
+        }
+    }
+
+    /**
+     * The enemy-hit-while-Small death: launches Mario up then lets gravity
+     * pull him back down off-screen before respawning - ported from
+     * {@code Player.Decerease()}'s {@code ID==1} branch and
+     * {@code Animations/FallingDeadMario.java}. A pit-fall (see {@link #act}'s
+     * fall-out check) stays the original's instant, silent {@code Restart()}
+     * instead - that distinction (animated "you died" beat vs. silent
+     * respawn) is the original's own, not new here.
+     */
+    private void beginDeathAnimation() {
+        MarioResourceManager.sound("smb_mariodie").play();
+        dyingAnimated = true;
+        deathDelayTimer = DEATH_INITIAL_DELAY_SECONDS;
+        deathGravity = DEATH_GRAVITY_START;
+        speed = 0;
+        justDied = true;
+    }
+
+    private void updateDeathAnimation(float delta, float frames) {
+        if (deathDelayTimer > 0) {
+            deathDelayTimer -= delta;
+            return;
+        }
+        if (deathGravity < DEATH_GRAVITY_CAP) {
+            deathGravity = Math.min(DEATH_GRAVITY_CAP, deathGravity + DEATH_GRAVITY_STEP * frames);
+        }
+        setY(getY() + deathGravity * frames);
+        // Ported from FallingDeadMario's own `this.getY() > 700` - re-derived
+        // against this level's own height (like the pit-fall check above)
+        // rather than the original's fixed constant, which only worked
+        // because every original level happened to be shorter than that.
+        if (getY() > world.getHeightPx() + FALL_OUT_MARGIN_PX) {
+            dyingAnimated = false;
+            speed = 0;
+            gravity = 0;
+            setPosition(checkpointX, checkpointY);
+            invincibleTimer = INVINCIBLE_SECONDS;
+        }
+    }
+
+    /**
+     * A pit-fall - ported from {@code Mario.java}'s own
+     * {@code player.getY() > 500} check in its main loop, same idea as
+     * {@code FireBall}'s own fall-out margin. Unconditional (bypasses
+     * {@link #isInvincible()}, unlike {@link #shrink()}) since a star or
+     * hit-invincibility never saved you from a pit in the original either.
+     * Respawns immediately at the last checkpoint (see {@link #updateCheckpoint}),
+     * matching the original's instant {@code Restart()} - no death
+     * animation/delay, unlike {@link #beginDeathAnimation()}.
      *
      * <p>Player has no notion of lives or game over; {@link #consumeDeath()}
      * is how {@code MarioGameScreen} finds out a life should be charged -
@@ -340,7 +669,7 @@ public class Player extends Layer {
         changePowerState(PlayerPowerState.SMALL);
         speed = 0;
         gravity = 0;
-        setPosition(spawnX, spawnY);
+        setPosition(checkpointX, checkpointY);
         invincibleTimer = INVINCIBLE_SECONDS;
         justDied = true;
     }
@@ -388,7 +717,7 @@ public class Player extends Layer {
     }
 
     public boolean isInvincible() {
-        return invincibleTimer > 0 || hasStar();
+        return invincibleTimer > 0 || hasStar() || shieldTimer > 0;
     }
 
     public PlayerPowerState getPowerState() {
@@ -435,9 +764,9 @@ public class Player extends Layer {
         forcedCommand = null;
     }
 
-    /** Extends (never shortens) the invincibility window - used to shield Mario during a level-complete sequence. */
+    /** Extends (never shortens) the shield window - used to protect Mario during a level-complete sequence. See {@link #shieldTimer}. */
     public void setInvincibleFor(float seconds) {
-        invincibleTimer = Math.max(invincibleTimer, seconds);
+        shieldTimer = Math.max(shieldTimer, seconds);
     }
 
     /** This frame's input intent, for checkpoints that gate on a held direction (e.g. a pipe entrance). */

@@ -66,6 +66,7 @@ public class PackMarioAtlas {
             new AssetSpec("flower", "Flower.png", 4, 1),
             new AssetSpec("coin_anim", "CoinAnim.png", 4, 1),
             new AssetSpec("star", "Star.png", 4, 1),
+            new AssetSpec("brick_peaces", "BrickPeaces.png", 2, 4),
             new AssetSpec("one_up", "1UP.png", 2, 1),
             new AssetSpec("coin", "Coin.png", 3, 1),
             new AssetSpec("iron", "Iron.png", 4, 1),
@@ -114,6 +115,12 @@ public class PackMarioAtlas {
             new AssetSpec("fire_to_small_mario", "FireToSmallMarioAnim.png", 10, 1),
             new AssetSpec("small_to_big_star_mario", "SmallToBigStarMaroAnim.png", 12, 1),
             new AssetSpec("small_dead_mario", "SmallDeadMario.png", 1, 1),
+            new AssetSpec("small_black_mario", "SmallBlackMario.png", 4, 7),
+            new AssetSpec("small_green_mario", "SmallGreenMario.png", 4, 7),
+            new AssetSpec("small_red_mario", "SmallRedMario.png", 4, 7),
+            new AssetSpec("big_black_mario", "BigBlackMario.png", 4, 7),
+            new AssetSpec("big_green_mario", "BigGreenMario.png", 4, 7),
+            new AssetSpec("big_red_mario", "BigRedMario.png", 4, 7),
 
             // HUD
             new AssetSpec("font", "Font.png", 16, 3),

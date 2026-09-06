@@ -16,4 +16,13 @@ public final class PlayerCommand {
 
     /** Edge-triggered: true only on the frame the fire input started. Only Fire Mario acts on it. */
     public boolean firePressed;
+
+    /**
+     * Held, not edge-triggered - ported from {@code Player.Speed(boolean)}.
+     * The original reads this off the *same* physical key as fire
+     * ({@code VK_Z}: tapped fires, held runs) rather than a separate button;
+     * this mirrors that by reusing the fire input (button A / keyboard X)
+     * continuously instead of adding new UI.
+     */
+    public boolean runHeld;
 }

@@ -48,6 +48,7 @@ public class MarioInputController {
                 || GameEngine.input.isKeyJustPressed(Input.Keys.UP)
                 || GameEngine.input.isKeyJustPressed(Input.Keys.Z);
         boolean keyboardFire = GameEngine.input.isKeyJustPressed(Input.Keys.X);
+        boolean keyboardRunHeld = GameEngine.input.isKeyPressed(Input.Keys.X);
         boolean keyboardDown = GameEngine.input.isKeyPressed(Input.Keys.DOWN)
                 || GameEngine.input.isKeyPressed(Input.Keys.S);
 
@@ -78,6 +79,8 @@ public class MarioInputController {
         command.down = keyboardDown || knobY > KNOB_DEADZONE;
         command.jumpPressed = keyboardJump || jumpButtonJustPressed;
         command.firePressed = keyboardFire || fireButtonJustPressed;
+        // See PlayerCommand.runHeld's doc - held fire (not just tapped) is turbo.
+        command.runHeld = keyboardRunHeld || fireButtonPressed;
         return command;
     }
 }

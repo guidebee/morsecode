@@ -4,7 +4,7 @@ This is the working plan for porting `C:\workspace\Mario` (a GTGE/Java2D desktop
 Mario Bros clone, ~27,300 lines across ~150 gameplay classes plus 58 level/bonus-area
 files) into this repo as a new GGE mini-game, alongside Flappy Bird and Battle City, with
 Morse-code training mechanics added. It assumes familiarity with
-[GAME_ENGINE.md](GAME_ENGINE.md) and the [engine tutorials](tutorials/README.md) —
+[GAME_ENGINE.md](../GAME_ENGINE.md) and the [engine tutorials](../tutorials/README.md) —
 this document is Mario-specific; it doesn't re-explain GGE itself.
 
 **Status of this document:** planning only. Nothing described here has been implemented
@@ -30,7 +30,7 @@ step-by-step recipes for adding new levels/enemies/bricks — and
 GTGE's `Sprite`/`SpriteGroup`/`PlayField`/`CollisionManager` and GGE's
 `microedition.Sprite`/`LayerManager` are conceptually the same idea (GGE's
 `microedition` package exists specifically to make old MIDP/GTGE-style ports
-straightforward — see [12. The Microedition Game API](tutorials/engine/12-microedition-game-api.md))
+straightforward — see [12. The Microedition Game API](../tutorials/engine/12-microedition-game-api.md))
 but are different, incompatible classes: `BufferedImage` vs `TextureRegion`,
 `Graphics2D.drawImage` vs `Batch.draw`, AWT `KeyEvent` vs touch/`GameController`. Every
 gameplay class needs rewriting against the new API. What *does* carry over directly:
@@ -46,7 +46,7 @@ gameplay class needs rewriting against the new API. What *does* carry over direc
 ## 2. Target architecture
 
 Same three-level chain as Flappy Bird / Battle City
-(`Activity → GamePlay → Screen`, see [GAME_ENGINE.md](GAME_ENGINE.md#the-lifecycle-activity--gameplay--screen)),
+(`Activity → GamePlay → Screen`, see [GAME_ENGINE.md](../GAME_ENGINE.md#the-lifecycle-activity--gameplay--screen)),
 using the **microedition** (`LayerManager`/`Sprite`/`TiledLayer`) API rather than
 `Stage`/`Actor`, because Mario's world — like Battle City's — is a dense 32px tile grid
 with dozens of concurrent actors, which is exactly the case that API is optimized for.
@@ -271,7 +271,7 @@ areas) to prove the whole pipeline before spending effort porting all 58 levels 
 - 6.3 `FireBall`/`Hammer`/`EnemyFireBall`/`LavaBall` + `ProjectileCollisionResolver`.
   Pool projectiles the way Battle City pools `Bullet`/`Explosion` — GGE's
   microedition `Sprite` is built for exactly this (see
-  [12. The Microedition Game API](tutorials/engine/12-microedition-game-api.md#sprite-frames-sequences-and-pooling)).
+  [12. The Microedition Game API](../tutorials/engine/12-microedition-game-api.md#sprite-frames-sequences-and-pooling)).
 
 **Step 7 — World mechanics**
 - 7.1 Lifts (moving platforms), teleports (pipes/warps), checkpoints, flag/level-complete.
@@ -353,10 +353,10 @@ Both existing games establish a pattern worth reusing rather than inventing a th
 
 - **Flappy Bird**: `Playground.isCollideWithTube` checks the pipe's assigned letter
   against a `ChallengeLetter` HUD target on collision — a wrong hit is a crash, a right
-  hit is a scored answer ([11. Collision Detection](tutorials/engine/11-collision-detection.md#the-collision-that-doesnt-end-the-game)).
+  hit is a scored answer ([11. Collision Detection](../tutorials/engine/11-collision-detection.md#the-collision-that-doesnt-end-the-game)).
 - **Battle City**: `BattleField.readBattlefieldFromLedLetter()` *generates* the level's
   wall layout from a Morse pattern — the geometry *is* the lesson
-  ([9. Tiled Layers](tutorials/engine/09-tiled-layers-and-scenery.md)).
+  ([9. Tiled Layers](../tutorials/engine/09-tiled-layers-and-scenery.md)).
 
 Mario's block-heavy, grid-based levels support either style. Options to choose between
 before finalizing the `LevelDefinition` schema in Step 1:

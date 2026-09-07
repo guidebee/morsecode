@@ -7,7 +7,7 @@ bricks/items, new hazards). It's written for a developer who has never touched t
 codebase before and needs to add content to it, most immediately as prep for the
 [reskin](MARIO_RESKIN_PLAN.md).
 
-It assumes the engine background in [GAME_ENGINE.md](GAME_ENGINE.md) (`LayerManager`/
+It assumes the engine background in [GAME_ENGINE.md](../GAME_ENGINE.md) (`LayerManager`/
 `Sprite`/`TiledLayer`, the microedition API) and complements, rather than repeats, the
 three planning documents:
 

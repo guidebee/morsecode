@@ -73,8 +73,20 @@ public class Rocket extends Enemy {
         deactivate();
     }
 
+    /**
+     * Immune to fireballs, matching the original's empty {@code
+     * KilledByFireBall()}. Note a real behavioral gap left as-is here: the
+     * original's *separate* {@code CollidedWithMovingShell()} (a kicked shell
+     * hitting this rocket) does kill it, with a "smb_kick" and a
+     * rightward-drifting {@code FallingDeadSprite} - this port's single
+     * {@code onDefeatedByProjectile} hook can't yet tell "hit by a fireball"
+     * apart from "hit by a moving shell" the way the original's two methods
+     * could, so it's kept a no-op for both rather than breaking the
+     * (more central) fireball immunity to add the (rarer) shell-kill case -
+     * same tradeoff noted on {@code HelmetShell}'s own equivalent gap, see
+     * docs/MARIO_PORT_PLAN_PHASE2.md S7.
+     */
     @Override
     public void onDefeatedByProjectile() {
-        // Immune to fireballs - matches the original's empty KilledByFireBall().
     }
 }

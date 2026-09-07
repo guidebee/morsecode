@@ -6,6 +6,7 @@ import java.util.ArrayList;
 
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.player.Player;
+import au.com.guidebee.morsetoolkit.activity.mario.fx.FallingDeadSprite;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
 import au.com.guidebee.morsetoolkit.activity.mario.world.TileMovement;
 
@@ -28,10 +29,12 @@ public class TurtleShell extends Enemy {
     private static final float GRAVITY = 6f;
     private static final float MOVING_SPEED = 5f;
 
+    private final String attribute;
     private boolean moving;
 
     public TurtleShell(float x, float y, String attribute, boolean movingRight) {
         super(regionFor(attribute), 32, 32, x, y, movingRight);
+        this.attribute = attribute;
     }
 
     private static TextureRegion regionFor(String attribute) {
@@ -88,5 +91,13 @@ public class TurtleShell extends Enemy {
     private void kick(Player player) {
         moving = true;
         movingRight = player.getX() < getX();
+    }
+
+    /** Ported from {@code Objects/TurtelShell.java}'s own {@code KilledByFireBall} - see {@code FallingDeadSprite}'s class doc. */
+    @Override
+    public void onDefeatedByProjectile() {
+        MarioResourceManager.sound("smb_kick").play();
+        FallingDeadSprite.spawn(getX(), getY(), regionFor(attribute).split(32, 32)[0][0]);
+        deactivate();
     }
 }

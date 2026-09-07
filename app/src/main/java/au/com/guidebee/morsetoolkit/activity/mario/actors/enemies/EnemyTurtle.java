@@ -4,6 +4,7 @@ import com.guidebee.game.graphics.TextureRegion;
 
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.player.Player;
+import au.com.guidebee.morsetoolkit.activity.mario.fx.FallingDeadSprite;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
 
 /**
@@ -69,6 +70,19 @@ public class EnemyTurtle extends Enemy {
         TurtleShell shell = new TurtleShell(getX(), getY(), attribute, movingRight);
         MarioContext.world().addEnemy(shell);
         MarioContext.spawn(shell);
+        deactivate();
+    }
+
+    /** Ported from {@code Collusion/EnemyToEnemy.java}'s own {@code case 102}. */
+    @Override
+    public boolean bouncesOffEnemies() {
+        return true;
+    }
+
+    /** Ported from {@code Objects/EnemyTurtle.java}'s own {@code KilledByFireBall} - see {@code FallingDeadSprite}'s class doc. */
+    @Override
+    public void onDefeatedByProjectile() {
+        FallingDeadSprite.spawn(getX(), getY(), regionFor(attribute).split(FRAME_WIDTH, FRAME_HEIGHT)[0][0]);
         deactivate();
     }
 }

@@ -3,6 +3,7 @@ package au.com.guidebee.morsetoolkit.activity.mario.actors.projectiles;
 import com.guidebee.game.microedition.Sprite;
 
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
+import au.com.guidebee.morsetoolkit.activity.mario.fx.Explosion;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
 import au.com.guidebee.morsetoolkit.activity.mario.world.TileMovement;
 
@@ -50,9 +51,23 @@ public class FireBall extends Sprite {
                 && y < getY() + getHeight() && y + height > getY();
     }
 
+    /** Silent removal - the level's own fall-out cleanup (ported from the original's own {@code getY() > 700} check), and the base every other explode variant below calls into. */
     public void explode() {
         active = false;
         remove();
+    }
+
+    /** Ported from {@code FireBallToEnemys.collided} - every enemy hit spawns an {@link Explosion}, but (unlike a wall hit) plays no sound of its own. */
+    public void explodeAgainstEnemy() {
+        Explosion.spawn(getX(), getY());
+        explode();
+    }
+
+    /** Ported from {@code FireBallToBricks.collided}'s own left/right cases - a wall hit plays "smb_bump" in addition to the {@link Explosion}, unlike an enemy hit. */
+    private void explodeAgainstWall() {
+        MarioResourceManager.sound("smb_bump").play();
+        Explosion.spawn(getX(), getY());
+        explode();
     }
 
     @Override
@@ -71,7 +86,7 @@ public class FireBall extends Sprite {
             gravity = BOUNCE_IMPULSE;
         }
         if (TileMovement.moveX(this, (movingRight ? SPEED : -SPEED) * frames, MarioContext.world())) {
-            explode();
+            explodeAgainstWall();
             return;
         }
         if (getY() > MarioContext.world().getHeightPx() + FALL_OUT_MARGIN_PX) {

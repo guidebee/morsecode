@@ -1,6 +1,7 @@
 package au.com.guidebee.morsetoolkit.activity.mario.actors.enemies;
 
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
+import au.com.guidebee.morsetoolkit.activity.mario.fx.FallingDeadSprite;
 
 /**
  * The walking mushroom enemy (note: hostile, not the growth power-up -
@@ -55,5 +56,19 @@ public class EnemyMashroom extends Enemy {
             showingA = !showingA;
             setFrame(showingA ? frameA : frameB);
         }
+    }
+
+    /** Ported from {@code Collusion/EnemyToEnemy.java}'s own {@code case 100} - a ground-walker turns around when it touches another one. */
+    @Override
+    public boolean bouncesOffEnemies() {
+        return true;
+    }
+
+    /** Ported from {@code Objects/EnemyMashroom.java}'s own {@code KilledByFireBall} - flips and drops the current pose off screen, matching every other enemy's fireball death (see {@code FallingDeadSprite}'s class doc). */
+    @Override
+    public void onDefeatedByProjectile() {
+        FallingDeadSprite.spawn(getX(), getY(),
+                MarioResourceManager.region("enemy").split(32, 32)[frameA / 2][frameA % 2]);
+        deactivate();
     }
 }

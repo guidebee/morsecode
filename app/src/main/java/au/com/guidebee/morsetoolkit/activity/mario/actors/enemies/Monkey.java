@@ -5,6 +5,7 @@ import java.util.Random;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.player.Player;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.projectiles.Hammer;
+import au.com.guidebee.morsetoolkit.activity.mario.fx.FallingDeadSprite;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
 import au.com.guidebee.morsetoolkit.activity.mario.world.TileMovement;
 
@@ -117,6 +118,8 @@ public class Monkey extends Enemy {
     @Override
     public void onDefeatedByProjectile() {
         MarioResourceManager.sound("smb_kick").play();
+        FallingDeadSprite.spawn(getX(), getY(),
+                MarioResourceManager.region("monkey").split(FRAME_WIDTH, FRAME_HEIGHT)[0][0]);
         deactivate();
     }
 }

@@ -2,6 +2,7 @@ package au.com.guidebee.morsetoolkit.activity.mario.actors.enemies;
 
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.player.Player;
+import au.com.guidebee.morsetoolkit.activity.mario.fx.FallingDeadSprite;
 
 /**
  * A Cheep-Cheep analog for Sea levels, ported from {@code Objects/FishyWater.java}:
@@ -30,6 +31,7 @@ public class FishyWater extends Enemy {
     private static final float BOB_RANGE_PX = 32f;
     private static final float BOB_SPEED = 0.5f;
 
+    private final boolean red;
     private final float speedX;
     private final boolean bobbing;
     private final float upY;
@@ -43,7 +45,7 @@ public class FishyWater extends Enemy {
     public FishyWater(float x, float y, int type) {
         super(MarioResourceManager.region(type == 3 || type == 4 ? "fish_red" : "fish_grey"),
                 FRAME_SIZE, FRAME_SIZE, x, y, false);
-        boolean red = type == 3 || type == 4;
+        this.red = type == 3 || type == 4;
         this.bobbing = type == 2 || type == 4;
         this.speedX = red ? -SPEED_RED : -SPEED_GREY;
         this.animInterval = red ? ANIM_INTERVAL_RED : ANIM_INTERVAL_GREY;
@@ -87,6 +89,8 @@ public class FishyWater extends Enemy {
     @Override
     public void onDefeatedByProjectile() {
         MarioResourceManager.sound("smb_kick").play();
+        FallingDeadSprite.spawn(getX(), getY(),
+                MarioResourceManager.region(red ? "fish_red" : "fish_grey").split(FRAME_SIZE, FRAME_SIZE)[0][0]);
         deactivate();
     }
 }

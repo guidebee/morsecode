@@ -39,7 +39,7 @@ public final class ProjectileCollisionResolver {
             for (Enemy enemy : new ArrayList<>(world.getEnemies())) {
                 if (enemy.isActive() && enemy.overlaps(fx, fy, fw, fh)) {
                     enemy.onDefeatedByProjectile();
-                    fireBall.explode();
+                    fireBall.explodeAgainstEnemy();
                     break;
                 }
             }

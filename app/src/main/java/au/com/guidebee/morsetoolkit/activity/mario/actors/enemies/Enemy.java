@@ -37,7 +37,8 @@ public abstract class Enemy extends Sprite {
         return active;
     }
 
-    protected void deactivate() {
+    /** Public so {@code MarioGameScreen} can silently clear the field when the boss fight ends (see {@code Axe}'s own doc) - every other caller is a subclass reacting to its own hit/stomp/fireball logic. */
+    public void deactivate() {
         active = false;
         remove();
     }
@@ -46,6 +47,28 @@ public abstract class Enemy extends Sprite {
         return active
                 && x < getX() + getWidth() && x + width > getX()
                 && y < getY() + getHeight() && y + height > getY();
+    }
+
+    /**
+     * Whether touching another enemy turns this one around, ported from
+     * {@code Collusion/EnemyToEnemy.java}'s own per-type switch - true for
+     * the plain ground-walkers it calls {@code OtherEnemyTouchedFromLeft/
+     * Right()} on (EnemyMashroom/EnemyTurtle/FlyingTurtle/Helmet/Spikey);
+     * every other type (Monkey, Rocket, the fish/water enemies, Boss, ...)
+     * is a no-op there, matching this defaulting to false. See {@code
+     * EnemyToEnemyResolver} for the actual per-frame check.
+     */
+    public boolean bouncesOffEnemies() {
+        return false;
+    }
+
+    /** Flips {@link #movingRight} - see {@link #bouncesOffEnemies}. */
+    public void reverseDirection() {
+        movingRight = !movingRight;
+    }
+
+    public boolean isMovingRight() {
+        return movingRight;
     }
 
     /** Walks at a constant pace, falls under gravity, turns around at walls. */

@@ -4,6 +4,7 @@ import com.guidebee.game.graphics.TextureRegion;
 
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.player.Player;
+import au.com.guidebee.morsetoolkit.activity.mario.fx.FallingDeadSprite;
 
 /**
  * The "jumping fish" ambient hazard for non-Sea levels with the
@@ -95,6 +96,7 @@ public class FishyGround extends Enemy {
     @Override
     public void onDefeatedByProjectile() {
         MarioResourceManager.sound("smb_kick").play();
+        FallingDeadSprite.spawn(getX(), getY(), regionFor(movingRight).split(FRAME_SIZE, FRAME_SIZE)[0][0]);
         deactivate();
     }
 }

@@ -2,6 +2,7 @@ package au.com.guidebee.morsetoolkit.activity.mario.actors.enemies;
 
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.player.Player;
+import au.com.guidebee.morsetoolkit.activity.mario.fx.FallingDeadSprite;
 
 /**
  * A Spiny-analog - ported from {@code Objects/Spikey.java}: walks and falls
@@ -55,9 +56,16 @@ public class Spikey extends Enemy {
         onTouchedSide(player);
     }
 
+    /** Ported from {@code Collusion/EnemyToEnemy.java}'s own {@code case 117}. */
+    @Override
+    public boolean bouncesOffEnemies() {
+        return true;
+    }
+
     @Override
     public void onDefeatedByProjectile() {
         MarioResourceManager.sound("smb_kick").play();
+        FallingDeadSprite.spawn(getX(), getY(), MarioResourceManager.region("spikey").split(FRAME_SIZE, FRAME_SIZE)[0][0]);
         deactivate();
     }
 }

@@ -2,6 +2,7 @@ package au.com.guidebee.morsetoolkit.activity.mario.actors.enemies;
 
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.player.Player;
+import au.com.guidebee.morsetoolkit.activity.mario.fx.FallingDeadSprite;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
 import au.com.guidebee.morsetoolkit.activity.mario.world.TileMovement;
 
@@ -75,6 +76,7 @@ public class SpikeyEgg extends Enemy {
     @Override
     public void onDefeatedByProjectile() {
         MarioResourceManager.sound("smb_kick").play();
+        FallingDeadSprite.spawn(getX(), getY(), MarioResourceManager.region("spikey_egg").split(FRAME_SIZE, FRAME_SIZE)[0][0]);
         deactivate();
     }
 }

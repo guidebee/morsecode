@@ -22,4 +22,14 @@ public final class AxeResolver {
             }
         }
     }
+
+    /** The first not-yet-triggered axe the player is touching this frame, or null - see {@code Axe#trigger}'s doc and {@code MarioGameScreen}'s own axe-handling for what happens next. */
+    public static Axe findTriggered(Player player, MarioWorld world) {
+        for (Axe axe : world.getAxes()) {
+            if (!axe.isTriggered() && axe.overlaps(player)) {
+                return axe;
+            }
+        }
+        return null;
+    }
 }

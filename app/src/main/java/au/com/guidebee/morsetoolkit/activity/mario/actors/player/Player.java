@@ -938,6 +938,11 @@ public class Player extends Layer {
         return powerState;
     }
 
+    /** Used by {@code fx.MarioGhost}'s static snapshot at the axe-triggered boss finale - see that class's doc. */
+    public boolean isFacingRight() {
+        return facingRight;
+    }
+
     public boolean isOnGround() {
         return onGround;
     }

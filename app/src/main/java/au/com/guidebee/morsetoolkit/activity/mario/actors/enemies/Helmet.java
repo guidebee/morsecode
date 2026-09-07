@@ -68,6 +68,12 @@ public class Helmet extends Enemy {
         setFrame((movingRight ? 2 : 0) + (showingFirstFrame ? 0 : 1));
     }
 
+    /** Ported from {@code Collusion/EnemyToEnemy.java}'s own {@code case 105}. */
+    @Override
+    public boolean bouncesOffEnemies() {
+        return true;
+    }
+
     @Override
     public void onStomped(Player player) {
         HelmetShell shell = new HelmetShell(getX(), getY(), color, movingRight);

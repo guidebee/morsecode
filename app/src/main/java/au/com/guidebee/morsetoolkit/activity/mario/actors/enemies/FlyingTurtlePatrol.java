@@ -1,7 +1,10 @@
 package au.com.guidebee.morsetoolkit.activity.mario.actors.enemies;
 
+import com.guidebee.game.graphics.TextureRegion;
+
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.player.Player;
+import au.com.guidebee.morsetoolkit.activity.mario.fx.FallingDeadSprite;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
 import au.com.guidebee.morsetoolkit.activity.mario.world.OscillatorClock;
 
@@ -77,9 +80,13 @@ public class FlyingTurtlePatrol extends Enemy {
         }
     }
 
+    /** Ported from {@code Objects/FlyingTurtlePatrol.java}'s own {@code KilledByFireBall} - always the red shell, horizontally flipped, matching the original's own fixed {@code "TurtelShellRed"} (unlike {@link FlyingTurtle}, this type has no color variants). */
     @Override
     public void onDefeatedByProjectile() {
         MarioResourceManager.sound("smb_kick").play();
+        TextureRegion shell = new TextureRegion(MarioResourceManager.region("turtle_shell_red"));
+        shell.flip(true, false);
+        FallingDeadSprite.spawn(getX(), getY(), shell);
         deactivate();
     }
 }

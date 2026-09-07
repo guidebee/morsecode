@@ -416,20 +416,43 @@ empty cheat-code key-switch (`SandBox/Mario.java:2261-2308`, does nothing).
 Same discipline as §4 — numbered to continue after P2.8, each ending with something
 testable on-device.
 
-**Step P2.9 — Boss finale + hit-feedback fidelity** *(highest priority — most visible)*
-- P2.9.1 Bridge-cut boss-defeat sequence: port `RemoveBridge()`/`Black.java`/
-  `BossFallingAnim.java`, wired from the same axe-landing contact `Collusion/
-  Player_Brick.java` gates on. Correct `actors/bricks/Axe.java`'s doc comment (and this
-  document's own §1.4) once implemented.
-- P2.9.2 `FallingDeadSprites` - one shared fx class, wired into every enemy's
-  `onDefeatedByProjectile()` (currently just `deactivate()`).
-- P2.9.3 Fireball impact `Explosion` puff + wall-hit bump sound, in `actors/projectiles/
-  FireBall.java`'s `explode()` and `collision/ProjectileCollisionResolver.java`.
-- P2.9.4 `EnemyToEnemy` bounce - new `collision/EnemyToEnemyResolver` (or fold into the
-  existing `EnemyCollisionResolver`), excluding items per the original.
-- P2.9.5 **Vertical slice:** replay a boss level end-to-end (e.g. `Level_14`) and confirm
+**Step P2.9 — Boss finale + hit-feedback fidelity** *(highest priority — most visible)* — **implemented 2026-09-07, pending on-device verification (P2.9.5)**
+- [x] P2.9.1 Bridge-cut boss-defeat sequence: `Axe` now detects a one-shot touch
+  (`overlaps`/`trigger`) and `MarioGameScreen#triggerAxe` reacts - if the boss is still
+  `isActive()`, `fx/BossFallingAnim#spawnCollapse` deactivates it, lays 13 `fx/
+  BridgeBlackout` tiles in a wave (relative to the axe's own position, not the original's
+  literal `10*32`), and drops a 2-frame falling boss sprite with "smb_bowserfalls";
+  `fx/MarioGhost` stands in for Mario at the trigger spot while the real Player auto-walks
+  off under a forced-right command, same two-actor trick the original's own `DemoMario`
+  used. A boss already dead (fireballed/starred before reaching the axe) skips the whole
+  visual, matching the original - level completion was never gated on the fight itself.
+  Corrected `Axe.java`'s doc comment and this document's own §1.4 claim that no such code
+  exists.
+- [x] P2.9.2 `fx/FallingDeadSprite` - wired into `EnemyMashroom`/`EnemyTurtle`/
+  `EnemyTurtlePatrol`/`FishyGround`/`FishyWater`/`FlyingTurtle`/`FlyingTurtlePatrol`/
+  `HelmetShell`/`Monkey`/`Spikey`/`SpikeyEgg`/`TurtleShell`'s `onDefeatedByProjectile()`.
+  `FlyingTurtle`/`FlyingTurtlePatrol` show a flipped turtle-shell falling instead of their
+  own sprite, matching the original's own image swap. `Helmet`/`Rocket` stay fireball-immune
+  (matches the original exactly); `HelmetShell`/`Rocket` have a known small residual gap
+  noted in their own doc comments - the original's separate "hit by a fireball" (immune)
+  vs. "hit by a moving shell" (dies) methods collapsed into this port's one
+  `onDefeatedByProjectile()` hook, out of scope to fully separate here.
+- [x] P2.9.3 `fx/Explosion` (one-shot, reuses the `Fireworks`-shared "explosion" region) -
+  `FireBall#explodeAgainstWall` (wall hit: explosion + "smb_bump") vs. `#explodeAgainstEnemy`
+  (enemy hit: explosion only, no sound) vs. the original silent `#explode` (level-bottom
+  cleanup only) - three distinct original code paths, now three distinct methods.
+- [x] P2.9.4 `collision/EnemyToEnemyResolver` - new `Enemy#bouncesOffEnemies()`
+  (true for EnemyMashroom/EnemyTurtle/FlyingTurtle/Helmet/Spikey, matching the original's
+  own per-type switch) turns two touching enemies around, gated on them still moving
+  toward each other so a per-frame overlap re-check doesn't jitter back and forth (the
+  original's collision only ever fired once per contact). A kicked shell killing whatever
+  it touches was already handled elsewhere (`TurtleShell`/`HelmetShell`'s own
+  `killOverlappingEnemies`), not duplicated here. Items are excluded structurally (a
+  separate actor list), matching the original's explicit exclusion.
+- [ ] P2.9.5 **Vertical slice:** replay a boss level end-to-end (e.g. `Level_14`) and confirm
   the bridge visibly collapses and the boss falls; trigger a fireball kill and an
-  enemy-vs-enemy contact in the same session.
+  enemy-vs-enemy contact in the same session. Built and installed to the test device;
+  awaiting user playtest.
 
 **Step P2.10 — Piranha Plant**
 - P2.10.1 Port `plant.java` as a new `actors/enemies/PiranhaPlant` (or similar):
@@ -468,3 +491,146 @@ testable on-device.
 
 Once P2.9-P2.13 are done (or explicitly descoped per-item with a reason noted here),
 re-confirm P2.8's exit criterion still holds, then proceed to the reskin plan unchanged.
+
+**Step P2.8.5 — Debug/QA tooling** *(added 2026-09-07, out of the original P2.9-P2.13
+order - see §8 for the full design; requested because manually replaying a whole world to
+reach one boss/pipe/pole for a single vertical-slice check is exactly the kind of
+time-consuming, error-prone verification this tooling exists to remove, starting with
+P2.9.5's own still-open on-device check)*
+- [ ] P2.8.5.1 `MarioSaveState` debug bypass + level warp picker (§8.3.1).
+- [ ] P2.8.5.2 In-level warp panel, data-driven from the current level's own checkpoints/
+  tiles (§8.3.2).
+- [ ] P2.8.5.3 God mode, infinite lives, power-state cycling, time-scale (§8.3.3-8.3.6).
+- [ ] P2.8.5.4 Debug-build gating, wired alongside the existing distribution gate (§8.4).
+- [ ] P2.8.5.5 **Vertical slice:** use the finished panel to jump straight to `Level_14`'s
+  axe and confirm P2.9.5's own still-outstanding check now takes under a minute instead of
+  a full level replay.
+
+## 8. Developer/QA debug tooling (design only - not yet implemented)
+
+**Why this exists:** P2.9's own vertical slice (P2.9.5) needs replaying a full castle
+level - dodge every enemy, survive the whole bridge, reach the axe - just to check three
+seconds of bridge-collapse animation. Every remaining step's own vertical slice (P2.10's
+pipes, P2.6's water level, any future regression pass) has the same shape: a small,
+specific thing to look at, buried behind several minutes of legitimate play to reach it.
+This section designs a debug/cheat layer to remove that tax - **for internal testing
+only, never shipped** (see §8.4's gating, which plugs into the exact same
+never-leaves-the-dev-machine discipline [MARIO_RESKIN_PLAN.md](MARIO_RESKIN_PLAN.md) §5
+already established for the placeholder art, and for the same underlying reason: a cheat
+menu reachable in a shipped build is its own, separate problem worth avoiding on its own
+merits, quite apart from the art).
+
+### 8.1 Goals
+
+- Reach any level, and any *specific spot inside* any level, in a few taps - no legitimate
+  play required.
+- Survive/experiment freely once there (invincibility, unlimited lives, any power state on
+  demand) without that itself becoming the next thing to debug.
+- Skip past slow waits (a boss's throw-timers, `SpawnController`'s ambient spawn delays,
+  P2.9.1's own 180-tick bridge hold) rather than sitting through them every single test
+  pass.
+- Cost near-zero new "real" code to build and trust: reuse existing, already-verified
+  primitives (`MarioGamePlay#goToLevel`, `Player#setPosition`/`setInvincibleFor`,
+  `LevelDefinition`'s already-parsed data) rather than inventing a parallel level-loading
+  or physics path that itself needs its own testing.
+
+### 8.2 Non-goals
+
+- Not a player-facing feature (no "level select cheat code" for end users) - see §8.4.
+- Not a replacement for actually playing a level normally at least once per vertical
+  slice - warping past the journey doesn't verify the journey itself still works, only
+  the destination. Use it to iterate quickly on *one* mechanic, not as the only testing
+  a level ever gets.
+- Doesn't touch `MarioSaveState`'s real unlock/clear tracking - a debug warp reads past
+  it (see §8.3.1) but never writes to it, so cheat use in a test session can't corrupt what
+  counts as "legitimately cleared" for a normal playthrough on the same device.
+- Doesn't attempt a free-roam/noclip camera or a level editor - out of scope; every warp
+  target is still a real, playable spawn point a normal run could reach.
+
+### 8.3 Feature design
+
+#### 8.3.1 Level warp (menu-level)
+
+`MarioMenuScreen`'s own `isUnlocked` check (reading `MarioSaveState.isCleared(...)`) is
+what currently forces playing worlds in order. In a debug build, add a second, clearly
+different-styled button state - not disabled/greyed but an obvious "debug: unlocked"
+tint - so *every* level is selectable regardless of clear state, calling the exact same
+`gamePlay.startLevel(levelNumber)` every normal button already calls. No new loading path;
+this is purely relaxing the one `if (!unlocked)` gate.
+
+#### 8.3.2 In-level warp (the main time-saver)
+
+A collapsible panel, opened from a small debug-only corner button (see §8.4), listing
+warp targets **generated from the current level's own already-parsed `LevelDefinition`**
+- no per-level authoring, no hand-maintained coordinate list to keep in sync as levels
+change:
+- One entry per `LevelDefinition.checkpoints[]` entry, labeled by `kind` (e.g. "CheckPoints
+  @ (6556, 384)", "InsidePumpvertically → 97") - covers every flagpole, pipe, and
+  beanstalk entrance for free.
+- One entry per "interesting" `LevelDefinition.tiles[]` type - `Flag`, `Axe`, `Boss`/
+  `BossHammer`, `Bouncer`, `FlyingTurtlePatrol`, `Monkey`, and any other type worth
+  standing next to for a quick look (a short allow-list, easy to extend as new mechanics
+  land in P2.10+).
+- A manual tile-X/tile-Y text entry + "Warp" button, for anywhere not already covered
+  (e.g. "I want to stand exactly where these three enemies converge") - paired with a
+  small always-visible readout of Mario's *current* tile position while the panel is
+  open, so a tester can walk somewhere once, read off its coordinates, and warp straight
+  back to it on the next test run without walking there again.
+
+Mechanically: `player.setPosition(x, y)` on the live `Player` (no level reload) - instant,
+keeps the rest of the level's state (already-defeated enemies, collected coins) exactly as
+it was, unlike a full `goToLevel` re-entry. Add a brief `player.setInvincibleFor(...)` on
+warp so teleporting into a wall or next to an enemy doesn't cause an instant, confusing
+death before the tester gets their bearings.
+
+#### 8.3.3 God mode
+
+A `debugInvincible` boolean on `Player` (or a dedicated debug controller holding a
+reference to it) that, while true, makes `isInvincible()` always return true - one
+extra `||` clause, no change to the existing star/hit/transition invincibility paths it
+sits alongside.
+
+#### 8.3.4 Infinite lives
+
+Gate `MarioGameScreen#handlePlayerDeath`'s `gamePlay.gameState().loseLife()` call behind
+`!debugInfiniteLives` - dying still plays out visually (useful for testing the death
+animation itself), it just never charges a life or reaches game-over.
+
+#### 8.3.5 Power-state cycling
+
+A debug button cycling `Player` through Small → Big → Fire → Small on demand, reusing
+the existing `grow()`/transition machinery (widened to a public debug entry point) rather
+than duplicating power-state logic - lets a tester reach Fire Mario (fireball tests, P2.9)
+or Big Mario (ducking, P2.5) instantly instead of hunting down a mushroom and a flower in
+sequence.
+
+#### 8.3.6 Time-scale / fast-forward
+
+A debug multiplier applied to `delta` before `MarioGameScreen#render` uses it - *not* a
+single larger `delta` in one frame (that's exactly what `MarioConfiguration.MAX_DELTA_SECONDS`
+exists to clamp against, to avoid tunneling through thin colliders), but running the
+frame's normal update logic **multiple times** at the regular clamped `delta` when
+fast-forward is held, e.g. 4x real speed = call the same per-frame update 4 times per
+real frame. Useful for skipping a boss's throw-timers, `SpawnController`'s ambient delays,
+or P2.9.1's own 180-tick bridge-collapse hold without altering any of those timers'
+actual tuned values.
+
+### 8.4 Access and gating
+
+The debug panel (and its corner toggle button) only exists when `BuildConfig.DEBUG` is
+true - compiled out of release builds entirely via that constant, not just hidden behind
+a runtime flag, so there's no code path that could ship it turned on by accident. This is
+the same category of risk the reskin plan's own release gate already tracks (a build
+leaving the dev machine while it's not ready) - treat "does a release build even contain
+the debug panel" as one more line on that same checklist, not a separate concern.
+
+### 8.5 What this deliberately reuses, not reinvents
+
+Every mechanism above is an existing, already-tested primitive used slightly more
+directly than normal play uses it: `MarioGamePlay#startLevel`/`goToLevel` (already how
+every level transition works), `Player#setPosition`/`setInvincibleFor` (already how
+checkpoints and lifts place the player), `LevelDefinition`'s already-parsed checkpoint/
+tile data (already how `CheckpointResolver`/`LevelLoader` read a level). The debug layer
+is a thin UI over these, not a second implementation of level loading or physics - keeps
+its own risk of *introducing* a bug low, which matters since it's specifically the tool
+used to catch bugs elsewhere.

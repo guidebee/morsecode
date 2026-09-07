@@ -4,6 +4,7 @@ import com.guidebee.game.graphics.TextureRegion;
 
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.player.Player;
+import au.com.guidebee.morsetoolkit.activity.mario.fx.FallingDeadSprite;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
 import au.com.guidebee.morsetoolkit.activity.mario.world.TileMovement;
 
@@ -98,9 +99,26 @@ public class FlyingTurtle extends Enemy {
         }
     }
 
+    /** Ported from {@code Collusion/EnemyToEnemy.java}'s own {@code case 101}. */
+    @Override
+    public boolean bouncesOffEnemies() {
+        return true;
+    }
+
+    /**
+     * Ported from {@code Objects/FlyingTurtle.java}'s own {@code KilledByFireBall}
+     * (= {@code CollidedWithMovingShell}) - unlike every other enemy's fireball
+     * death, this one shows a horizontally-flipped turtle-shell falling, not
+     * its own flying sprite (matching the original's own {@code
+     * HorizontalFilpShell} image swap).
+     */
     @Override
     public void onDefeatedByProjectile() {
         MarioResourceManager.sound("smb_kick").play();
+        TextureRegion shell = new TextureRegion(
+                MarioResourceManager.region("normal".equals(color) ? "turtle_shell" : "turtle_shell_dark"));
+        shell.flip(true, false);
+        FallingDeadSprite.spawn(getX(), getY(), shell);
         deactivate();
     }
 }

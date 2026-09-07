@@ -6,6 +6,7 @@ import java.util.ArrayList;
 
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.player.Player;
+import au.com.guidebee.morsetoolkit.activity.mario.fx.FallingDeadSprite;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
 import au.com.guidebee.morsetoolkit.activity.mario.world.TileMovement;
 
@@ -95,5 +96,26 @@ public class HelmetShell extends Enemy {
     private void kick(Player player) {
         moving = true;
         movingRight = player.getX() < getX();
+    }
+
+    /**
+     * Ported from {@code Objects/HelmetShell.java}'s own {@code
+     * CollidedWithMovingShell} (a kicked shell hitting this one) - falls with
+     * a "smb_kick" and the drift-away animation, matching {@link
+     * TurtleShell}'s own equivalent. Note a real behavioral gap versus the
+     * original left as-is here: the original's own {@code KilledByFireBall()}
+     * is a no-op (a Helmet-family shell is immune to fireballs, matching
+     * {@link Helmet}'s own immunity), but this port's single {@code
+     * onDefeatedByProjectile} hook can't yet tell "hit by a fireball" apart
+     * from "hit by a moving shell" the way the original's two separate
+     * methods could - fixing that needs threading a trigger-kind distinction
+     * through {@code ProjectileCollisionResolver}, out of scope for this pass
+     * (see docs/MARIO_PORT_PLAN_PHASE2.md S7).
+     */
+    @Override
+    public void onDefeatedByProjectile() {
+        MarioResourceManager.sound("smb_kick").play();
+        FallingDeadSprite.spawn(getX(), getY(), regionFor(color).split(32, 32)[0][0]);
+        deactivate();
     }
 }

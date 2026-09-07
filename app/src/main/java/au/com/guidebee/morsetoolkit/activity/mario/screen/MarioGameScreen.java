@@ -23,6 +23,9 @@ import com.guidebee.game.ui.drawable.TextureRegionDrawable;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioGamePlay;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
+import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.Axe;
+import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.Boss;
+import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.Enemy;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.player.Player;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.scenery.FlagPole;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.scenery.FlagWinBanner;
@@ -30,12 +33,14 @@ import au.com.guidebee.morsetoolkit.activity.mario.actors.scenery.Scenery;
 import au.com.guidebee.morsetoolkit.activity.mario.collision.AxeResolver;
 import au.com.guidebee.morsetoolkit.activity.mario.collision.CheckpointResolver;
 import au.com.guidebee.morsetoolkit.activity.mario.collision.EnemyCollisionResolver;
+import au.com.guidebee.morsetoolkit.activity.mario.collision.EnemyToEnemyResolver;
 import au.com.guidebee.morsetoolkit.activity.mario.collision.HazardCollisionResolver;
 import au.com.guidebee.morsetoolkit.activity.mario.collision.LiftCollisionResolver;
 import au.com.guidebee.morsetoolkit.activity.mario.collision.PlayerCollisionResolver;
 import au.com.guidebee.morsetoolkit.activity.mario.collision.ProjectileCollisionResolver;
 import au.com.guidebee.morsetoolkit.activity.mario.collision.TeleportResolver;
 import au.com.guidebee.morsetoolkit.activity.mario.fx.BackgroundBand;
+import au.com.guidebee.morsetoolkit.activity.mario.fx.BossFallingAnim;
 import au.com.guidebee.morsetoolkit.activity.mario.fx.Fireworks;
 import au.com.guidebee.morsetoolkit.activity.mario.hud.PauseOverlay;
 import au.com.guidebee.morsetoolkit.activity.mario.hud.ScoreHud;
@@ -53,6 +58,7 @@ import au.com.guidebee.morsetoolkit.activity.mario.world.MarioWorld;
 import au.com.guidebee.morsetoolkit.activity.mario.world.OscillatorClock;
 import au.com.guidebee.morsetoolkit.activity.mario.world.SpawnController;
 
+import java.util.ArrayList;
 import java.util.Random;
 
 /**
@@ -591,6 +597,7 @@ public class MarioGameScreen extends ScreenAdapter {
             OscillatorClock.advance(delta);
             PlayerCollisionResolver.resolvePickups(player, world);
             EnemyCollisionResolver.resolve(player, world);
+            EnemyToEnemyResolver.resolve(world);
             ProjectileCollisionResolver.resolve(world);
             LiftCollisionResolver.resolve(player, world);
             HazardCollisionResolver.resolve(player, world);
@@ -648,6 +655,11 @@ public class MarioGameScreen extends ScreenAdapter {
                     flagPoleTouched = true;
                     gamePlay.gameState().addScore(flagPole.heightBonusScore(player));
                     beginFlagSlide();
+                    break;
+                }
+                Axe touchedAxe = AxeResolver.findTriggered(player, world);
+                if (touchedAxe != null) {
+                    triggerAxe(touchedAxe);
                     break;
                 }
                 LevelDefinition.Checkpoint hit = CheckpointResolver.findTouched(level.checkpoints, player);
@@ -787,6 +799,47 @@ public class MarioGameScreen extends ScreenAdapter {
         if (sound != null) {
             MarioResourceManager.sound(sound).play();
         }
+    }
+
+    /**
+     * The boss-bridge finale, ported from {@code Player_Brick.collided}'s own
+     * {@code getID()==15} case. Unlike every other special touch in this
+     * class, this doesn't change {@link #levelState} or set {@link
+     * #pendingCheckpoint} at all - it just clears the way (every other enemy
+     * vanishes, Mario starts auto-walking right) and, if the boss is still
+     * alive, runs the dramatic {@link BossFallingAnim#spawnCollapse} in
+     * parallel. The level's own "WhyYouDOThis"/"Princess" checkpoint just
+     * past this point (already handled by {@link #beginAnotherCastleMessage})
+     * is what actually ends the level, same as before this method existed -
+     * a boss already defeated by fireballs/a star before Mario ever reaches
+     * the axe skips this whole visual (it already played its own
+     * "smb_bowserfalls" via {@code Boss#die}), matching the original: level
+     * completion was never gated on actually beating the boss (see
+     * docs/MARIO_PORT_PLAN_PHASE2.md S1.4).
+     */
+    private void triggerAxe(Axe axe) {
+        axe.trigger();
+        Boss boss = findActiveBoss();
+        if (boss != null) {
+            BossFallingAnim.spawnCollapse(axe, boss, player);
+        }
+        for (Enemy enemy : new ArrayList<>(world.getEnemies())) {
+            if (enemy.isActive()) {
+                enemy.deactivate();
+            }
+        }
+        PlayerCommand walkForward = new PlayerCommand();
+        walkForward.right = true;
+        player.setForcedCommand(walkForward);
+    }
+
+    private Boss findActiveBoss() {
+        for (Enemy enemy : world.getEnemies()) {
+            if (enemy instanceof Boss && enemy.isActive()) {
+                return (Boss) enemy;
+            }
+        }
+        return null;
     }
 
     /**

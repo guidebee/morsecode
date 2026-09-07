@@ -1,4 +1,4 @@
-mario0.png
+mario-common0.png
 size: 2048,2048
 format: RGBA8888
 filter: Nearest,Nearest
@@ -157,51 +157,44 @@ pump_top
   orig: 64, 64
   offset: 0, 0
   index: -1
-pump_top_castle
-  rotate: false
-  xy: 454, 1834
-  size: 64, 64
-  orig: 64, 64
-  offset: 0, 0
-  index: -1
 hori_image
   rotate: false
-  xy: 520, 1834
+  xy: 454, 1834
   size: 128, 64
   orig: 128, 64
   offset: 0, 0
   index: -1
 brick_peaces
   rotate: false
-  xy: 650, 1834
+  xy: 584, 1834
   size: 32, 64
   orig: 32, 64
   offset: 0, 0
   index: -1
 tree
   rotate: false
-  xy: 684, 1834
+  xy: 618, 1834
   size: 160, 64
   orig: 160, 64
   offset: 0, 0
   index: -1
 small_to_big_mario
   rotate: false
-  xy: 846, 1834
+  xy: 780, 1834
   size: 384, 64
   orig: 384, 64
   offset: 0, 0
   index: -1
 big_to_fire_mario
   rotate: false
-  xy: 1232, 1834
+  xy: 1166, 1834
   size: 320, 64
   orig: 320, 64
   offset: 0, 0
   index: -1
 big_to_small_mario
   rotate: false
-  xy: 1554, 1834
+  xy: 1488, 1834
   size: 320, 64
   orig: 320, 64
   offset: 0, 0
@@ -220,295 +213,218 @@ small_to_big_star_mario
   orig: 384, 64
   offset: 0, 0
   index: -1
-tiles
-  rotate: false
-  xy: 710, 1964
-  size: 96, 64
-  orig: 96, 64
-  offset: 0, 0
-  index: -1
 plant
   rotate: false
-  xy: 808, 1964
+  xy: 710, 1964
   size: 64, 48
   orig: 64, 48
   offset: 0, 0
   index: -1
 plant_dark
   rotate: false
-  xy: 874, 1964
+  xy: 776, 1964
   size: 64, 48
   orig: 64, 48
   offset: 0, 0
   index: -1
 turtle
   rotate: false
-  xy: 940, 1964
+  xy: 842, 1964
   size: 128, 48
   orig: 128, 48
   offset: 0, 0
   index: -1
 turtle_dark
   rotate: false
-  xy: 1070, 1964
+  xy: 972, 1964
   size: 128, 48
   orig: 128, 48
   offset: 0, 0
   index: -1
 enemy_turtle_patrol
   rotate: false
-  xy: 1200, 1964
+  xy: 1102, 1964
   size: 128, 48
   orig: 128, 48
   offset: 0, 0
   index: -1
 flying_turtle_patrol
   rotate: false
-  xy: 1330, 1964
+  xy: 1232, 1964
   size: 128, 48
   orig: 128, 48
   offset: 0, 0
   index: -1
 font
   rotate: false
-  xy: 1460, 1964
+  xy: 1362, 1964
   size: 256, 48
   orig: 256, 48
   offset: 0, 0
   index: -1
-brick
-  rotate: false
-  xy: 1718, 1964
-  size: 32, 32
-  orig: 32, 32
-  offset: 0, 0
-  index: -1
-brick_underground
-  rotate: false
-  xy: 1752, 1964
-  size: 32, 32
-  orig: 32, 32
-  offset: 0, 0
-  index: -1
-brick_castle
-  rotate: false
-  xy: 1786, 1964
-  size: 32, 32
-  orig: 32, 32
-  offset: 0, 0
-  index: -1
-stone
-  rotate: false
-  xy: 1820, 1964
-  size: 32, 32
-  orig: 32, 32
-  offset: 0, 0
-  index: -1
-stone_underground
-  rotate: false
-  xy: 1854, 1964
-  size: 32, 32
-  orig: 32, 32
-  offset: 0, 0
-  index: -1
-stone_castle
-  rotate: false
-  xy: 1888, 1964
-  size: 32, 32
-  orig: 32, 32
-  offset: 0, 0
-  index: -1
-chocolate
-  rotate: false
-  xy: 1922, 1964
-  size: 32, 32
-  orig: 32, 32
-  offset: 0, 0
-  index: -1
-chocolate_underground
-  rotate: false
-  xy: 1956, 1964
-  size: 32, 32
-  orig: 32, 32
-  offset: 0, 0
-  index: -1
-chocolate_castle
-  rotate: false
-  xy: 1990, 1964
-  size: 32, 32
-  orig: 32, 32
-  offset: 0, 0
-  index: -1
-
-mario1.png
-size: 2048,2048
-format: RGBA8888
-filter: Nearest,Nearest
-repeat: none
 pump
   rotate: false
-  xy: 2, 2
-  size: 64, 32
-  orig: 64, 32
-  offset: 0, 0
-  index: -1
-pump_castle
-  rotate: false
-  xy: 68, 2
+  xy: 1620, 1964
   size: 64, 32
   orig: 64, 32
   offset: 0, 0
   index: -1
 question_mark
   rotate: false
-  xy: 134, 2
+  xy: 1686, 1964
   size: 96, 32
   orig: 96, 32
   offset: 0, 0
   index: -1
 mashroom
   rotate: false
-  xy: 232, 2
+  xy: 1784, 1964
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
 mashrooms
   rotate: false
-  xy: 266, 2
+  xy: 1818, 1964
   size: 64, 32
   orig: 64, 32
   offset: 0, 0
   index: -1
 flower
   rotate: false
-  xy: 332, 2
+  xy: 1884, 1964
   size: 128, 32
   orig: 128, 32
   offset: 0, 0
   index: -1
+
+mario-common1.png
+size: 2048,2048
+format: RGBA8888
+filter: Nearest,Nearest
+repeat: none
 coin_anim
   rotate: false
-  xy: 462, 2
+  xy: 2, 2
   size: 128, 32
   orig: 128, 32
   offset: 0, 0
   index: -1
 star
   rotate: false
-  xy: 592, 2
+  xy: 132, 2
   size: 128, 32
   orig: 128, 32
   offset: 0, 0
   index: -1
 one_up
   rotate: false
-  xy: 722, 2
+  xy: 262, 2
   size: 64, 32
   orig: 64, 32
   offset: 0, 0
   index: -1
 coin
   rotate: false
-  xy: 788, 2
+  xy: 328, 2
   size: 96, 32
   orig: 96, 32
   offset: 0, 0
   index: -1
 iron
   rotate: false
-  xy: 886, 2
+  xy: 426, 2
   size: 128, 32
   orig: 128, 32
   offset: 0, 0
   index: -1
 bridge_blocks
   rotate: false
-  xy: 1016, 2
+  xy: 556, 2
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
 turtle_shell
   rotate: false
-  xy: 1050, 2
+  xy: 590, 2
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
 turtle_shell_dark
   rotate: false
-  xy: 1084, 2
+  xy: 624, 2
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
 turtle_shell_red
   rotate: false
-  xy: 1118, 2
+  xy: 658, 2
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
 axe
   rotate: false
-  xy: 1152, 2
+  xy: 692, 2
   size: 128, 32
   orig: 128, 32
   offset: 0, 0
   index: -1
 flag_top
   rotate: false
-  xy: 1282, 2
+  xy: 822, 2
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
 flag_sphere
   rotate: false
-  xy: 1316, 2
+  xy: 856, 2
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
 flag_win
   rotate: false
-  xy: 1350, 2
+  xy: 890, 2
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
 small_dead_mario
   rotate: false
-  xy: 1384, 2
+  xy: 924, 2
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
 bw_hammer
   rotate: false
-  xy: 1418, 2
+  xy: 958, 2
   size: 112, 28
   orig: 112, 28
   offset: 0, 0
   index: -1
 boss_fire
   rotate: false
-  xy: 1532, 2
+  xy: 1072, 2
   size: 96, 16
   orig: 96, 16
   offset: 0, 0
   index: -1
 fire_ball
   rotate: false
-  xy: 1630, 2
+  xy: 1170, 2
   size: 64, 16
   orig: 64, 16
   offset: 0, 0
   index: -1
 lift
   rotate: false
-  xy: 1696, 2
+  xy: 1236, 2
   size: 16, 16
   orig: 16, 16
   offset: 0, 0

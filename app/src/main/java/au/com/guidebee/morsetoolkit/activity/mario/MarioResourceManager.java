@@ -19,12 +19,20 @@ import java.util.Map;
  * Loads and caches every World-1 texture region and sound/music asset via
  * {@code GameEngine.assetManager}. See docs/MARIO_PORT_PLAN.md Step 2.
  *
- * <p>Regions come from {@code mario.atlas}, built offline by
+ * <p>Regions come from two kinds of atlas, built offline by
  * {@code tools/mario-atlas-packer} - see that tool's {@code ASSETS} table for
  * the source-PNG-to-region-name mapping and each region's original col x row
  * strip layout (needed by Step 3/4 to slice animation frames via
  * {@code new com.guidebee.game.microedition.Sprite(region, frameWidth, frameHeight)},
- * the same way the original engine's {@code Sprite(Image, width, height)} did).
+ * the same way the original engine's {@code Sprite(Image, width, height)} did):
+ * {@code mario-common.atlas} (player/enemies/items/HUD/fonts - loaded once for
+ * the whole app session, see {@link #loadCommon}) and one {@code mario-<theme>.atlas}
+ * per level attribute (terrain art only - {@code Ground}/{@code UnderGround}/
+ * {@code Castle}), loaded/swapped per level by {@link #loadTheme} so a level
+ * never keeps another theme's terrain art resident (see
+ * docs/MARIO_PORT_PLAN_PHASE2.md Step P2.1.1). {@link #region} searches
+ * whichever of the two is currently loaded - callers don't know or care which
+ * one actually holds a given name.
  *
  * <p>Music tracks are keyed by the original engine's level {@code attribute}
  * string ("Ground"/"UnderGround"/"Castle"), matching {@code Mario.java}'s own
@@ -91,7 +99,11 @@ public final class MarioResourceManager {
     private static final int REFERENCE_VIEWPORT_WIDTH = 384;
     private static final float CONTROLLER_ALPHA = 0.3f;
 
-    private static TextureAtlas atlas;
+    private static final String COMMON_ATLAS_PATH = "mario-common.atlas";
+
+    private static TextureAtlas commonAtlas;
+    private static TextureAtlas themeAtlas;
+    private static String loadedThemeAttribute;
     private static final Map<String, Sound> SOUNDS = new HashMap<>();
     private static final Map<String, Music> MUSIC = new HashMap<>();
     private static final Map<String, Texture> CONTROLLER_TEXTURE_CACHE = new HashMap<>();
@@ -99,8 +111,9 @@ public final class MarioResourceManager {
     private MarioResourceManager() {
     }
 
-    public static void load() {
-        GameEngine.assetManager.load("mario.atlas", TextureAtlas.class);
+    /** Loads everything used regardless of level attribute - call once per app session (see {@code MarioGamePlay#create}). */
+    public static void loadCommon() {
+        GameEngine.assetManager.load(COMMON_ATLAS_PATH, TextureAtlas.class);
         for (String sfx : SOUND_EFFECTS) {
             GameEngine.assetManager.load(audioPath(sfx), Sound.class);
         }
@@ -109,7 +122,7 @@ public final class MarioResourceManager {
         }
         GameEngine.assetManager.finishLoading();
 
-        atlas = GameEngine.assetManager.get("mario.atlas", TextureAtlas.class);
+        commonAtlas = GameEngine.assetManager.get(COMMON_ATLAS_PATH, TextureAtlas.class);
         for (String sfx : SOUND_EFFECTS) {
             SOUNDS.put(sfx, GameEngine.assetManager.get(audioPath(sfx), Sound.class));
         }
@@ -120,6 +133,45 @@ public final class MarioResourceManager {
         // at load time, not just a file read (see CONTROLLER_TEXTURES' doc).
         for (String path : CONTROLLER_TEXTURES) {
             CONTROLLER_TEXTURE_CACHE.put(path, downscaledTexture(path));
+        }
+    }
+
+    /**
+     * Loads the terrain atlas for {@code attribute} (a level's own theme),
+     * unloading whichever other one was previously loaded - see the class
+     * doc. A no-op if this attribute's atlas is already the one loaded
+     * (e.g. two Ground levels in a row), so callers (just
+     * {@code MarioGameScreen}'s constructor) can call this unconditionally
+     * on every level load without worrying about redundant reloads, and so
+     * a same-theme level-to-level transition never has a moment with the
+     * theme atlas unloaded (unlike unloading from the *old* screen's
+     * teardown instead, which would race against the *new* screen already
+     * having loaded - and possibly needing to keep - the same atlas).
+     */
+    public static void loadTheme(String attribute) {
+        if (attribute.equals(loadedThemeAttribute)) {
+            return;
+        }
+        String path = themeAtlasPath(attribute);
+        if (themeAtlas != null) {
+            GameEngine.assetManager.unload(themeAtlasPath(loadedThemeAttribute));
+        }
+        GameEngine.assetManager.load(path, TextureAtlas.class);
+        GameEngine.assetManager.finishLoading();
+        themeAtlas = GameEngine.assetManager.get(path, TextureAtlas.class);
+        loadedThemeAttribute = attribute;
+    }
+
+    private static String themeAtlasPath(String attribute) {
+        switch (attribute) {
+            case "Ground":
+                return "mario-ground.atlas";
+            case "UnderGround":
+                return "mario-underground.atlas";
+            case "Castle":
+                return "mario-castle.atlas";
+            default:
+                throw new IllegalArgumentException("No theme atlas for attribute: " + attribute);
         }
     }
 
@@ -145,9 +197,12 @@ public final class MarioResourceManager {
     }
 
     public static TextureRegion region(String name) {
-        TextureRegion region = atlas.findRegion(name);
+        TextureRegion region = commonAtlas.findRegion(name);
+        if (region == null && themeAtlas != null) {
+            region = themeAtlas.findRegion(name);
+        }
         if (region == null) {
-            throw new IllegalArgumentException("No such mario.atlas region: " + name);
+            throw new IllegalArgumentException("No such mario atlas region: " + name);
         }
         return region;
     }

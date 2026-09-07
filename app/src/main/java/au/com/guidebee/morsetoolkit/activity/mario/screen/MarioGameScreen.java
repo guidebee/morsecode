@@ -235,6 +235,11 @@ public class MarioGameScreen extends ScreenAdapter {
         this.gamePlay = gamePlay;
         level = LevelCatalog.load(levelNumber);
         levelAttribute = level.attribute;
+        // Must happen before anything below touches MarioResourceManager.region -
+        // MarioWorld's own constructor (inside createWorld) already looks up the
+        // "tiles" region, which now lives in this level's theme atlas, not the
+        // common one - see MarioResourceManager#loadTheme's doc.
+        MarioResourceManager.loadTheme(levelAttribute);
         world = LevelLoader.createWorld(level);
 
         // FitViewport (Step 3's original choice) letterboxes/pillarboxes

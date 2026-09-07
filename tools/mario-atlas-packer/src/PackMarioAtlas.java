@@ -4,18 +4,31 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileWriter;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Offline, dev-only tool - not part of the Android build.
  *
  * Packs the World-1 subset of the original Mario game's PNGs (from
  * C:\workspace\Mario\SandBox, plus CloudsNight\Hammer.png for the boss's
- * hammer) into a libGDX-format TextureAtlas (mario.png[+mario1.png...] and
- * mario.atlas), matching the format GGE's TextureAtlas/AssetManager already
- * loads for battlecity.atlas / flappybird.atlas.
+ * hammer) into libGDX-format TextureAtlases, matching the format GGE's
+ * TextureAtlas/AssetManager already loads for battlecity.atlas / flappybird.atlas.
  *
- * ASSETS below is the exact set of resource keys the original engine's
+ * <p>Emits one atlas per {@link Theme} instead of a single growing one -
+ * see docs/MARIO_PORT_PLAN_PHASE2.md Step P2.1.1. {@link Theme#COMMON} (player,
+ * enemies, items, HUD, fonts - everything used regardless of a level's
+ * attribute) is always loaded; {@code MarioResourceManager} additionally loads
+ * just whichever one of {@link Theme#GROUND}/{@link Theme#UNDERGROUND}/
+ * {@link Theme#CASTLE} the current level's attribute calls for, so a Ground
+ * level never pays to keep Castle-only terrain art resident. Region *names*
+ * are unchanged from the single-atlas version (still e.g. "brick_underground",
+ * not just "brick", picked by {@code MarioResourceManager.themedRegion} the
+ * same way as before) - only *which physical atlas file* a region lives in
+ * changed, so no actor/call-site code needed to change for this split.
+ *
+ * <p>ASSETS below is the exact set of resource keys the original engine's
  * WholeGame.java registers with its BaseLoader (bsLoader.storeImage/
  * storeImages) that are actually reachable from World 1 (Levels 11-14 and
  * bonus areas 97/98) - cross-checked against Mario.java's tile-spawning
@@ -35,132 +48,156 @@ import java.util.List;
  */
 public class PackMarioAtlas {
 
-    private record AssetSpec(String regionName, String sourcePath, int cols, int rows) {
+    private enum Theme {
+        /** Loaded for the whole app session - see {@code MarioResourceManager#loadCommon}. */
+        COMMON("mario-common"),
+        GROUND("mario-ground"),
+        UNDERGROUND("mario-underground"),
+        CASTLE("mario-castle");
+
+        final String baseName;
+
+        Theme(String baseName) {
+            this.baseName = baseName;
+        }
+    }
+
+    private record AssetSpec(Theme theme, String regionName, String sourcePath, int cols, int rows) {
     }
 
     private static final List<AssetSpec> ASSETS = List.of(
-            // Ground/UnderGround/Castle terrain (attribute-themed single 32x32 tiles)
-            new AssetSpec("brick", "brick.png", 1, 1),
-            new AssetSpec("brick_underground", "brick_UnderGround.png", 1, 1),
-            new AssetSpec("brick_castle", "brick_Castle.png", 1, 1),
-            new AssetSpec("stone", "stone.png", 1, 1),
-            new AssetSpec("stone_underground", "stone_UnderGround.png", 1, 1),
-            new AssetSpec("stone_castle", "stone_Castle.png", 1, 1),
-            new AssetSpec("chocolate", "chocolate.png", 1, 1),
-            new AssetSpec("chocolate_underground", "chocolate_UnderGround.png", 1, 1),
-            new AssetSpec("chocolate_castle", "chocolate_Castle.png", 1, 1),
+            // Ground/UnderGround/Castle terrain (attribute-themed single 32x32 tiles) -
+            // each variant lives in its own theme's atlas; region *names* keep the old
+            // suffix convention (MarioResourceManager.themedRegion picks by name, same as
+            // pre-split) so no actor code needed to change.
+            new AssetSpec(Theme.GROUND, "brick", "brick.png", 1, 1),
+            new AssetSpec(Theme.UNDERGROUND, "brick_underground", "brick_UnderGround.png", 1, 1),
+            new AssetSpec(Theme.CASTLE, "brick_castle", "brick_Castle.png", 1, 1),
+            new AssetSpec(Theme.GROUND, "stone", "stone.png", 1, 1),
+            new AssetSpec(Theme.UNDERGROUND, "stone_underground", "stone_UnderGround.png", 1, 1),
+            new AssetSpec(Theme.CASTLE, "stone_castle", "stone_Castle.png", 1, 1),
+            new AssetSpec(Theme.GROUND, "chocolate", "chocolate.png", 1, 1),
+            new AssetSpec(Theme.UNDERGROUND, "chocolate_underground", "chocolate_UnderGround.png", 1, 1),
+            new AssetSpec(Theme.CASTLE, "chocolate_castle", "chocolate_Castle.png", 1, 1),
 
-            // Pipes/pumps (Ground + Castle only - World 1 never uses the Sea attribute)
-            new AssetSpec("pump", "pump.png", 1, 1),
-            new AssetSpec("pump_top", "pump top.png", 1, 1),
-            new AssetSpec("pump_castle", "pump Castle.png", 1, 1),
-            new AssetSpec("pump_top_castle", "pump top Castle.png", 1, 1),
-            new AssetSpec("plant", "plant.png", 2, 1),
-            new AssetSpec("plant_dark", "plantdark.png", 2, 1),
-            new AssetSpec("hori_image", "HoriImage.png", 2, 1),
+            // Pipes/pumps - "pump"/"pump_top" are shared Ground+UnderGround art in the
+            // original (see actors.bricks.Pump's own doc), so they're COMMON, not
+            // GROUND-only; only the Castle recolor is theme-exclusive. World 1 never
+            // places a pipe on the "Sea" attribute.
+            new AssetSpec(Theme.COMMON, "pump", "pump.png", 1, 1),
+            new AssetSpec(Theme.COMMON, "pump_top", "pump top.png", 1, 1),
+            new AssetSpec(Theme.CASTLE, "pump_castle", "pump Castle.png", 1, 1),
+            new AssetSpec(Theme.CASTLE, "pump_top_castle", "pump top Castle.png", 1, 1),
+            new AssetSpec(Theme.COMMON, "plant", "plant.png", 2, 1),
+            new AssetSpec(Theme.COMMON, "plant_dark", "plantdark.png", 2, 1),
+            new AssetSpec(Theme.COMMON, "hori_image", "HoriImage.png", 2, 1),
 
-            // Bricks/blocks and their reveal items
-            new AssetSpec("question_mark", "QuestionMark.png", 3, 1),
-            new AssetSpec("mashroom", "Mashroom.png", 1, 1),
-            new AssetSpec("mashrooms", "Mashrooms.png", 2, 1),
-            new AssetSpec("flower", "Flower.png", 4, 1),
-            new AssetSpec("coin_anim", "CoinAnim.png", 4, 1),
-            new AssetSpec("star", "Star.png", 4, 1),
-            new AssetSpec("brick_peaces", "BrickPeaces.png", 2, 4),
-            new AssetSpec("one_up", "1UP.png", 2, 1),
-            new AssetSpec("coin", "Coin.png", 3, 1),
-            new AssetSpec("iron", "Iron.png", 4, 1),
-            new AssetSpec("bridge_blocks", "BridgeBloks.png", 1, 1),
+            // Bricks/blocks and their reveal items - not theme-swapped (each already
+            // themes itself via a frame index or an attribute-picked *name* read from
+            // the common atlas, e.g. Iron/BrickFragment), so COMMON.
+            new AssetSpec(Theme.COMMON, "question_mark", "QuestionMark.png", 3, 1),
+            new AssetSpec(Theme.COMMON, "mashroom", "Mashroom.png", 1, 1),
+            new AssetSpec(Theme.COMMON, "mashrooms", "Mashrooms.png", 2, 1),
+            new AssetSpec(Theme.COMMON, "flower", "Flower.png", 4, 1),
+            new AssetSpec(Theme.COMMON, "coin_anim", "CoinAnim.png", 4, 1),
+            new AssetSpec(Theme.COMMON, "star", "Star.png", 4, 1),
+            new AssetSpec(Theme.COMMON, "brick_peaces", "BrickPeaces.png", 2, 4),
+            new AssetSpec(Theme.COMMON, "one_up", "1UP.png", 2, 1),
+            new AssetSpec(Theme.COMMON, "coin", "Coin.png", 3, 1),
+            new AssetSpec(Theme.COMMON, "iron", "Iron.png", 4, 1),
+            new AssetSpec(Theme.COMMON, "bridge_blocks", "BridgeBloks.png", 1, 1),
 
-            // Enemies
-            new AssetSpec("enemy", "enemy.png", 2, 4),
-            new AssetSpec("turtle", "turtle.png", 4, 1),
-            new AssetSpec("turtle_dark", "turtledark.png", 4, 1),
-            new AssetSpec("turtle_shell", "TurtelShell.png", 1, 1),
-            new AssetSpec("turtle_shell_dark", "TurtelShelldark.png", 1, 1),
-            new AssetSpec("turtle_shell_red", "TurtelShellRed.png", 1, 1),
-            new AssetSpec("enemy_turtle_patrol", "EnemyTurtlePatrol.png", 4, 1),
-            new AssetSpec("flying_turtle_patrol", "FlyingTurtlePatrol.png", 4, 1),
-            new AssetSpec("boss", "Boss.png", 3, 2),
-            new AssetSpec("boss_fire", "BossFire.png", 2, 1),
+            // Enemies - never theme-swapped by atlas (a "dark" variant is just a
+            // differently-*named* common region, picked by attribute the same way
+            // Iron's frame is), so all COMMON.
+            new AssetSpec(Theme.COMMON, "enemy", "enemy.png", 2, 4),
+            new AssetSpec(Theme.COMMON, "turtle", "turtle.png", 4, 1),
+            new AssetSpec(Theme.COMMON, "turtle_dark", "turtledark.png", 4, 1),
+            new AssetSpec(Theme.COMMON, "turtle_shell", "TurtelShell.png", 1, 1),
+            new AssetSpec(Theme.COMMON, "turtle_shell_dark", "TurtelShelldark.png", 1, 1),
+            new AssetSpec(Theme.COMMON, "turtle_shell_red", "TurtelShellRed.png", 1, 1),
+            new AssetSpec(Theme.COMMON, "enemy_turtle_patrol", "EnemyTurtlePatrol.png", 4, 1),
+            new AssetSpec(Theme.COMMON, "flying_turtle_patrol", "FlyingTurtlePatrol.png", 4, 1),
+            new AssetSpec(Theme.COMMON, "boss", "Boss.png", 3, 2),
+            new AssetSpec(Theme.COMMON, "boss_fire", "BossFire.png", 2, 1),
             // NOTE: the original Boss.java always throws bsLoader "BWHammer" regardless of
             // level theme (likely an oversight left in the original game) - preserved as-is.
-            new AssetSpec("bw_hammer", "CloudsNight/Hammer.png", 4, 1),
-            new AssetSpec("fire_ball", "FireBall.png", 4, 1),
-            new AssetSpec("lava", "Lava.png", 1, 1),
+            new AssetSpec(Theme.COMMON, "bw_hammer", "CloudsNight/Hammer.png", 4, 1),
+            new AssetSpec(Theme.COMMON, "fire_ball", "FireBall.png", 4, 1),
+            new AssetSpec(Theme.COMMON, "lava", "Lava.png", 1, 1),
             // 4-frame strip (128x32, confirmed against the source PNG), cycled
             // 0,1,2,3,2,1 by Axe.java - see actors.bricks.Axe.
-            new AssetSpec("axe", "Axe.png", 4, 1),
+            new AssetSpec(Theme.COMMON, "axe", "Axe.png", 4, 1),
 
             // Scenery
-            new AssetSpec("small_castle", "SmallCastle.png", 1, 1),
-            new AssetSpec("big_castle", "BigCastle.png", 1, 1),
-            new AssetSpec("tree", "tree.png", 5, 2),
-            new AssetSpec("lift", "Lift.png", 1, 1),
-            new AssetSpec("mountain", "Mountain.png", 1, 1),
-            new AssetSpec("clouds", "Clouds.png", 1, 1),
+            new AssetSpec(Theme.COMMON, "small_castle", "SmallCastle.png", 1, 1),
+            new AssetSpec(Theme.COMMON, "big_castle", "BigCastle.png", 1, 1),
+            new AssetSpec(Theme.COMMON, "tree", "tree.png", 5, 2),
+            new AssetSpec(Theme.COMMON, "lift", "Lift.png", 1, 1),
+            new AssetSpec(Theme.COMMON, "mountain", "Mountain.png", 1, 1),
+            new AssetSpec(Theme.COMMON, "clouds", "Clouds.png", 1, 1),
 
             // Flag / level-end
-            new AssetSpec("flag", "Flag.png", 1, 1),
-            new AssetSpec("flag_top", "FlagTop.png", 1, 1),
-            new AssetSpec("flag_sphere", "FlagSphere.png", 1, 1),
-            new AssetSpec("flag_win", "FlagWin.png", 1, 1),
-            new AssetSpec("another_castle_message", "AnotherCastleMessage.png", 1, 1),
-            new AssetSpec("quest_complete", "QuestComplete.png", 1, 1),
+            new AssetSpec(Theme.COMMON, "flag", "Flag.png", 1, 1),
+            new AssetSpec(Theme.COMMON, "flag_top", "FlagTop.png", 1, 1),
+            new AssetSpec(Theme.COMMON, "flag_sphere", "FlagSphere.png", 1, 1),
+            new AssetSpec(Theme.COMMON, "flag_win", "FlagWin.png", 1, 1),
+            new AssetSpec(Theme.COMMON, "another_castle_message", "AnotherCastleMessage.png", 1, 1),
+            new AssetSpec(Theme.COMMON, "quest_complete", "QuestComplete.png", 1, 1),
 
             // Player
-            new AssetSpec("player", "player.png", 4, 7),
-            new AssetSpec("big_player", "BigPlayer.png", 4, 7),
-            new AssetSpec("fire_player", "FirePlayer.png", 4, 7),
-            new AssetSpec("small_to_big_mario", "SmallToBigMarioAnim.png", 12, 1),
-            new AssetSpec("big_to_fire_mario", "BigToFireMarioAnim.png", 10, 1),
-            new AssetSpec("big_to_small_mario", "BigToSmallMarioAnim.png", 10, 1),
-            new AssetSpec("fire_to_small_mario", "FireToSmallMarioAnim.png", 10, 1),
-            new AssetSpec("small_to_big_star_mario", "SmallToBigStarMaroAnim.png", 12, 1),
-            new AssetSpec("small_dead_mario", "SmallDeadMario.png", 1, 1),
-            new AssetSpec("small_black_mario", "SmallBlackMario.png", 4, 7),
-            new AssetSpec("small_green_mario", "SmallGreenMario.png", 4, 7),
-            new AssetSpec("small_red_mario", "SmallRedMario.png", 4, 7),
-            new AssetSpec("big_black_mario", "BigBlackMario.png", 4, 7),
-            new AssetSpec("big_green_mario", "BigGreenMario.png", 4, 7),
-            new AssetSpec("big_red_mario", "BigRedMario.png", 4, 7),
+            new AssetSpec(Theme.COMMON, "player", "player.png", 4, 7),
+            new AssetSpec(Theme.COMMON, "big_player", "BigPlayer.png", 4, 7),
+            new AssetSpec(Theme.COMMON, "fire_player", "FirePlayer.png", 4, 7),
+            new AssetSpec(Theme.COMMON, "small_to_big_mario", "SmallToBigMarioAnim.png", 12, 1),
+            new AssetSpec(Theme.COMMON, "big_to_fire_mario", "BigToFireMarioAnim.png", 10, 1),
+            new AssetSpec(Theme.COMMON, "big_to_small_mario", "BigToSmallMarioAnim.png", 10, 1),
+            new AssetSpec(Theme.COMMON, "fire_to_small_mario", "FireToSmallMarioAnim.png", 10, 1),
+            new AssetSpec(Theme.COMMON, "small_to_big_star_mario", "SmallToBigStarMaroAnim.png", 12, 1),
+            new AssetSpec(Theme.COMMON, "small_dead_mario", "SmallDeadMario.png", 1, 1),
+            new AssetSpec(Theme.COMMON, "small_black_mario", "SmallBlackMario.png", 4, 7),
+            new AssetSpec(Theme.COMMON, "small_green_mario", "SmallGreenMario.png", 4, 7),
+            new AssetSpec(Theme.COMMON, "small_red_mario", "SmallRedMario.png", 4, 7),
+            new AssetSpec(Theme.COMMON, "big_black_mario", "BigBlackMario.png", 4, 7),
+            new AssetSpec(Theme.COMMON, "big_green_mario", "BigGreenMario.png", 4, 7),
+            new AssetSpec(Theme.COMMON, "big_red_mario", "BigRedMario.png", 4, 7),
 
             // HUD
-            new AssetSpec("font", "Font.png", 16, 3),
-            new AssetSpec("info", "Info.png", 1, 1),
-            new AssetSpec("info2", "Info2.png", 1, 1)
+            new AssetSpec(Theme.COMMON, "font", "Font.png", 16, 3),
+            new AssetSpec(Theme.COMMON, "info", "Info.png", 1, 1),
+            new AssetSpec(Theme.COMMON, "info2", "Info2.png", 1, 1)
     );
 
     /**
-     * The World-1 static-terrain tiles, in the exact order they're packed into the
-     * composite "tiles" region below - a uniform 32x32 grid that {@code TiledLayer}
-     * requires (unlike every other region, which is packed as a standalone image).
-     * Index into this list + 1 = the TiledLayer cell value (index 0 means "empty").
+     * The static-terrain tiles composited into each theme's own "tiles" region -
+     * a uniform 32x32 grid {@code TiledLayer} requires. Unlike the single-atlas
+     * version, each theme gets its *own* 2-cell composite (stone+chocolate for
+     * that theme only) rather than one 6-cell sheet spanning all three - cell
+     * value 1=stone, 2=chocolate, the *same two indices regardless of which
+     * theme atlas is currently loaded* (see {@code MarioConfiguration}'s
+     * TILE_STONE/TILE_CHOCOLATE - the four now-redundant per-theme variants were
+     * removed since the theme atlas itself supplies the right texture).
      *
-     * NOTE: "pump" and its variants are deliberately excluded, even though they're
-     * conceptually static terrain - pump.png etc. are 64x32 (2 tiles wide, drawn as
-     * freely-positioned/overlapping sprites in the original engine, not tile-grid
-     * cells), which TiledLayer's uniform grid can't represent without distorting
-     * them. This matches docs/MARIO_PORT_PLAN.md's own package layout (section 5),
-     * which groups Pump with the Sprite-based actors/bricks/* classes, not static
-     * geometry - it becomes a Sprite actor in Step 5, like Bank/QuestionMark.
+     * <p>NOTE: "pump" and its variants are deliberately excluded, even though
+     * they're conceptually static terrain - pump.png etc. are 64x32 (2 tiles
+     * wide, drawn as freely-positioned/overlapping sprites in the original
+     * engine, not tile-grid cells), which TiledLayer's uniform grid can't
+     * represent without distorting them - it's a Sprite actor instead (see
+     * {@code actors.bricks.Pump}).
      *
-     * NOTE: "brick" and its variants are ALSO excluded (Step 5) - Brick turned out
-     * to be breakable (see {@code Bricks/Brick.java}'s HitFromDown), so it moved
-     * from a static TiledLayer cell to a Sprite actor
-     * ({@code actors.bricks.Brick}), same reasoning as pump. The individual
-     * "brick"/"brick_underground"/"brick_castle" regions are still packed above
-     * (ASSETS) since that actor needs them standalone - only the composite tile
-     * sheet no longer includes them.
-     *
-     * Kept in lockstep with {@code MarioConfiguration}'s TILE_* constants and
-     * {@code LevelLoader}'s attribute -> tile-index mapping.
+     * <p>NOTE: "brick" and its variants are ALSO excluded - Brick turned out to
+     * be breakable (see {@code Bricks/Brick.java}'s HitFromDown), so it's a
+     * Sprite actor too ({@code actors.bricks.Brick}), same reasoning as pump.
      */
-    private static final List<String> TILE_SHEET_ORDER = List.of(
-            "stone", "stone_underground", "stone_castle",
-            "chocolate", "chocolate_underground", "chocolate_castle"
+    private record TerrainTile(Theme theme, String stoneRegion, String chocolateRegion) {
+    }
+
+    private static final List<TerrainTile> TERRAIN_TILES = List.of(
+            new TerrainTile(Theme.GROUND, "stone", "chocolate"),
+            new TerrainTile(Theme.UNDERGROUND, "stone_underground", "chocolate_underground"),
+            new TerrainTile(Theme.CASTLE, "stone_castle", "chocolate_castle")
     );
-    private static final int TILE_SHEET_COLS = 3;
+    private static final int TILE_SHEET_COLS = 2;
     private static final int TILE_SIZE = 32;
 
     private static final int PAGE_SIZE = 2048;
@@ -207,19 +244,47 @@ public class PackMarioAtlas {
             }
             loaded.add(new LoadedAsset(spec, img));
         }
+        for (TerrainTile tile : TERRAIN_TILES) {
+            loaded.add(new LoadedAsset(
+                    new AssetSpec(tile.theme(), "tiles", null, TILE_SHEET_COLS, 1),
+                    buildTileSheet(loaded, tile)));
+        }
 
-        loaded.add(new LoadedAsset(
-                new AssetSpec("tiles", null, TILE_SHEET_COLS, ceilDiv(TILE_SHEET_ORDER.size(), TILE_SHEET_COLS)),
-                buildTileSheet(loaded)));
+        Map<Theme, List<LoadedAsset>> byTheme = new EnumMap<>(Theme.class);
+        for (LoadedAsset asset : loaded) {
+            byTheme.computeIfAbsent(asset.spec().theme(), t -> new ArrayList<>()).add(asset);
+        }
 
+        for (Theme theme : Theme.values()) {
+            List<LoadedAsset> themeAssets = byTheme.getOrDefault(theme, List.of());
+            if (themeAssets.isEmpty()) {
+                continue;
+            }
+            packTheme(theme, themeAssets, outDir);
+        }
+
+        System.out.println();
+        System.out.println("Region -> (cols x rows) frame grid, for Step 3/4's Sprite(region, frameWidth, frameHeight):");
+        for (AssetSpec spec : ASSETS) {
+            System.out.println("  [" + spec.theme() + "] " + spec.regionName() + " -> " + spec.cols() + "x" + spec.rows());
+        }
+        for (TerrainTile tile : TERRAIN_TILES) {
+            System.out.println("  [" + tile.theme() + "] tiles -> " + TILE_SHEET_COLS
+                    + "x1 (composite TiledLayer tile set; 1=" + tile.stoneRegion() + ", 2=" + tile.chocolateRegion() + ")");
+        }
+    }
+
+    /** Packs one theme's assets into its own page(s) + .atlas, exactly like the old single-atlas packer did for everything at once. */
+    private static void packTheme(Theme theme, List<LoadedAsset> themeAssets, File outDir) throws Exception {
         // Tallest-first shelf packing keeps shelves tightly packed.
-        loaded.sort((a, b) -> b.image.getHeight() - a.image.getHeight());
+        List<LoadedAsset> sorted = new ArrayList<>(themeAssets);
+        sorted.sort((a, b) -> b.image.getHeight() - a.image.getHeight());
 
         List<Page> pages = new ArrayList<>();
         pages.add(new Page());
         List<PlacedRegion> placements = new ArrayList<>();
 
-        for (LoadedAsset asset : loaded) {
+        for (LoadedAsset asset : sorted) {
             int w = asset.image.getWidth();
             int h = asset.image.getHeight();
             if (w + PADDING * 2 > PAGE_SIZE || h + PADDING * 2 > PAGE_SIZE) {
@@ -236,7 +301,7 @@ public class PackMarioAtlas {
             placements.add(new PlacedRegion(asset.spec, pages.size() - 1, pos[0], pos[1], w, h));
         }
 
-        String baseName = "mario";
+        String baseName = theme.baseName;
         for (int i = 0; i < pages.size(); i++) {
             BufferedImage canvas = new BufferedImage(PAGE_SIZE, PAGE_SIZE, BufferedImage.TYPE_INT_ARGB);
             Graphics2D g = canvas.createGraphics();
@@ -244,7 +309,7 @@ public class PackMarioAtlas {
                 if (pr.pageIndex() != i) {
                     continue;
                 }
-                BufferedImage img = findImage(loaded, pr.spec());
+                BufferedImage img = findImage(sorted, pr.spec());
                 drawFlippedPerCell(g, img, pr.x(), pr.y(), pr.spec().cols(), pr.spec().rows());
             }
             g.dispose();
@@ -259,9 +324,9 @@ public class PackMarioAtlas {
             // A blank line is how TextureAtlas$TextureAtlasData's own parser
             // (see its `line.trim().length() == 0` check) knows a new page's
             // header is starting rather than another region of the current
-            // one - omitting it (as this loop did before) reads fine for a
-            // single-page atlas but corrupts parsing of every page after the
-            // first once there's more than one.
+            // one - omitting it reads fine for a single-page atlas but
+            // corrupts parsing of every page after the first once there's
+            // more than one.
             if (i > 0) {
                 atlas.append("\n");
             }
@@ -290,15 +355,6 @@ public class PackMarioAtlas {
         }
         System.out.println("Wrote " + atlasFile + " (" + placements.size()
                 + " regions across " + pages.size() + " page(s))");
-
-        System.out.println();
-        System.out.println("Region -> (cols x rows) frame grid, for Step 3/4's Sprite(region, frameWidth, frameHeight):");
-        for (AssetSpec spec : ASSETS) {
-            System.out.println("  " + spec.regionName() + " -> " + spec.cols() + "x" + spec.rows());
-        }
-        System.out.println("  tiles -> " + TILE_SHEET_COLS + "x" + ceilDiv(TILE_SHEET_ORDER.size(), TILE_SHEET_COLS)
-                + " (composite TiledLayer tile set; cell value = 1 + index into TILE_SHEET_ORDER = "
-                + TILE_SHEET_ORDER + ")");
     }
 
     private static BufferedImage findImage(List<LoadedAsset> loaded, AssetSpec spec) {
@@ -310,40 +366,16 @@ public class PackMarioAtlas {
         throw new IllegalStateException("Unreachable: " + spec.regionName());
     }
 
-    private static BufferedImage findImageByRegionName(List<LoadedAsset> loaded, String regionName) {
+    private static BufferedImage findImageByRegionName(List<LoadedAsset> loaded, Theme theme, String regionName) {
         for (LoadedAsset asset : loaded) {
-            if (asset.spec().regionName().equals(regionName)) {
+            if (asset.spec().theme() == theme && asset.spec().regionName().equals(regionName)) {
                 return asset.image();
             }
         }
         throw new IllegalStateException("No such source asset for tile sheet: " + regionName);
     }
 
-    private static int ceilDiv(int a, int b) {
-        return (a + b - 1) / b;
-    }
-
-    /**
-     * Draws {@code img} into the page at (destX,destY), flipping each
-     * cols x rows frame cell vertically IN PLACE (cell positions unchanged).
-     *
-     * <p>Why per-cell and not "flip the whole image": {@code MarioGameScreen}
-     * configures the camera Y-down to match this port's Y-down world
-     * convention (see that class's comment), but the engine's
-     * {@code SpriteBatch.draw(TextureRegion,...)} hard-codes a UV-to-vertex
-     * mapping tuned for the opposite, default Y-up camera - so every sprite's
-     * texture ends up sampled upside-down unless corrected. Flipping the
-     * source pixels here (once, offline) is the fix; runtime
-     * {@code TextureRegion.flip()} doesn't work because both
-     * {@code TiledLayer} and {@code microedition.Sprite} internally call
-     * {@code TextureRegion.split()} to slice a strip into per-frame regions,
-     * and {@code split()}'s own docs say a pre-flipped parent region isn't
-     * supported - it recomputes fresh, unflipped sub-regions regardless.
-     * Flipping *within* each frame cell (not the whole multi-row image as
-     * one block) is what keeps a strip's frame order intact - a whole-image
-     * flip would reverse row order (e.g. "player"'s 4x7 grid, where each row
-     * is a different animation, would end up with row 0 and row 6 swapped).
-     */
+    /** Draws {@code img} into the page at (destX,destY), flipping each cols x rows frame cell vertically IN PLACE - see the class doc's original note on why. */
     private static void drawFlippedPerCell(Graphics2D g, BufferedImage img, int destX, int destY,
                                             int cols, int rows) {
         int cellWidth = img.getWidth() / cols;
@@ -363,20 +395,17 @@ public class PackMarioAtlas {
         }
     }
 
-    private static BufferedImage buildTileSheet(List<LoadedAsset> loaded) {
-        int rows = ceilDiv(TILE_SHEET_ORDER.size(), TILE_SHEET_COLS);
-        BufferedImage sheet = new BufferedImage(
-                TILE_SHEET_COLS * TILE_SIZE, rows * TILE_SIZE, BufferedImage.TYPE_INT_ARGB);
+    private static BufferedImage buildTileSheet(List<LoadedAsset> loaded, TerrainTile tile) {
+        BufferedImage sheet = new BufferedImage(TILE_SHEET_COLS * TILE_SIZE, TILE_SIZE, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g = sheet.createGraphics();
-        for (int i = 0; i < TILE_SHEET_ORDER.size(); i++) {
-            BufferedImage tile = findImageByRegionName(loaded, TILE_SHEET_ORDER.get(i));
-            if (tile.getWidth() != TILE_SIZE || tile.getHeight() != TILE_SIZE) {
+        String[] order = {tile.stoneRegion(), tile.chocolateRegion()};
+        for (int i = 0; i < order.length; i++) {
+            BufferedImage cell = findImageByRegionName(loaded, tile.theme(), order[i]);
+            if (cell.getWidth() != TILE_SIZE || cell.getHeight() != TILE_SIZE) {
                 throw new IllegalStateException("Tile sheet source must be " + TILE_SIZE + "x"
-                        + TILE_SIZE + ": " + TILE_SHEET_ORDER.get(i));
+                        + TILE_SIZE + ": " + order[i]);
             }
-            int col = i % TILE_SHEET_COLS;
-            int row = i / TILE_SHEET_COLS;
-            g.drawImage(tile, col * TILE_SIZE, row * TILE_SIZE, null);
+            g.drawImage(cell, i * TILE_SIZE, 0, null);
         }
         g.dispose();
         return sheet;

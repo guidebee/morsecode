@@ -29,7 +29,7 @@ public class MarioGamePlay extends GamePlay {
 
     @Override
     public void create() {
-        MarioResourceManager.load();
+        MarioResourceManager.loadCommon();
         setScreen(new MarioMenuScreen(this));
     }
 

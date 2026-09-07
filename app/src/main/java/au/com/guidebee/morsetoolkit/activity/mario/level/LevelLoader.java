@@ -73,7 +73,7 @@ public final class LevelLoader {
 
     private static void populateStaticGeometry(MarioWorld world, LevelDefinition level) {
         for (LevelDefinition.Tile tile : level.tiles) {
-            int index = staticTileIndex(tile.type, level.attribute);
+            int index = staticTileIndex(tile.type);
             if (index == 0) {
                 continue;
             }
@@ -85,28 +85,24 @@ public final class LevelLoader {
         }
     }
 
-    /** @return a {@code MarioConfiguration.TILE_*} index, or 0 if this type isn't static terrain. */
-    private static int staticTileIndex(String type, String attribute) {
+    /**
+     * @return a {@code MarioConfiguration.TILE_*} index, or 0 if this type
+     * isn't static terrain. No longer attribute-dependent - since
+     * docs/MARIO_PORT_PLAN_PHASE2.md Step P2.1.1's per-theme atlas split,
+     * index 1 always means "stone" and index 2 always means "chocolate";
+     * which actual texture that draws comes from whichever theme atlas
+     * {@code MarioResourceManager} has loaded for this level, not from a
+     * different index per attribute (see {@code MarioConfiguration}'s doc).
+     */
+    private static int staticTileIndex(String type) {
         switch (type) {
             case "stone":
-                return themed(attribute, MarioConfiguration.TILE_STONE,
-                        MarioConfiguration.TILE_STONE_UNDERGROUND, MarioConfiguration.TILE_STONE_CASTLE);
+                return MarioConfiguration.TILE_STONE;
             case "chocolate":
-                return themed(attribute, MarioConfiguration.TILE_CHOCOLATE,
-                        MarioConfiguration.TILE_CHOCOLATE_UNDERGROUND, MarioConfiguration.TILE_CHOCOLATE_CASTLE);
+                return MarioConfiguration.TILE_CHOCOLATE;
             default:
                 return 0;
         }
-    }
-
-    private static int themed(String attribute, int ground, int underGround, int castle) {
-        if ("UnderGround".equals(attribute)) {
-            return underGround;
-        }
-        if ("Castle".equals(attribute)) {
-            return castle;
-        }
-        return ground;
     }
 
     /**

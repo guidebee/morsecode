@@ -5,9 +5,16 @@ package au.com.guidebee.morsetoolkit.activity.mario;
  * mapping for World 1's static terrain. See docs/MARIO_PORT_PLAN.md Step 3.1.
  *
  * <p>The TILE_* indices below must stay in lockstep with
- * {@code tools/mario-atlas-packer}'s {@code TILE_SHEET_ORDER} - both list the
- * same 6 tiles (stone/chocolate x Ground/UnderGround/Castle) in the same
- * order, 1-based (TiledLayer reserves cell value 0 for "empty").
+ * {@code tools/mario-atlas-packer}'s per-theme tile-sheet order (1=stone,
+ * 2=chocolate), 1-based (TiledLayer reserves cell value 0 for "empty"). Since
+ * docs/MARIO_PORT_PLAN_PHASE2.md Step P2.1.1's per-theme atlas split, there
+ * are only these two indices, not six - each theme (Ground/UnderGround/Castle)
+ * now has its *own* "tiles" region with just its own stone+chocolate cells at
+ * these same two indices, so which texture index 1 actually draws depends on
+ * whichever theme atlas {@code MarioResourceManager} currently has loaded,
+ * not on the index itself. {@code LevelLoader} no longer needs to pick a
+ * different index per attribute for this reason - see its own
+ * {@code staticTileIndex}.
  *
  * <p>Two tile types that look like static terrain are deliberately NOT here:
  * <ul>
@@ -27,11 +34,7 @@ public final class MarioConfiguration {
     public static final int TILE_SIZE = 32;
 
     public static final int TILE_STONE = 1;
-    public static final int TILE_STONE_UNDERGROUND = 2;
-    public static final int TILE_STONE_CASTLE = 3;
-    public static final int TILE_CHOCOLATE = 4;
-    public static final int TILE_CHOCOLATE_UNDERGROUND = 5;
-    public static final int TILE_CHOCOLATE_CASTLE = 6;
+    public static final int TILE_CHOCOLATE = 2;
 
     /**
      * The default "camera window" size, in world pixels - see

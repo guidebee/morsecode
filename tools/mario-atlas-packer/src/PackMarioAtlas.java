@@ -28,14 +28,39 @@ import java.util.Map;
  * same way as before) - only *which physical atlas file* a region lives in
  * changed, so no actor/call-site code needed to change for this split.
  *
- * <p>ASSETS below is the exact set of resource keys the original engine's
+ * <p>ASSETS below is the set of resource keys the original engine's
  * WholeGame.java registers with its BaseLoader (bsLoader.storeImage/
- * storeImages) that are actually reachable from World 1 (Levels 11-14 and
- * bonus areas 97/98) - cross-checked against Mario.java's tile-spawning
- * switch and each Bricks/Objects/Lifts class's own getStoredImage(s) calls.
+ * storeImages) that are reachable via a real Mario.java tile-spawning case
+ * (cross-checked against that switch and each Bricks/Objects/Lifts class's
+ * own getStoredImage(s) calls) - originally just World 1's own subset
+ * (Levels 11-14 + bonus areas 97/98), extended per
+ * docs/MARIO_PORT_PLAN_PHASE2.md Step P2.1.2 to also cover every asset the
+ * *rest* of Phase 2's own §1.3 mechanic table plans to build (Helmet family,
+ * Bouncer/Spring, Monkey, RocketLauncher, SonOfABuitch, Spikey/SpikeyEgg,
+ * WoodenBridge, LavaBall, Chain/Rope, the regular FlyingTurtle, ...) -
+ * packed ahead of the actor code that will read them, so P2.2-P2.5's own
+ * steps are pure gameplay-code work with zero further packer round-trips.
  * Region names are re-cased (camel/snake, no spaces) since this tool and its
  * one consumer (MarioResourceManager) are both new code - there's no
  * original-engine string to stay compatible with.
+ *
+ * <p><b>Deliberately still excluded</b> (Step P2.1.2's own scope decision,
+ * not an oversight): every Sea-attribute terrain/creature asset
+ * (chocolate_Sea/brick_Sea/stone_Sea/pump variants/stone_Castle_Sea/
+ * stone_Clowd/OrangePump/FishGrey/FishRed/OctoPussy/Bubble/Water) and every
+ * CloudsNight-theme asset beyond the already-packed "bw_hammer"
+ * (BWBigCastle/BWRocketLauncher/BWBouncer/BWstone/BWtree/BWSmallCastle) -
+ * both would need a brand-new {@link Theme} bucket (and a matching
+ * {@code MarioResourceManager.loadTheme} mapping) that can't be verified
+ * against a real level until Phase 2's own P2.5 (CloudsNight)/P2.6 (Sea)
+ * steps actually land; pack those alongside that work instead of guessing
+ * the bucket now. Also excluded: assets that look like dead/abandoned
+ * original-engine resources with no reachable spawn path found
+ * (numbers432/numbers876 - superseded by this port's own bitmap-font HUD
+ * per {@code ScoreHud}'s doc; Start/bend; the root "Hammer.png" duplicate of
+ * "BWHammer", never actually read per {@code Boss}'s own doc) - re-check
+ * before assuming any of these are needed if a later survey suggests
+ * otherwise.
  *
  * Each region is packed as a single whole image, preserving the original
  * col x row strip layout unsliced (recorded as a comment here for step
@@ -106,6 +131,12 @@ public class PackMarioAtlas {
             new AssetSpec(Theme.COMMON, "coin", "Coin.png", 3, 1),
             new AssetSpec(Theme.COMMON, "iron", "Iron.png", 4, 1),
             new AssetSpec(Theme.COMMON, "bridge_blocks", "BridgeBloks.png", 1, 1),
+            // The "used up" Bank/QuestionMark replacement image - packed now (ahead of
+            // the P2.4-onward mechanic that reads it) per docs/MARIO_PORT_PLAN_PHASE2.md
+            // Step P2.1.2, matching this table's existing practice of tracking exactly
+            // what WholeGame.java registers regardless of which port step first spawns it.
+            new AssetSpec(Theme.COMMON, "question_mark_grey", "QuestionMarkGrey.png", 3, 1),
+            new AssetSpec(Theme.COMMON, "explosion", "Explosion.png", 3, 1),
 
             // Enemies - never theme-swapped by atlas (a "dark" variant is just a
             // differently-*named* common region, picked by attribute the same way
@@ -116,8 +147,30 @@ public class PackMarioAtlas {
             new AssetSpec(Theme.COMMON, "turtle_shell", "TurtelShell.png", 1, 1),
             new AssetSpec(Theme.COMMON, "turtle_shell_dark", "TurtelShelldark.png", 1, 1),
             new AssetSpec(Theme.COMMON, "turtle_shell_red", "TurtelShellRed.png", 1, 1),
+            // Pre-flipped shell art (the original also flips TurtelShellRed at *runtime*
+            // for FlyingTurtlePatrol's own kick reaction instead of using this - packed
+            // for whichever P2.4-onward mechanic actually turns out to want a static
+            // pre-flipped strip; verify the exact call site before relying on it).
+            new AssetSpec(Theme.COMMON, "turtle_shell_flip", "TurtelShellFilp.png", 1, 1),
+            new AssetSpec(Theme.COMMON, "turtle_shell_flip_dark", "TurtelShellFilpdark.png", 1, 1),
+            new AssetSpec(Theme.COMMON, "turtle_shell_flip_red", "TurtelShellFilpRed.png", 1, 1),
             new AssetSpec(Theme.COMMON, "enemy_turtle_patrol", "EnemyTurtlePatrol.png", 4, 1),
             new AssetSpec(Theme.COMMON, "flying_turtle_patrol", "FlyingTurtlePatrol.png", 4, 1),
+            // The regular (non-patrol) flying turtle - Mario.java case 20; distinct from
+            // FlyingTurtlePatrol (bobs in place vs. this one's own free-roam behavior,
+            // unread - see docs/MARIO_PORT_PLAN_PHASE2.md's open items).
+            new AssetSpec(Theme.COMMON, "flying_turtle", "FlyingTurtle.png", 4, 1),
+            new AssetSpec(Theme.COMMON, "flying_turtle_dark", "FlyingTurtledark.png", 4, 1),
+            new AssetSpec(Theme.COMMON, "monkey", "Monkey.png", 3, 2),
+            new AssetSpec(Theme.COMMON, "helmet", "Helmet.png", 4, 1),
+            new AssetSpec(Theme.COMMON, "helmet_dark", "Helmetdark.png", 4, 1),
+            new AssetSpec(Theme.COMMON, "helmet_white", "Helmetwhite.png", 4, 1),
+            new AssetSpec(Theme.COMMON, "helmet_shell", "HelmetShell.png", 1, 1),
+            new AssetSpec(Theme.COMMON, "helmet_shell_dark", "HelmetShelldark.png", 1, 1),
+            new AssetSpec(Theme.COMMON, "helmet_shell_white", "HelmetShellwhite.png", 1, 1),
+            new AssetSpec(Theme.COMMON, "son_of_a_buitch", "SonOfABuitch.png", 2, 1),
+            new AssetSpec(Theme.COMMON, "spikey_egg", "SpikeyEgg.png", 2, 1),
+            new AssetSpec(Theme.COMMON, "spikey", "Spikey.png", 4, 1),
             new AssetSpec(Theme.COMMON, "boss", "Boss.png", 3, 2),
             new AssetSpec(Theme.COMMON, "boss_fire", "BossFire.png", 2, 1),
             // NOTE: the original Boss.java always throws bsLoader "BWHammer" regardless of
@@ -125,9 +178,22 @@ public class PackMarioAtlas {
             new AssetSpec(Theme.COMMON, "bw_hammer", "CloudsNight/Hammer.png", 4, 1),
             new AssetSpec(Theme.COMMON, "fire_ball", "FireBall.png", 4, 1),
             new AssetSpec(Theme.COMMON, "lava", "Lava.png", 1, 1),
+            new AssetSpec(Theme.COMMON, "lava_ball", "LavaBall.png", 2, 1),
             // 4-frame strip (128x32, confirmed against the source PNG), cycled
             // 0,1,2,3,2,1 by Axe.java - see actors.bricks.Axe.
             new AssetSpec(Theme.COMMON, "axe", "Axe.png", 4, 1),
+
+            // World-mechanics bricks/scenery for P2.3-P2.4 (teleports/novel enemies) -
+            // packed now per Step P2.1.2, actors land in their own later steps.
+            new AssetSpec(Theme.COMMON, "wall", "Wall.png", 2, 1),
+            new AssetSpec(Theme.COMMON, "rocket_launcher", "RocketLauncher.png", 1, 4),
+            new AssetSpec(Theme.COMMON, "bouncer", "Bouncer.png", 1, 1),
+            new AssetSpec(Theme.COMMON, "spring", "Spring.png", 3, 1),
+            new AssetSpec(Theme.COMMON, "wooden_bridge", "WoodenBridge.png", 1, 1),
+            new AssetSpec(Theme.COMMON, "white_line", "WhiteLine.png", 1, 1),
+            new AssetSpec(Theme.COMMON, "chain", "Chain.png", 4, 1),
+            new AssetSpec(Theme.COMMON, "rope", "Rope.png", 1, 1),
+            new AssetSpec(Theme.COMMON, "clowd_checkpoint", "clowd_checkpoint.png", 1, 1),
 
             // Scenery
             new AssetSpec(Theme.COMMON, "small_castle", "SmallCastle.png", 1, 1),

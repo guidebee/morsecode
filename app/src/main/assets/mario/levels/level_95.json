@@ -1,0 +1,29 @@
+{
+  "levelNumber": 95,
+  "sourceClass": "Levels.Extra.Clowd_level_for_5_2",
+  "backgroundColor": "Blue",
+  "time": "400",
+  "type": "GreenAndTrees",
+  "pos": {"x": 10, "y": 12},
+  "backgroundImage": "Nothing$",
+  "attribute": "Clowd",
+  "levelLength": 2464,
+  "bombs": false,
+  "bombsTurnOff": -1,
+  "flyingFishes": false,
+  "flyingFishesLength": -1,
+  "levelName": "normal",
+  "tiles": [
+    {"type": "LiftCar", "x": 16, "y": 10, "lengthX": 1, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 6},
+    {"type": "stone", "x": 0, "y": 13, "lengthX": 62, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "Coin", "x": 15, "y": 6, "lengthX": 16, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "Coin", "x": 32, "y": 4, "lengthX": 3, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "Coin", "x": 36, "y": 5, "lengthX": 16, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "Coin", "x": 53, "y": 4, "lengthX": 3, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0}
+  ],
+  "checkpoints": [
+    {"kind": "Clowd_CheckPoint", "x": 1984.0, "y": 464.0, "nextLevel": 52, "locX": 141, "locY": 0}
+  ],
+  "teleports": [
+  ]
+}

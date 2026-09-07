@@ -1,0 +1,46 @@
+{
+  "levelNumber": 842,
+  "sourceClass": "Levels.Eight.Level_842",
+  "backgroundColor": "Black",
+  "time": "300",
+  "type": "",
+  "pos": {"x": 10, "y": 12},
+  "backgroundImage": "",
+  "attribute": "Castle",
+  "levelLength": 3700,
+  "bombs": false,
+  "bombsTurnOff": -1,
+  "flyingFishes": false,
+  "flyingFishesLength": -1,
+  "levelName": "normal",
+  "tiles": [
+    {"type": "Helmet", "x": 37, "y": 12, "lengthX": 1, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "Helmet", "x": 38, "y": 12, "lengthX": 1, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "FlyingTurtle", "x": 51, "y": 9, "lengthX": 1, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "FlyingTurtle", "x": 70, "y": 10, "lengthX": 1, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "FlyingTurtle", "x": 75, "y": 9, "lengthX": 1, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 0, "y": 2, "lengthX": 100, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 0, "y": 13, "lengthX": 28, "lengthY": 5, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 30, "y": 13, "lengthX": 5, "lengthY": 5, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 37, "y": 13, "lengthX": 8, "lengthY": 5, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 47, "y": 13, "lengthX": 8, "lengthY": 5, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 60, "y": 13, "lengthX": 40, "lengthY": 5, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 65, "y": 9, "lengthX": 2, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "pump", "x": 28, "y": 11, "lengthX": 1, "lengthY": 4, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "pump", "x": 35, "y": 10, "lengthX": 1, "lengthY": 15, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "pump", "x": 45, "y": 11, "lengthX": 1, "lengthY": 15, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "pump", "x": 55, "y": 10, "lengthX": 1, "lengthY": 15, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "pump", "x": 65, "y": 6, "lengthX": 1, "lengthY": 3, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "Lava", "x": 57, "y": 13, "lengthX": 3, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "InvisibleBrckWithCoin", "x": 63, "y": 9, "lengthX": 1, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0}
+  ],
+  "checkpoints": [
+    {"kind": "InsidePumpvertically", "x": 1456.0, "y": 348.0, "nextLevel": 841, "locX": 19, "locY": 9},
+    {"kind": "InsidePumpvertically", "x": 2096.0, "y": 188.0, "nextLevel": 843, "locX": 26, "locY": 9}
+  ],
+  "teleports": [
+    {"inX": 2528, "inY": 96, "outX": 320, "outY": 96},
+    {"inX": 2528, "inY": 192, "outX": 320, "outY": 192},
+    {"inX": 2528, "inY": 288, "outX": 320, "outY": 288}
+  ]
+}

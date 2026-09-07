@@ -1,0 +1,38 @@
+{
+  "levelNumber": 96,
+  "sourceClass": "Levels.Extra.Clowd_level_for_6_2",
+  "backgroundColor": "Black",
+  "time": "400",
+  "type": "GreenAndTrees",
+  "pos": {"x": 10, "y": 12},
+  "backgroundImage": "Nothing$",
+  "attribute": "Clowd",
+  "levelLength": 3072,
+  "bombs": false,
+  "bombsTurnOff": -1,
+  "flyingFishes": false,
+  "flyingFishesLength": -1,
+  "levelName": "normal",
+  "tiles": [
+    {"type": "LiftCar", "x": 16, "y": 10, "lengthX": 1, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 6},
+    {"type": "stone", "x": 0, "y": 13, "lengthX": 83, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 32, "y": 8, "lengthX": 1, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 51, "y": 7, "lengthX": 1, "lengthY": 2, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 61, "y": 7, "lengthX": 1, "lengthY": 2, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 67, "y": 6, "lengthX": 2, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 71, "y": 6, "lengthX": 1, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 73, "y": 6, "lengthX": 1, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 75, "y": 6, "lengthX": 1, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 77, "y": 6, "lengthX": 1, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 79, "y": 6, "lengthX": 1, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "Coin", "x": 15, "y": 6, "lengthX": 16, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "Coin", "x": 34, "y": 6, "lengthX": 16, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "Coin", "x": 53, "y": 5, "lengthX": 7, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "Coin", "x": 71, "y": 5, "lengthX": 10, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0}
+  ],
+  "checkpoints": [
+    {"kind": "Clowd_CheckPoint", "x": 2656.0, "y": 464.0, "nextLevel": 62, "locX": 162, "locY": 0}
+  ],
+  "teleports": [
+  ]
+}

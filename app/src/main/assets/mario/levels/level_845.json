@@ -1,0 +1,42 @@
+{
+  "levelNumber": 845,
+  "sourceClass": "Levels.Eight.Level_845",
+  "backgroundColor": "Black",
+  "time": "300",
+  "type": "",
+  "pos": {"x": 10, "y": 12},
+  "backgroundImage": "",
+  "attribute": "Castle",
+  "levelLength": 2200,
+  "bombs": false,
+  "bombsTurnOff": -1,
+  "flyingFishes": false,
+  "flyingFishesLength": -1,
+  "levelName": "normal",
+  "tiles": [
+    {"type": "stone", "x": 0, "y": 2, "lengthX": 100, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 0, "y": 13, "lengthX": 3, "lengthY": 2, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 5, "y": 13, "lengthX": 5, "lengthY": 2, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 12, "y": 13, "lengthX": 9, "lengthY": 2, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 26, "y": 3, "lengthX": 6, "lengthY": 2, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 46, "y": 3, "lengthX": 2, "lengthY": 3, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 45, "y": 9, "lengthX": 3, "lengthY": 4, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 26, "y": 10, "lengthX": 6, "lengthY": 5, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 45, "y": 13, "lengthX": 55, "lengthY": 2, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "pump", "x": 3, "y": 11, "lengthX": 1, "lengthY": 5, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "pump", "x": 10, "y": 11, "lengthX": 1, "lengthY": 5, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "Monkey", "x": 18, "y": 9, "lengthX": 1, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "LavaBall", "x": 23, "y": 6, "lengthX": 1, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "Lava", "x": 21, "y": 13, "lengthX": 5, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "Lava", "x": 32, "y": 13, "lengthX": 13, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "BridgeBloks", "x": 32, "y": 10, "lengthX": 13, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "BossHammer", "x": 39, "y": 7, "lengthX": 1, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 45},
+    {"type": "Axe", "x": 45, "y": 8, "lengthX": 1, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0}
+  ],
+  "checkpoints": [
+    {"kind": "InsidePumpvertically", "x": 336.0, "y": 348.0, "nextLevel": 841, "locX": 19, "locY": 9},
+    {"kind": "Princess", "x": 1824.0, "y": 368.0, "nextLevel": 11, "locX": 3, "locY": 6}
+  ],
+  "teleports": [
+  ]
+}

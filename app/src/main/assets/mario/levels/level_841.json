@@ -1,0 +1,53 @@
+{
+  "levelNumber": 841,
+  "sourceClass": "Levels.Eight.Level_841",
+  "backgroundColor": "Black",
+  "time": "300",
+  "type": "",
+  "pos": {"x": 10, "y": 12},
+  "backgroundImage": "",
+  "attribute": "Castle",
+  "levelLength": 10000,
+  "bombs": false,
+  "bombsTurnOff": -1,
+  "flyingFishes": false,
+  "flyingFishesLength": -1,
+  "levelName": "normal",
+  "tiles": [
+    {"type": "stone", "x": 0, "y": 2, "lengthX": 120, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 0, "y": 7, "lengthX": 3, "lengthY": 10, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 3, "y": 8, "lengthX": 1, "lengthY": 10, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 4, "y": 9, "lengthX": 1, "lengthY": 10, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 5, "y": 10, "lengthX": 1, "lengthY": 10, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "Lava", "x": 6, "y": 13, "lengthX": 5, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "Lava", "x": 66, "y": 13, "lengthX": 9, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 11, "y": 13, "lengthX": 8, "lengthY": 5, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 21, "y": 13, "lengthX": 30, "lengthY": 5, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 53, "y": 13, "lengthX": 13, "lengthY": 5, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 62, "y": 10, "lengthX": 4, "lengthY": 3, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 75, "y": 10, "lengthX": 6, "lengthY": 5, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 78, "y": 10, "lengthX": 11, "lengthY": 5, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 76, "y": 6, "lengthX": 4, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 83, "y": 10, "lengthX": 7, "lengthY": 5, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 92, "y": 10, "lengthX": 4, "lengthY": 5, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "pump", "x": 19, "y": 11, "lengthX": 1, "lengthY": 5, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "pump", "x": 51, "y": 11, "lengthX": 1, "lengthY": 5, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "pump", "x": 81, "y": 8, "lengthX": 1, "lengthY": 15, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "pump", "x": 90, "y": 7, "lengthX": 1, "lengthY": 15, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "EnemyMushroom", "x": 56, "y": 12, "lengthX": 1, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "EnemyMushroom", "x": 57, "y": 12, "lengthX": 1, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "EnemyMushroom", "x": 58, "y": 12, "lengthX": 1, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 96, "y": 13, "lengthX": 24, "lengthY": 5, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "Lift_LeftRight", "x": 69, "y": 13, "lengthX": 1, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 6}
+  ],
+  "checkpoints": [
+    {"kind": "InsidePumpvertically", "x": 1648.0, "y": 348.0, "nextLevel": 841, "locX": 19, "locY": 9},
+    {"kind": "InsidePumpvertically", "x": 2608.0, "y": 252.0, "nextLevel": 842, "locX": 28, "locY": 8}
+  ],
+  "teleports": [
+    {"inX": 3456, "inY": 96, "outX": 1120, "outY": 96},
+    {"inX": 3456, "inY": 192, "outX": 1120, "outY": 192},
+    {"inX": 3456, "inY": 288, "outX": 1120, "outY": 288},
+    {"inX": 3456, "inY": 384, "outX": 1120, "outY": 384}
+  ]
+}

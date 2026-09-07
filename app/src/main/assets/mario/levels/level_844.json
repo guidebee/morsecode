@@ -1,0 +1,47 @@
+{
+  "levelNumber": 844,
+  "sourceClass": "Levels.Eight.Level_844",
+  "backgroundColor": "DarkBlue",
+  "time": "400",
+  "type": "GreenAndTrees",
+  "pos": {"x": 10, "y": 12},
+  "backgroundImage": "",
+  "attribute": "Sea",
+  "levelLength": 2304,
+  "bombs": false,
+  "bombsTurnOff": -1,
+  "flyingFishes": false,
+  "flyingFishesLength": -1,
+  "levelName": "normal",
+  "tiles": [
+    {"type": "HoriImage", "x": 68, "y": 7, "lengthX": 1, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 0, "y": 2, "lengthX": 2, "lengthY": 15, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 2, "y": 13, "lengthX": 1, "lengthY": 2, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 5, "y": 13, "lengthX": 1, "lengthY": 2, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 6, "y": 10, "lengthX": 12, "lengthY": 5, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 11, "y": 9, "lengthX": 7, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 6, "y": 2, "lengthX": 12, "lengthY": 3, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 11, "y": 5, "lengthX": 7, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 18, "y": 2, "lengthX": 72, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 18, "y": 13, "lengthX": 72, "lengthY": 2, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 39, "y": 3, "lengthX": 3, "lengthY": 3, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 39, "y": 10, "lengthX": 3, "lengthY": 3, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 67, "y": 3, "lengthX": 23, "lengthY": 3, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 69, "y": 6, "lengthX": 21, "lengthY": 3, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 67, "y": 9, "lengthX": 23, "lengthY": 4, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "pump", "x": 3, "y": 11, "lengthX": 1, "lengthY": 4, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "FireBar", "x": 18, "y": 9, "lengthX": 1, "lengthY": 1, "extraInfo": "AWC", "bridgeLength": 0, "patrolLength": 0},
+    {"type": "FireBar", "x": 38, "y": 8, "lengthX": 1, "lengthY": 1, "extraInfo": "AWC", "bridgeLength": 0, "patrolLength": 0},
+    {"type": "FireBar", "x": 29, "y": 12, "lengthX": 1, "lengthY": 1, "extraInfo": "AWC", "bridgeLength": 0, "patrolLength": 0},
+    {"type": "FireBar", "x": 54, "y": 10, "lengthX": 1, "lengthY": 1, "extraInfo": "AWC", "bridgeLength": 0, "patrolLength": 0},
+    {"type": "FireBar", "x": 62, "y": 9, "lengthX": 1, "lengthY": 1, "extraInfo": "AWC", "bridgeLength": 0, "patrolLength": 0},
+    {"type": "OctoPussy", "x": 28, "y": 9, "lengthX": 1, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "OctoPussy", "x": 53, "y": 11, "lengthX": 1, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "OctoPussy", "x": 57, "y": 4, "lengthX": 1, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0}
+  ],
+  "checkpoints": [
+    {"kind": "InsidePumpHorzontally", "x": 2172.0, "y": 256.0, "nextLevel": 845, "locX": 3, "locY": 9}
+  ],
+  "teleports": [
+  ]
+}

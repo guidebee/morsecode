@@ -1,0 +1,32 @@
+{
+  "levelNumber": 108,
+  "sourceClass": "Levels.Seven.BonusArea.BonusArea71A",
+  "backgroundColor": "Black",
+  "time": "400",
+  "type": "GreenAndTrees",
+  "pos": {"x": 10, "y": 12},
+  "backgroundImage": "",
+  "attribute": "UnderGround",
+  "levelLength": 640,
+  "bombs": false,
+  "bombsTurnOff": -1,
+  "flyingFishes": false,
+  "flyingFishesLength": -1,
+  "levelName": "normal",
+  "tiles": [
+    {"type": "Brick", "x": 0, "y": 2, "lengthX": 1, "lengthY": 12, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "Brick", "x": 4, "y": 2, "lengthX": 11, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "Brick", "x": 4, "y": 10, "lengthX": 11, "lengthY": 3, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "Coin", "x": 5, "y": 5, "lengthX": 9, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "Coin", "x": 4, "y": 7, "lengthX": 11, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "Coin", "x": 4, "y": 9, "lengthX": 11, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "stone", "x": 0, "y": 13, "lengthX": 20, "lengthY": 2, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "PumpImage", "x": 19, "y": 2, "lengthX": 1, "lengthY": 9, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "HoriImage", "x": 17, "y": 11, "lengthX": 1, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0}
+  ],
+  "checkpoints": [
+    {"kind": "InsidePumpHorzontally", "x": 540.0, "y": 384.0, "nextLevel": 71, "locX": 116, "locY": 9}
+  ],
+  "teleports": [
+  ]
+}

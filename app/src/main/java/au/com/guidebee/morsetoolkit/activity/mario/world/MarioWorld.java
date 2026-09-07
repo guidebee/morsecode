@@ -1,12 +1,12 @@
 package au.com.guidebee.morsetoolkit.activity.mario.world;
 
+import com.guidebee.game.graphics.TextureRegion;
 import com.guidebee.game.microedition.TiledLayer;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
-import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.Axe;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.InteractiveBrick;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.Enemy;
@@ -37,9 +37,19 @@ public class MarioWorld extends TiledLayer {
     private final List<Hazard> hazards = new ArrayList<>();
     private final List<Axe> axes = new ArrayList<>();
 
-    public MarioWorld(int cols, int rows) {
-        super(cols, rows, MarioResourceManager.region("tiles"),
-                MarioConfiguration.TILE_SIZE, MarioConfiguration.TILE_SIZE);
+    /**
+     * @param tilesRegion the composite "tiles"-shaped region to draw this
+     *                     level's static terrain from - normally whichever
+     *                     theme atlas's own "tiles" ({@code
+     *                     MarioResourceManager.region("tiles")}), but
+     *                     {@code LevelLoader.createWorld} picks a different,
+     *                     COMMON-theme one instead for CloudsNight/"Clowd"
+     *                     levels, whose *look* is independent of the level's
+     *                     real {@code attribute} - see {@code
+     *                     tools.mario-atlas-packer}'s own TERRAIN_TILES doc.
+     */
+    public MarioWorld(int cols, int rows, TextureRegion tilesRegion) {
+        super(cols, rows, tilesRegion, MarioConfiguration.TILE_SIZE, MarioConfiguration.TILE_SIZE);
     }
 
     public int getWidthPx() {

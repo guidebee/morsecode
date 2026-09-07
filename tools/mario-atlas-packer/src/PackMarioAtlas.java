@@ -48,20 +48,23 @@ import java.util.Map;
  * <p><b>Deliberately still excluded</b> (Step P2.1.2's own scope decision,
  * not an oversight): every Sea-attribute terrain/creature asset
  * (chocolate_Sea/brick_Sea/stone_Sea/pump variants/stone_Castle_Sea/
- * stone_Clowd/OrangePump/FishGrey/FishRed/OctoPussy/Bubble/Water) and every
- * CloudsNight-theme asset beyond the already-packed "bw_hammer"
- * (BWBigCastle/BWRocketLauncher/BWBouncer/BWstone/BWtree/BWSmallCastle) -
- * both would need a brand-new {@link Theme} bucket (and a matching
- * {@code MarioResourceManager.loadTheme} mapping) that can't be verified
- * against a real level until Phase 2's own P2.5 (CloudsNight)/P2.6 (Sea)
- * steps actually land; pack those alongside that work instead of guessing
- * the bucket now. Also excluded: assets that look like dead/abandoned
- * original-engine resources with no reachable spawn path found
- * (numbers432/numbers876 - superseded by this port's own bitmap-font HUD
- * per {@code ScoreHud}'s doc; Start/bend; the root "Hammer.png" duplicate of
- * "BWHammer", never actually read per {@code Boss}'s own doc) - re-check
- * before assuming any of these are needed if a later survey suggests
- * otherwise.
+ * OrangePump/FishGrey/FishRed/OctoPussy/Bubble/Water) - would need a
+ * brand-new {@link Theme} bucket (and a matching {@code
+ * MarioResourceManager.loadTheme} mapping) that can't be verified against a
+ * real level until Phase 2's own P2.6 (Sea) step actually lands; pack those
+ * alongside that work instead of guessing the bucket now. CloudsNight's own
+ * assets (bw_stone/bw_tree/bw_small_castle/bw_big_castle/bw_bouncer/
+ * bw_rocket_launcher/bw_hammer) and "Clowd"-attribute's stone_clowd landed
+ * with Step P2.5 - both turned out to need no new {@link Theme} bucket at
+ * all (see TERRAIN_TILES' own doc on why). Also excluded: assets that look
+ * like dead/abandoned original-engine resources with no reachable spawn path
+ * found (numbers432/numbers876 - superseded by this port's own bitmap-font
+ * HUD per {@code ScoreHud}'s doc; Start/bend; the root "Hammer.png"
+ * duplicate of "BWHammer", never actually read per {@code Boss}'s own doc;
+ * "clowd_checkpoint.png", read only by a line {@code Mario.java} itself
+ * comments out in favor of a blank placeholder image - confirmed by reading
+ * {@code LoadCheckPoints}) - re-check before assuming any of these are
+ * needed if a later survey suggests otherwise.
  *
  * Each region is packed as a single whole image, preserving the original
  * col x row strip layout unsliced (recorded as a comment here for step
@@ -199,15 +202,49 @@ public class PackMarioAtlas {
             new AssetSpec(Theme.COMMON, "white_line", "WhiteLine.png", 1, 1),
             new AssetSpec(Theme.COMMON, "chain", "Chain.png", 4, 1),
             new AssetSpec(Theme.COMMON, "rope", "Rope.png", 1, 1),
-            new AssetSpec(Theme.COMMON, "clowd_checkpoint", "clowd_checkpoint.png", 1, 1),
 
             // Scenery
             new AssetSpec(Theme.COMMON, "small_castle", "SmallCastle.png", 1, 1),
             new AssetSpec(Theme.COMMON, "big_castle", "BigCastle.png", 1, 1),
             new AssetSpec(Theme.COMMON, "tree", "tree.png", 5, 2),
             new AssetSpec(Theme.COMMON, "lift", "Lift.png", 1, 1),
+            // Tiled parallax backdrops - Mario.java repeats each of these
+            // every 1536px across a level's full length (see MarioGameScreen's
+            // own BackgroundBand doc); "mountain"/"clouds" were already packed
+            // ahead of this step, "fence"/"fence2"/"cloudsnight" land now
+            // alongside the rest of this step's CloudsNight work.
             new AssetSpec(Theme.COMMON, "mountain", "Mountain.png", 1, 1),
             new AssetSpec(Theme.COMMON, "clouds", "Clouds.png", 1, 1),
+            new AssetSpec(Theme.COMMON, "cloudsnight", "CloudsNight.png", 1, 1),
+            new AssetSpec(Theme.COMMON, "fence", "Fence.png", 1, 1),
+            new AssetSpec(Theme.COMMON, "fence2", "Fence2.png", 1, 1),
+
+            // CloudsNight (World 6's Level_63, its only level) reskins several
+            // static/scenery assets to black-and-white variants - see this
+            // class's own TERRAIN_TILES doc for the stone/chocolate half.
+            // Region names re-cased same as everything else here; source
+            // paths match WholeGame.java's own "CloudsNight/..." tree.
+            new AssetSpec(Theme.COMMON, "bw_stone", "CloudsNight/stone.png", 1, 1),
+            // Reuses the *existing* Castle chocolate art under a new COMMON
+            // region name - matches the original's own reuse (its CloudsNight
+            // branch for chocolate loads "chocolate_Castle", not a distinct
+            // BW asset; see Mario.java's case 7).
+            new AssetSpec(Theme.COMMON, "bw_chocolate", "chocolate_Castle.png", 1, 1),
+            new AssetSpec(Theme.COMMON, "bw_tree", "CloudsNight/tree.png", 5, 2),
+            new AssetSpec(Theme.COMMON, "bw_small_castle", "CloudsNight/SmallCastle.png", 1, 1),
+            new AssetSpec(Theme.COMMON, "bw_big_castle", "CloudsNight/BigCastle.png", 1, 1),
+            new AssetSpec(Theme.COMMON, "bw_bouncer", "CloudsNight/Bouncer.png", 1, 1),
+            new AssetSpec(Theme.COMMON, "bw_rocket_launcher", "CloudsNight/RocketLauncher.png", 1, 4),
+
+            // The "Clowd" attribute (the 4 pure-climb beanstalk levels, e.g.
+            // Levels 92/93/95/96 - the 5th, 94, is a plain Ground hub room)
+            // only ever places "stone" among its own tiles (confirmed by
+            // reading all 5 converted level JSONs by hand) - packed as its
+            // own COMMON composite the same way as CloudsNight's, rather than
+            // a real Theme bucket, since attribute-driven Bank/Brick/
+            // QuestionMark art (the only things that would actually need one)
+            // never appears in these levels either.
+            new AssetSpec(Theme.COMMON, "stone_clowd", "stone_Clowd.png", 1, 1),
 
             // Flag / level-end
             new AssetSpec(Theme.COMMON, "flag", "Flag.png", 1, 1),
@@ -261,13 +298,29 @@ public class PackMarioAtlas {
      * be breakable (see {@code Bricks/Brick.java}'s HitFromDown), so it's a
      * Sprite actor too ({@code actors.bricks.Brick}), same reasoning as pump.
      */
-    private record TerrainTile(Theme theme, String stoneRegion, String chocolateRegion) {
+    private record TerrainTile(Theme theme, String regionName, String stoneRegion, String chocolateRegion) {
     }
 
     private static final List<TerrainTile> TERRAIN_TILES = List.of(
-            new TerrainTile(Theme.GROUND, "stone", "chocolate"),
-            new TerrainTile(Theme.UNDERGROUND, "stone_underground", "chocolate_underground"),
-            new TerrainTile(Theme.CASTLE, "stone_castle", "chocolate_castle")
+            new TerrainTile(Theme.GROUND, "tiles", "stone", "chocolate"),
+            new TerrainTile(Theme.UNDERGROUND, "tiles", "stone_underground", "chocolate_underground"),
+            new TerrainTile(Theme.CASTLE, "tiles", "stone_castle", "chocolate_castle"),
+            // CloudsNight's own static-terrain look (World 6's Level_63, the
+            // only level in the game that uses it - see MarioGameScreen's own
+            // CloudsNight doc) - packed as its own COMMON-theme composite
+            // rather than a new Theme bucket, since exactly one level ever
+            // needs it: MarioWorld's constructor now takes an explicit tiles
+            // region so LevelLoader.createWorld can pick this one instead of
+            // whichever GROUND/UNDERGROUND/CASTLE atlas the level's own
+            // `attribute` would otherwise select (CloudsNight overrides the
+            // *look*, not the level's real attribute - Level_63's is still
+            // "Ground", confirmed by reading its own source).
+            new TerrainTile(Theme.COMMON, "tiles_cloudsnight", "bw_stone", "bw_chocolate"),
+            // "Clowd" attribute levels never place a chocolate tile (see the
+            // "stone_clowd" AssetSpec's own doc) - "bw_chocolate" fills the
+            // sheet's unused second cell since it's already a valid COMMON
+            // 32x32 asset, not because it's ever actually drawn.
+            new TerrainTile(Theme.COMMON, "tiles_clowd", "stone_clowd", "bw_chocolate")
     );
     private static final int TILE_SHEET_COLS = 2;
     private static final int TILE_SIZE = 32;
@@ -318,7 +371,7 @@ public class PackMarioAtlas {
         }
         for (TerrainTile tile : TERRAIN_TILES) {
             loaded.add(new LoadedAsset(
-                    new AssetSpec(tile.theme(), "tiles", null, TILE_SHEET_COLS, 1),
+                    new AssetSpec(tile.theme(), tile.regionName(), null, TILE_SHEET_COLS, 1),
                     buildTileSheet(loaded, tile)));
         }
 
@@ -341,7 +394,7 @@ public class PackMarioAtlas {
             System.out.println("  [" + spec.theme() + "] " + spec.regionName() + " -> " + spec.cols() + "x" + spec.rows());
         }
         for (TerrainTile tile : TERRAIN_TILES) {
-            System.out.println("  [" + tile.theme() + "] tiles -> " + TILE_SHEET_COLS
+            System.out.println("  [" + tile.theme() + "] " + tile.regionName() + " -> " + TILE_SHEET_COLS
                     + "x1 (composite TiledLayer tile set; 1=" + tile.stoneRegion() + ", 2=" + tile.chocolateRegion() + ")");
         }
     }

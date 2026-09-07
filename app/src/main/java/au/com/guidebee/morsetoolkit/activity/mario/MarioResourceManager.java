@@ -185,6 +185,20 @@ public final class MarioResourceManager {
         if (attribute.equals(loadedThemeAttribute)) {
             return;
         }
+        if ("Clowd".equals(attribute)) {
+            // The 4 pure-climb beanstalk levels using this attribute place
+            // nothing but "stone" (redirected to the COMMON "tiles_clowd"
+            // composite - see PackMarioAtlas's own doc) plus Coin/LiftCar
+            // (both already COMMON) - no Bank/Brick/QuestionMark ever needs
+            // a themed region here, so there's genuinely no theme atlas to
+            // load; just drop whichever one was previously loaded.
+            if (themeAtlas != null) {
+                GameEngine.assetManager.unload(themeAtlasPath(loadedThemeAttribute));
+                themeAtlas = null;
+            }
+            loadedThemeAttribute = attribute;
+            return;
+        }
         String path = themeAtlasPath(attribute);
         if (themeAtlas != null) {
             GameEngine.assetManager.unload(themeAtlasPath(loadedThemeAttribute));

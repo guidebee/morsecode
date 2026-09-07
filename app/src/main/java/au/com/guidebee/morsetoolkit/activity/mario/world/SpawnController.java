@@ -37,11 +37,18 @@ public class SpawnController {
 
     private final boolean bombsEnabled;
     private final int bombsTurnOffTile;
+    private final boolean blackAndWhite;
     private float bombsDelay;
 
     public SpawnController(LevelDefinition level) {
         this.bombsEnabled = level.bombs;
         this.bombsTurnOffTile = level.bombsTurnOff;
+        // Ported from Mario.java's own ambient-bomb block: on a CloudsNight
+        // level (World 6's Level_63, the only one that both sets Bombs=true
+        // and CloudsNight - confirmed by reading its own source) the rocket
+        // itself swaps to the black-and-white asset too, matching Rocket's
+        // own "bw_rocket_launcher" doc.
+        this.blackAndWhite = "CloudsNight".equals(level.backgroundImage);
     }
 
     public void update(float delta, CameraController camera, Player player) {
@@ -54,7 +61,7 @@ public class SpawnController {
             bombsDelay = (1 + RANDOM.nextInt(5)) * 100f;
             float x = camera.getX() + camera.getEffectiveWidth() + SPAWN_MARGIN_PX;
             float y = (1 + RANDOM.nextInt(10)) * MarioConfiguration.TILE_SIZE;
-            Rocket rocket = new Rocket(x, y, false);
+            Rocket rocket = new Rocket(x, y, false, blackAndWhite);
             MarioContext.world().addEnemy(rocket);
             MarioContext.spawn(rocket);
         }

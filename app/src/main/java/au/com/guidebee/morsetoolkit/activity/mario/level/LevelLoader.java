@@ -33,6 +33,7 @@ import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.SonOfABuitch;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.items.Coin;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.lifts.BalanceLiftPlatform;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.lifts.Lift;
+import au.com.guidebee.morsetoolkit.activity.mario.actors.lifts.LiftCar;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.lifts.LiftFall;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.projectiles.BossFire;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.scenery.Scenery;
@@ -78,9 +79,28 @@ public final class LevelLoader {
             cols = Math.max(cols, tile.x + tile.lengthX);
             rows = Math.max(rows, tile.y + tile.lengthY);
         }
-        MarioWorld world = new MarioWorld(cols, rows);
+        MarioWorld world = new MarioWorld(cols, rows, staticTilesRegion(level));
         populateStaticGeometry(world, level);
         return world;
+    }
+
+    /**
+     * CloudsNight overrides a level's static-terrain *look* independently of
+     * its real {@code attribute} (World 6's Level_63 is still attribute
+     * "Ground", confirmed by reading its own source); "Clowd" attribute
+     * levels need their own look too, but never a whole theme atlas (see
+     * {@code MarioResourceManager#loadTheme}'s own "Clowd" doc) - both
+     * composites live in the COMMON atlas instead, see
+     * {@code tools.mario-atlas-packer}'s own TERRAIN_TILES doc.
+     */
+    private static TextureRegion staticTilesRegion(LevelDefinition level) {
+        if ("CloudsNight".equals(level.backgroundImage)) {
+            return MarioResourceManager.region("tiles_cloudsnight");
+        }
+        if ("Clowd".equals(level.attribute)) {
+            return MarioResourceManager.region("tiles_clowd");
+        }
+        return MarioResourceManager.region("tiles");
     }
 
     private static void populateStaticGeometry(MarioWorld world, LevelDefinition level) {
@@ -169,7 +189,7 @@ public final class LevelLoader {
                             MarioResourceManager.region("bridge_blocks"), level.attribute)));
                     break;
                 case "tree":
-                    spawnTree(tile);
+                    spawnTree(tile, "CloudsNight".equals(level.backgroundImage));
                     break;
                 case "pump":
                     for (int dy = 0; dy < tile.lengthY; dy++) {
@@ -193,7 +213,7 @@ public final class LevelLoader {
                     spawnRocketLauncher(tile);
                     break;
                 case "Bouncer":
-                    add(new Bouncer(tile.x * tileSize, tile.y * tileSize));
+                    add(new Bouncer(tile.x * tileSize, tile.y * tileSize, "CloudsNight".equals(level.backgroundImage)));
                     // The decorative Spring sits one tile above - see Bouncer's
                     // own class doc for why it's plain Scenery here, not a real
                     // actor. A single frame (index 0) of the 3-frame strip, since
@@ -351,6 +371,12 @@ public final class LevelLoader {
                 MarioContext.spawn(fall);
                 continue;
             }
+            if ("LiftCar".equals(tile.type)) {
+                LiftCar car = new LiftCar(tile.x * tileSize, tile.y * tileSize, tile.patrolLength);
+                MarioContext.world().addLift(car);
+                MarioContext.spawn(car);
+                continue;
+            }
             Lift.Motion motion = liftMotion(tile.type);
             if (motion == null) {
                 continue;
@@ -402,12 +428,14 @@ public final class LevelLoader {
      * Step P2.0). A tree's own solid canopy + decorative trunk are handled
      * separately by {@link #spawnTree} (called from {@link #spawnBricks} -
      * the canopy row is a real, solid {@code InteractiveBrick}, not
-     * decoration). Every *other* background tile type (mountain/clouds) is
-     * still left unrendered - visual polish outside Step 7.1's "world
-     * mechanics" scope.
+     * decoration). A level's own scrolling backdrop (mountain/clouds/...) is
+     * a whole separate, non-tile field ({@code backgroundImage}) - see
+     * {@code MarioGameScreen}'s own {@code BackgroundBand} wiring, not this
+     * method.
      */
     public static void spawnScenery(LevelDefinition level) {
         int tileSize = MarioConfiguration.TILE_SIZE;
+        boolean blackAndWhite = "CloudsNight".equals(level.backgroundImage);
         for (LevelDefinition.Tile tile : level.tiles) {
             if ("Lava".equals(tile.type)) {
                 forEachCell(tile, (x, y) -> MarioContext.spawn(new Scenery(x, y, MarioResourceManager.region("lava"))));
@@ -421,7 +449,7 @@ public final class LevelLoader {
                 forEachCell(tile, (x, y) -> MarioContext.spawn(new Scenery(x, y, MarioResourceManager.region("water"))));
                 continue;
             }
-            String regionName = sceneryRegion(tile.type);
+            String regionName = sceneryRegion(tile.type, blackAndWhite);
             if (regionName == null) {
                 continue;
             }
@@ -430,14 +458,15 @@ public final class LevelLoader {
         }
     }
 
-    private static String sceneryRegion(String type) {
+    /** @param blackAndWhite CloudsNight (see this class's own "Bouncer"/tree cases) also swaps SmallCastle/BigCastle for their "bw_"-prefixed variants. */
+    private static String sceneryRegion(String type, boolean blackAndWhite) {
         switch (type) {
             case "Flag":
                 return "flag";
             case "SmallCastle":
-                return "small_castle";
+                return blackAndWhite ? "bw_small_castle" : "small_castle";
             case "BigCastle":
-                return "big_castle";
+                return blackAndWhite ? "bw_big_castle" : "big_castle";
             default:
                 return null;
         }
@@ -483,18 +512,18 @@ public final class LevelLoader {
      * row below is purely decorative, and only in the strip's *middle*
      * columns (matching the original's own {@code x==0}/
      * {@code x==lengthX-1} exclusion for the trunk) - drawn via a
-     * pre-sliced single frame (index 3) of the "tree" region handed to
-     * {@code Scenery}, rather than adding a frame-slicing constructor to
+     * pre-sliced single frame (index 3) of the "tree"/"bw_tree" region handed
+     * to {@code Scenery}, rather than adding a frame-slicing constructor to
      * that class for one caller.
      */
-    private static void spawnTree(LevelDefinition.Tile tile) {
+    private static void spawnTree(LevelDefinition.Tile tile, boolean blackAndWhite) {
         int tileSize = MarioConfiguration.TILE_SIZE;
         int lastColumn = tile.lengthX - 1;
-        TextureRegion trunkFrame = MarioResourceManager.region("tree")
+        TextureRegion trunkFrame = MarioResourceManager.region(blackAndWhite ? "bw_tree" : "tree")
                 .split(tileSize, tileSize)[0][3];
         for (int dx = 0; dx < tile.lengthX; dx++) {
             float x = (tile.x + dx) * tileSize;
-            add(new Tree(x, tile.y * tileSize, dx, lastColumn));
+            add(new Tree(x, tile.y * tileSize, dx, lastColumn, blackAndWhite));
             if (dx == 0 || dx == lastColumn) {
                 continue;
             }

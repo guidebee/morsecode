@@ -855,4 +855,9 @@ public class Player extends Layer {
     public boolean wantsDown() {
         return lastCommand != null && lastCommand.down;
     }
+
+    /** For a {@code ClowdGoUP_CheckPoint}'s entry gate - see {@code CheckpointResolver}. */
+    public boolean wantsUp() {
+        return lastCommand != null && lastCommand.up;
+    }
 }

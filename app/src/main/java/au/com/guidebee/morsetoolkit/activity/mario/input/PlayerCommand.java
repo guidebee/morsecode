@@ -10,6 +10,15 @@ public final class PlayerCommand {
     public boolean right;
     /** Held, not edge-triggered - gates a vertical pipe's entry (see {@code CheckpointResolver}). */
     public boolean down;
+    /**
+     * Held, not edge-triggered - ported from {@code Player.KeyPressedUP},
+     * itself a plain {@code isKeyDown(VK_UP)} read wholly separate from the
+     * edge-triggered jump input below (confirmed by reading {@code
+     * Mario.java}'s own input-polling block). Gates a {@code
+     * ClowdGoUP_CheckPoint}'s beanstalk-climb entry (see {@code
+     * CheckpointResolver}) - nothing else reads it.
+     */
+    public boolean up;
 
     /** Edge-triggered: true only on the frame the jump input started. */
     public boolean jumpPressed;

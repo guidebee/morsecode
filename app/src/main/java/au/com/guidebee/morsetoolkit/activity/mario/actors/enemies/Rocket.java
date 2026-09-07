@@ -18,10 +18,13 @@ import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
  * immune to fireballs (the original's own {@code KilledByFireBall()} is
  * empty), so {@link #onDefeatedByProjectile} is overridden to a no-op.
  *
- * <p>Reuses frame index 3 of the "rocket_launcher" region for its own
- * sprite - not a separate asset - matching the original's own
- * {@code bsLoader.getStoredImages("RocketLauncher")[3]}. Flipped
- * horizontally for a rightward launch, matching the original's own
+ * <p>Reuses frame index 3 of the "rocket_launcher" (or, on a CloudsNight
+ * level - only ever reachable via {@code SpawnController}'s ambient
+ * "Bombs" spawner, never a placed {@code RocketLauncher} turret, see
+ * {@code Mario.java}'s own case 19 vs. its ambient-bomb block) "bw_rocket_launcher")
+ * region for its own sprite - not a separate asset - matching the original's
+ * own {@code bsLoader.getStoredImages("RocketLauncher"/"BWRocketLauncher")[3]}.
+ * Flipped horizontally for a rightward launch, matching the original's own
  * {@code ImageUtil.flipHorizontal}.
  */
 public class Rocket extends Enemy {
@@ -31,11 +34,15 @@ public class Rocket extends Enemy {
     private static final float FALL_OUT_MARGIN_TILES = 20f;
 
     public Rocket(float x, float y, boolean movingRight) {
-        super(regionFor(movingRight), FRAME_SIZE, FRAME_SIZE, x, y, movingRight);
+        this(x, y, movingRight, false);
     }
 
-    private static TextureRegion regionFor(boolean movingRight) {
-        TextureRegion frame = MarioResourceManager.region("rocket_launcher")
+    public Rocket(float x, float y, boolean movingRight, boolean blackAndWhite) {
+        super(regionFor(movingRight, blackAndWhite), FRAME_SIZE, FRAME_SIZE, x, y, movingRight);
+    }
+
+    private static TextureRegion regionFor(boolean movingRight, boolean blackAndWhite) {
+        TextureRegion frame = MarioResourceManager.region(blackAndWhite ? "bw_rocket_launcher" : "rocket_launcher")
                 .split(FRAME_SIZE, FRAME_SIZE)[3][0];
         if (movingRight) {
             TextureRegion flipped = new TextureRegion(frame);

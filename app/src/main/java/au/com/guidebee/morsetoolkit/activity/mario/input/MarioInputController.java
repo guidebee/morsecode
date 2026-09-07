@@ -51,6 +51,11 @@ public class MarioInputController {
         boolean keyboardRunHeld = GameEngine.input.isKeyPressed(Input.Keys.X);
         boolean keyboardDown = GameEngine.input.isKeyPressed(Input.Keys.DOWN)
                 || GameEngine.input.isKeyPressed(Input.Keys.S);
+        // Held, not edge-triggered - separate from keyboardJump's own
+        // isKeyJustPressed(UP) read above, matching the original's own
+        // KeyPressedUP field (see PlayerCommand.up's doc).
+        boolean keyboardUp = GameEngine.input.isKeyPressed(Input.Keys.UP)
+                || GameEngine.input.isKeyPressed(Input.Keys.W);
 
         // The controller's buttons only expose "currently held"
         // (isButtonXPressed()), so jump/fire are edge-detected here, the same
@@ -77,6 +82,7 @@ public class MarioInputController {
         // the reverse of Touchpad's own javadoc (written for an ordinary
         // Y-up camera, as Battle City uses). Verified by hand on-device.
         command.down = keyboardDown || knobY > KNOB_DEADZONE;
+        command.up = keyboardUp || knobY < -KNOB_DEADZONE;
         command.jumpPressed = keyboardJump || jumpButtonJustPressed;
         command.firePressed = keyboardFire || fireButtonJustPressed;
         // See PlayerCommand.runHeld's doc - held fire (not just tapped) is turbo.

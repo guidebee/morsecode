@@ -14,13 +14,14 @@ import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
  *
  * <p>{@code capIndex} picks the left-cap/middle/right-cap frame (0/1/2 for
  * the "GreenAndTrees" palette, the only one any World-1 level's own
- * {@code type} uses - "OrangeAndMushroom" (frames 5/6/7) and the
- * black-and-white {@code CloudsNight} variant (a wholly separate "BWtree"
- * asset, not yet packed) are both unported until a level actually needs
- * them, matching this port's usual "build what's used" scoping).
+ * {@code type} uses - "OrangeAndMushroom" (frames 5/6/7) is still unported
+ * until a level actually needs it, matching this port's usual "build what's
+ * used" scoping; the black-and-white {@code CloudsNight} variant uses the
+ * *same* 0/1/2 indices, just from the separate "bw_tree" strip - confirmed
+ * against {@code Mario.java}'s own case 17).
  *
- * <p>The "tree" region is 32x32 per frame, 5 cols x 2 rows - confirmed
- * against {@code WholeGame.java}'s {@code getImages("tree.png", 5, 2)}.
+ * <p>The "tree"/"bw_tree" regions are each 32x32 per frame, 5 cols x 2 rows -
+ * confirmed against {@code WholeGame.java}'s {@code getImages("tree.png", 5, 2)}.
  */
 public class Tree extends InteractiveBrick {
 
@@ -29,7 +30,12 @@ public class Tree extends InteractiveBrick {
     private static final int FRAME_RIGHT_CAP = 2;
 
     public Tree(float x, float y, int columnIndex, int lastColumnIndex) {
-        super(MarioResourceManager.region("tree"), MarioConfiguration.TILE_SIZE, MarioConfiguration.TILE_SIZE, x, y);
+        this(x, y, columnIndex, lastColumnIndex, false);
+    }
+
+    public Tree(float x, float y, int columnIndex, int lastColumnIndex, boolean blackAndWhite) {
+        super(MarioResourceManager.region(blackAndWhite ? "bw_tree" : "tree"),
+                MarioConfiguration.TILE_SIZE, MarioConfiguration.TILE_SIZE, x, y);
         int frame;
         if (columnIndex == 0) {
             frame = FRAME_LEFT_CAP;

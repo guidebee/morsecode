@@ -23,6 +23,14 @@ public final class CheckpointResolver {
     /** The original stores each checkpoint's exact trigger position, not a tile-sized footprint - this is the generous hitbox around it. */
     private static final int TRIGGER_WIDTH = 32;
     private static final int TRIGGER_HEIGHT = 64;
+    /**
+     * Ported from {@code Mario.java}'s own {@code LoadCheckPoints}: a
+     * {@code Clowd_CheckPoint}'s collision image is a deliberately huge,
+     * invisible {@code ImageUtil.createImage(640, 64, 3)} - it marks a whole
+     * landing platform at the top of a beanstalk climb, not a precise point,
+     * unlike every other checkpoint kind's plain 32-wide default.
+     */
+    private static final int CLOWD_TRIGGER_WIDTH = 640;
     private static final float PUMP_HORIZONTAL_PROXIMITY = 10f;
 
     private CheckpointResolver() {
@@ -37,7 +45,8 @@ public final class CheckpointResolver {
         for (LevelDefinition.Checkpoint checkpoint : checkpoints) {
             float cx = (float) checkpoint.x;
             float cy = (float) checkpoint.y;
-            boolean overlaps = px < cx + TRIGGER_WIDTH && px + pw > cx
+            int triggerWidth = "Clowd_CheckPoint".equals(checkpoint.kind) ? CLOWD_TRIGGER_WIDTH : TRIGGER_WIDTH;
+            boolean overlaps = px < cx + triggerWidth && px + pw > cx
                     && py < cy + TRIGGER_HEIGHT && py + ph > cy;
             if (!overlaps) {
                 continue;
@@ -54,9 +63,18 @@ public final class CheckpointResolver {
                         return checkpoint;
                     }
                     break;
+                case "ClowdGoUP_CheckPoint":
+                    // Ported from Player_CheckPoint.collided's own ID-28
+                    // case: `if (p.KeyPressedUP)` - the beanstalk-climb entry
+                    // only fires while Up is held, matching the original.
+                    if (player.wantsUp()) {
+                        return checkpoint;
+                    }
+                    break;
                 default:
-                    // "CheckPoints" (basic level end), "WhyYouDOThis", and any
-                    // other kind trigger on plain contact.
+                    // "CheckPoints" (basic level end), "WhyYouDOThis",
+                    // "Clowd_CheckPoint", and any other kind trigger on plain
+                    // contact.
                     return checkpoint;
             }
         }

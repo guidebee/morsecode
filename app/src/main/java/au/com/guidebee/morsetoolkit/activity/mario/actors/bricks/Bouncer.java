@@ -23,6 +23,20 @@ import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 public class Bouncer extends InteractiveBrick {
 
     public Bouncer(float x, float y) {
-        super(MarioResourceManager.region("bouncer"), x, y);
+        this(x, y, false);
+    }
+
+    /**
+     * @param blackAndWhite CloudsNight (World 6's Level_63, the only level
+     *                      that sets this) swaps in "bw_bouncer" - unlike its
+     *                      decorative Spring, which stays the normal asset
+     *                      even there (confirmed by reading {@code
+     *                      Mario.java}'s own case 31: only the {@code
+     *                      Bouncer} constructor call switches to
+     *                      "BWBouncer", the {@code Spring} one right above it
+     *                      doesn't).
+     */
+    public Bouncer(float x, float y, boolean blackAndWhite) {
+        super(MarioResourceManager.region(blackAndWhite ? "bw_bouncer" : "bouncer"), x, y);
     }
 }

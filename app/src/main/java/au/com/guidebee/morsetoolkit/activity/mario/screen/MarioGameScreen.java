@@ -32,6 +32,7 @@ import au.com.guidebee.morsetoolkit.activity.mario.collision.LiftCollisionResolv
 import au.com.guidebee.morsetoolkit.activity.mario.collision.PlayerCollisionResolver;
 import au.com.guidebee.morsetoolkit.activity.mario.collision.ProjectileCollisionResolver;
 import au.com.guidebee.morsetoolkit.activity.mario.collision.TeleportResolver;
+import au.com.guidebee.morsetoolkit.activity.mario.fx.BackgroundBand;
 import au.com.guidebee.morsetoolkit.activity.mario.hud.PauseOverlay;
 import au.com.guidebee.morsetoolkit.activity.mario.hud.ScoreHud;
 import au.com.guidebee.morsetoolkit.activity.mario.input.MarioInputController;
@@ -257,6 +258,12 @@ public class MarioGameScreen extends ScreenAdapter {
         // it blank - no letterboxing, no distortion (see its own class doc).
         layerManager = new LayerManager(new ExtendViewport(
                 MarioConfiguration.VIEWPORT_WIDTH, MarioConfiguration.VIEWPORT_HEIGHT));
+        // Appended before `world` so it always paints behind every terrain
+        // tile - see BackgroundBand's own class doc.
+        String backgroundRegion = backgroundBandRegion(level.backgroundImage);
+        if (backgroundRegion != null) {
+            layerManager.append(new BackgroundBand(MarioResourceManager.region(backgroundRegion)));
+        }
         layerManager.append(world);
 
         // Stage's constructor already resolved the extended size above
@@ -463,11 +470,43 @@ public class MarioGameScreen extends ScreenAdapter {
         return new float[]{92f / 255f, 148f / 255f, 252f / 255f};
     }
 
+    /**
+     * @return the atlas region for this level's {@code backgroundImage}
+     * (Mountain/Clouds/CloudsNight/Fence/Fence2 - see {@code Mario.java}'s
+     * own "Tiled background" block), or null for any other value (most
+     * levels' own {@code ""}/{@code "Nothing$"} included) - see
+     * {@link BackgroundBand}'s own class doc.
+     */
+    private static String backgroundBandRegion(String backgroundImage) {
+        if (backgroundImage == null) {
+            return null;
+        }
+        switch (backgroundImage) {
+            case "Mountain":
+                return "mountain";
+            case "Clouds":
+                return "clouds";
+            case "CloudsNight":
+                return "cloudsnight";
+            case "Fence":
+                return "fence";
+            case "Fence2":
+                return "fence2";
+            default:
+                return null;
+        }
+    }
+
     private void startMusic(String attribute) {
         if (currentMusic != null) {
             currentMusic.stop();
         }
-        currentMusic = MarioResourceManager.music(attribute);
+        // Ported from Mario.java's own startup block: a "Clowd" level (the 4
+        // pure-climb beanstalk levels) has no music track of its own - it
+        // plays "Ground" instead, confirmed by reading the source rather
+        // than assumed (this isn't just "no crash": it's the original's own
+        // deliberate choice).
+        currentMusic = MarioResourceManager.music("Clowd".equals(attribute) ? "Ground" : attribute);
         currentMusic.setLooping(true);
         currentMusic.play();
     }
@@ -666,7 +705,16 @@ public class MarioGameScreen extends ScreenAdapter {
             currentMusic.stop();
         }
         boolean isPipe = checkpoint.kind.startsWith("InsidePump");
-        MarioResourceManager.sound(isFlag ? "smb_flagpole" : (isPipe ? "smb_pipe" : "smb_stage_clear")).play();
+        // Ported from Player_CheckPoint.collided's own ID-27/28 cases: both
+        // comment out their would-be smb_stage_clear.play() call (unlike
+        // every other kind, which does play something) - a beanstalk
+        // transition is silent, confirmed by reading the source rather than
+        // assumed.
+        boolean isClowd = checkpoint.kind.startsWith("Clowd");
+        String sound = isFlag ? "smb_flagpole" : isPipe ? "smb_pipe" : isClowd ? null : "smb_stage_clear";
+        if (sound != null) {
+            MarioResourceManager.sound(sound).play();
+        }
     }
 
     private void advanceToNextLevel() {

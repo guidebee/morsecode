@@ -1,0 +1,61 @@
+mario-sea.png
+size: 2048,2048
+format: RGBA8888
+filter: Nearest,Nearest
+repeat: none
+pump_top_sea
+  rotate: false
+  xy: 2, 2
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: -1
+brick_sea
+  rotate: false
+  xy: 68, 2
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+stone_sea
+  rotate: false
+  xy: 102, 2
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+stone_castle_sea
+  rotate: false
+  xy: 136, 2
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+chocolate_sea
+  rotate: false
+  xy: 170, 2
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+pump_sea
+  rotate: false
+  xy: 204, 2
+  size: 64, 32
+  orig: 64, 32
+  offset: 0, 0
+  index: -1
+tiles_sea
+  rotate: false
+  xy: 270, 2
+  size: 64, 32
+  orig: 64, 32
+  offset: 0, 0
+  index: -1
+tiles_castle_sea
+  rotate: false
+  xy: 336, 2
+  size: 64, 32
+  orig: 64, 32
+  offset: 0, 0
+  index: -1

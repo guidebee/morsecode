@@ -24,10 +24,12 @@ import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.Enemy;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.EnemyMashroom;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.EnemyTurtle;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.EnemyTurtlePatrol;
+import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.FishyWater;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.FlyingTurtle;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.FlyingTurtlePatrol;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.Helmet;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.Monkey;
+import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.OctoPussy;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.OrbitingFireball;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.SonOfABuitch;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.items.Coin;
@@ -99,6 +101,17 @@ public final class LevelLoader {
         }
         if ("Clowd".equals(level.attribute)) {
             return MarioResourceManager.region("tiles_clowd");
+        }
+        if ("Sea".equals(level.attribute)) {
+            // Ported from Mario.java's own case 6 ("stone"): every Sea level
+            // except World 8's Level_844 uses the generic "stone_Sea" look;
+            // that one level alone special-cases `LevelNumber==844` to
+            // "stone_Castle_Sea" instead (its approach to the underwater
+            // castle, confirmed by reading the source) - both composites
+            // share the SEA theme atlas, see PackMarioAtlas's own doc.
+            return level.levelNumber == 844
+                    ? MarioResourceManager.region("tiles_castle_sea")
+                    : MarioResourceManager.region("tiles_sea");
         }
         return MarioResourceManager.region("tiles");
     }
@@ -279,6 +292,24 @@ public final class LevelLoader {
                     break;
                 case "BossHammer":
                     addEnemy(new Boss(tile.x * tileSize, tile.y * tileSize, tile.patrolLength * tileSize, true));
+                    break;
+                // Sea-level water enemies (step P2.6) - ported from Mario.java's
+                // cases 54-57/58, FishyWater's own Type argument (1=grey
+                // straight, 2=grey up-down, 3=red straight, 4=red up-down).
+                case "FishGrey":
+                    addEnemy(new FishyWater(tile.x * tileSize, tile.y * tileSize, 1));
+                    break;
+                case "FishGreyUpDown":
+                    addEnemy(new FishyWater(tile.x * tileSize, tile.y * tileSize, 2));
+                    break;
+                case "FishRed":
+                    addEnemy(new FishyWater(tile.x * tileSize, tile.y * tileSize, 3));
+                    break;
+                case "FishRedUpDown":
+                    addEnemy(new FishyWater(tile.x * tileSize, tile.y * tileSize, 4));
+                    break;
+                case "OctoPussy":
+                    addEnemy(new OctoPussy(tile.x * tileSize, tile.y * tileSize));
                     break;
                 default:
                     break;

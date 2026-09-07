@@ -264,6 +264,16 @@ public class MarioGameScreen extends ScreenAdapter {
         if (backgroundRegion != null) {
             layerManager.append(new BackgroundBand(MarioResourceManager.region(backgroundRegion)));
         }
+        // Ported from Mario.java's own "sea" block (separate from the
+        // BackgroundImage loop above - a level could in principle set both,
+        // though no Sea level in this game actually sets a backgroundImage
+        // too, confirmed by reading every converted Sea level JSON): tiled
+        // every 32px across the level's own length, not a fixed 10 repeats -
+        // see BackgroundBand's own second-constructor doc.
+        if ("Sea".equals(level.attribute)) {
+            int seaTileCount = Math.max(1, level.levelLength / MarioConfiguration.TILE_SIZE);
+            layerManager.append(new BackgroundBand(MarioResourceManager.region("sea_background"), 0f, seaTileCount));
+        }
         layerManager.append(world);
 
         // Stage's constructor already resolved the extended size above
@@ -322,6 +332,9 @@ public class MarioGameScreen extends ScreenAdapter {
         int startTileY = spawnTileY >= 0 ? spawnTileY : level.posY;
         player = new Player(startTileX * MarioConfiguration.TILE_SIZE,
                 startTileY * MarioConfiguration.TILE_SIZE, world, input);
+        // Ported from Mario.java's own `if ("Sea".equals(attribute)) player.Water = true`
+        // set once at level load, never toggled mid-level - see Player#setWater's doc.
+        player.setWater("Sea".equals(level.attribute));
         layerManager.append(player);
         MarioContext.setPlayer(player);
 
@@ -465,6 +478,12 @@ public class MarioGameScreen extends ScreenAdapter {
     private static float[] clearColor(String backgroundColor) {
         if ("Black".equals(backgroundColor)) {
             return new float[]{0f, 0f, 0f};
+        }
+        // Every Sea level's own background color, ported from Mario.java's
+        // own `new Color(32, 56, 236)` - a deeper, more saturated blue than
+        // the classic sky, matching an underwater level's own look.
+        if ("DarkBlue".equals(backgroundColor)) {
+            return new float[]{32f / 255f, 56f / 255f, 236f / 255f};
         }
         // Mario's classic sky-blue, matching the original's "Blue" background.
         return new float[]{92f / 255f, 148f / 255f, 252f / 255f};

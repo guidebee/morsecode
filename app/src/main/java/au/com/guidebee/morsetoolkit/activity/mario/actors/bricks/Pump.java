@@ -8,10 +8,10 @@ import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
  * A pipe segment, ported from {@code Bricks/pump.java} - purely solid
  * decoration, no interaction. Its art (64px, 2 tiles wide) is why pipes
  * couldn't be static {@code TiledLayer} cells - see
- * {@code MarioConfiguration}'s note. World 1 never places a pipe on the
- * "Sea" attribute, so only the Ground/UnderGround (shared "pump"/"pump_top")
- * and Castle variants are needed, matching the original's
- * {@code Mario.java} switch.
+ * {@code MarioConfiguration}'s note. Ground/UnderGround share plain "pump"/
+ * "pump_top"; Castle and Sea (World 8's Level_844, its only Sea-attribute
+ * pipe - confirmed by reading that level's own converted JSON) each get
+ * their own recolor, matching the original's {@code Mario.java} switch.
  */
 public class Pump extends InteractiveBrick {
 
@@ -25,10 +25,12 @@ public class Pump extends InteractiveBrick {
     }
 
     private static TextureRegion regionFor(String attribute, boolean top) {
-        boolean castle = "Castle".equals(attribute);
-        if (top) {
-            return MarioResourceManager.region(castle ? "pump_top_castle" : "pump_top");
+        if ("Castle".equals(attribute)) {
+            return MarioResourceManager.region(top ? "pump_top_castle" : "pump_castle");
         }
-        return MarioResourceManager.region(castle ? "pump_castle" : "pump");
+        if ("Sea".equals(attribute)) {
+            return MarioResourceManager.region(top ? "pump_top_sea" : "pump_sea");
+        }
+        return MarioResourceManager.region(top ? "pump_top" : "pump");
     }
 }

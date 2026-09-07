@@ -43,7 +43,7 @@ import java.util.Map;
 public final class MarioResourceManager {
 
     private static final String[] MUSIC_TRACKS = {
-            "Ground", "UnderGround", "Castle", "Star"
+            "Ground", "UnderGround", "Castle", "Star", "Sea"
     };
 
     private static final String[] SOUND_EFFECTS = {
@@ -217,6 +217,8 @@ public final class MarioResourceManager {
                 return "mario-underground.atlas";
             case "Castle":
                 return "mario-castle.atlas";
+            case "Sea":
+                return "mario-sea.atlas";
             default:
                 throw new IllegalArgumentException("No theme atlas for attribute: " + attribute);
         }
@@ -267,6 +269,9 @@ public final class MarioResourceManager {
         }
         if ("Castle".equals(attribute)) {
             return region(base + "_castle");
+        }
+        if ("Sea".equals(attribute)) {
+            return region(base + "_sea");
         }
         return region(base);
     }

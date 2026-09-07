@@ -19,25 +19,46 @@ import com.guidebee.game.microedition.Layer;
  * this to the layerManager *before* the level's own {@code MarioWorld} so it
  * always paints behind every terrain tile/actor, the same way {@code
  * Scenery} is spawned before bricks/enemies for the same reason.
+ *
+ * <p>The Sea attribute's own backdrop ("sea_background", ported from the
+ * same "Tiled background" block's own {@code Sea} branch) uses the second
+ * constructor instead: tiled every 32px, not 1536px, starting at y=0 - see
+ * that constructor's own doc.
  */
 public class BackgroundBand extends Layer {
 
-    private static final int TILE_COUNT = 10;
-    private static final float Y = 32f;
+    private static final int DEFAULT_TILE_COUNT = 10;
+    private static final float DEFAULT_Y = 32f;
 
     private final TextureRegion region;
+    private final float y;
+    private final int tileCount;
 
     public BackgroundBand(TextureRegion region) {
-        super(0, Y, region.getRegionWidth() * TILE_COUNT, region.getRegionHeight(), true);
+        this(region, DEFAULT_Y, DEFAULT_TILE_COUNT);
+    }
+
+    /**
+     * Ported from Mario.java's own Sea-backdrop loop:
+     * {@code new Sprite(getImage("Sea.png"), 32*i, 0)} repeated once per
+     * 32px column across the level's own length (not a fixed 10 repeats of
+     * a 1536px-wide image, unlike every other {@code backgroundImage} band -
+     * see {@code MarioGameScreen}'s own call site for how {@code tileCount}
+     * is derived from the level's length instead of hardcoded).
+     */
+    public BackgroundBand(TextureRegion region, float y, int tileCount) {
+        super(0, y, region.getRegionWidth() * tileCount, region.getRegionHeight(), true);
         this.region = region;
+        this.y = y;
+        this.tileCount = tileCount;
     }
 
     @Override
     public void paint(Batch g) {
         int nativeWidth = region.getRegionWidth();
         float height = region.getRegionHeight();
-        for (int i = 0; i < TILE_COUNT; i++) {
-            g.draw(region, i * nativeWidth, Y, nativeWidth, height);
+        for (int i = 0; i < tileCount; i++) {
+            g.draw(region, i * nativeWidth, y, nativeWidth, height);
         }
     }
 }

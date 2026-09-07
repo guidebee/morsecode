@@ -64,6 +64,24 @@ public class Player extends Layer {
     /** Ported from {@code Player_Brick.collided}'s own {@code p.Jump(-22)} for a Bouncer - see {@code Bouncer}'s class doc. */
     private static final float BOUNCER_LAUNCH_GRAVITY = -22f;
 
+    /**
+     * Water/swim constants, ported from {@code Player.update}/{@code Jump}/
+     * {@code Gravity}'s own {@code if (Water)} branches - see {@link #water}'s
+     * doc and {@link #applyWaterSurfaceConstraints}.
+     */
+    private static final float WATER_GRAVITY_STEP = 0.1f;
+    private static final float WATER_GRAVITY_CAP = 2f;
+    /** A tap-to-paddle impulse, not a held jump - ported from {@code Jump()}'s own {@code Gravity = -3.5} (fires every {@code jumpPressed} edge, no {@link #onGround} gate, unlike a ground jump). */
+    private static final float WATER_JUMP_GRAVITY = -3.5f;
+    /** Ported from {@code Player.update}'s own {@code if (OnGround) { speed>30 ? 30 : ... }} - walking the sea floor caps out well below free-swimming's {@link #MAX_SPEED}. */
+    private static final float WATER_GROUNDED_SPEED_CAP = 30f;
+    /** Ported from {@code Player.update}'s own literal {@code getY()<64 -> setY(64)} - every Sea level's water surface sits at this same absolute world Y (confirmed: original hardcodes it, not derived from level data). */
+    private static final float WATER_SURFACE_Y = 64f;
+    private static final float WATER_FORCE_SINK_Y = 32f;
+    private static final float WATER_FORCE_SINK_GRAVITY = 2f;
+    /** Ported from {@code Player.update}'s own {@code swimmDelay} (4 original ticks between each stroke-frame toggle). */
+    private static final float SWIM_ANIM_INTERVAL_TICKS = 4f;
+
     private static final float WALK_CYCLE_THRESHOLD = 160f;
 
     /** ~400 original 60fps ticks - matches Player.java's post-shrink `invincible = 400`. */
@@ -115,6 +133,9 @@ public class Player extends Layer {
     private float gravity;
     private boolean onGround;
     private boolean facingRight = true;
+    /** Set once at level load from {@code "Sea".equals(level.attribute)} - see {@link #setWater}. */
+    private boolean water;
+    private float swimAnimTimer;
 
     private float walkCycleAccumulator;
     private int walkCyclePos;
@@ -350,8 +371,15 @@ public class Player extends Layer {
         keyPressedDown = command.down;
         ducking = keyPressedDown && powerState != PlayerPowerState.SMALL;
 
+        // Ported from the original's own per-frame ordering: GoToLeft/Right
+        // and Jump() are called from Mario.java's outer input-polling loop,
+        // *before* Player.update() (this method) runs each frame - so the
+        // Water block's grounded-speed clamp and surface-breach overrides
+        // apply *after* this frame's horizontal/jump input, not before (see
+        // applyWaterSurfaceConstraints's own doc).
         applyHorizontalInput(command, frames);
         applyJump(command);
+        applyWaterSurfaceConstraints();
         applyGravity(frames);
 
         moveXWithCollision(speed / 20f * frames);
@@ -368,6 +396,32 @@ public class Player extends Layer {
 
         applyFire(command);
         updateAnimation(command, frames);
+    }
+
+    /**
+     * Ported from {@code Player.update}'s own {@code if (Water) {...}} block
+     * (run after this frame's horizontal/jump input but before gravity's own
+     * ramp - see {@link #act}'s own ordering comment): while resting on the
+     * sea floor, swim speed is capped much lower than free-swimming (this
+     * frame's acceleration already applied by {@link #applyHorizontalInput},
+     * then clamped back down here); breaching too far above the surface
+     * overrides even a same-frame jump/paddle back into a forced sink, and
+     * he can never rise past the surface line itself. A no-op outside Sea
+     * levels.
+     */
+    private void applyWaterSurfaceConstraints() {
+        if (!water) {
+            return;
+        }
+        if (onGround) {
+            speed = Math.max(-WATER_GROUNDED_SPEED_CAP, Math.min(WATER_GROUNDED_SPEED_CAP, speed));
+        }
+        if (getY() < WATER_FORCE_SINK_Y) {
+            gravity = WATER_FORCE_SINK_GRAVITY;
+        }
+        if (getY() < WATER_SURFACE_Y) {
+            setY(WATER_SURFACE_Y);
+        }
     }
 
     /**
@@ -440,16 +494,23 @@ public class Player extends Layer {
     }
 
     private void applyHorizontalInput(PlayerCommand command, float frames) {
-        float maxSpeed = command.runHeld ? MAX_SPEED_TURBO : MAX_SPEED;
+        // Ported from Player.Speed()'s own `if (Water) turbo = false` - no
+        // turbo while swimming, regardless of the run input.
+        float maxSpeed = command.runHeld && !water ? MAX_SPEED_TURBO : MAX_SPEED;
+        // Ported from Player.update()'s own three-way friction branch:
+        // `if (!Water) {...} else if (Water & !OnGround) {} else if
+        // (OnGround) {...}` - free-swimming (water and airborne) applies NO
+        // friction at all, so speed persists until directly countered by the
+        // opposite input; every other case (dry ground, or standing on the
+        // sea floor) decays toward zero same as before.
+        boolean noFriction = water && !onGround;
         // Ported from GoToLeft/GoToRight's own `if (ControlleByKeyboard & !KeyPressedDown)`
         // guard - holding down locks out new acceleration (existing speed
-        // still decays via the friction branch below) regardless of power
-        // state, see keyPressedDown's doc.
+        // still decays via the friction branch below, water permitting)
+        // regardless of power state, see keyPressedDown's doc.
         if (keyPressedDown) {
-            if (speed > 0) {
-                speed = Math.max(0, speed - FRICTION * frames);
-            } else if (speed < 0) {
-                speed = Math.min(0, speed + FRICTION * frames);
+            if (!noFriction) {
+                decaySpeedTowardZero(frames);
             }
             return;
         }
@@ -459,7 +520,13 @@ public class Player extends Layer {
         } else if (command.right) {
             facingRight = true;
             speed = Math.min(speed + ACCEL * frames, maxSpeed);
-        } else if (speed > 0) {
+        } else if (!noFriction) {
+            decaySpeedTowardZero(frames);
+        }
+    }
+
+    private void decaySpeedTowardZero(float frames) {
+        if (speed > 0) {
             speed = Math.max(0, speed - FRICTION * frames);
         } else if (speed < 0) {
             speed = Math.min(0, speed + FRICTION * frames);
@@ -467,7 +534,17 @@ public class Player extends Layer {
     }
 
     private void applyJump(PlayerCommand command) {
-        if (!command.jumpPressed || !onGround) {
+        if (!command.jumpPressed) {
+            return;
+        }
+        // Ported from Jump()'s own `if (Water) { Gravity = -3.5; }` branch: a
+        // fixed-strength paddle stroke on every press (no OnGround gate, no
+        // speed-scaled bonus, no jump sound - the original plays none here).
+        if (water) {
+            gravity = WATER_JUMP_GRAVITY;
+            return;
+        }
+        if (!onGround) {
             return;
         }
         if (speed > 0) {
@@ -482,8 +559,10 @@ public class Player extends Layer {
     }
 
     private void applyGravity(float frames) {
-        if (gravity < GRAVITY_CAP) {
-            gravity = Math.min(GRAVITY_CAP, gravity + GRAVITY_STEP * frames);
+        float cap = water ? WATER_GRAVITY_CAP : GRAVITY_CAP;
+        float step = water ? WATER_GRAVITY_STEP : GRAVITY_STEP;
+        if (gravity < cap) {
+            gravity = Math.min(cap, gravity + step * frames);
         }
     }
 
@@ -564,6 +643,10 @@ public class Player extends Layer {
             setFrame(facingRight ? 24 : 25);
             return;
         }
+        if (water && !onGround) {
+            updateSwimAnimation(frames);
+            return;
+        }
         if (!onGround) {
             setFrame(facingRight ? 2 : 3);
             return;
@@ -584,6 +667,35 @@ public class Player extends Layer {
             walkCyclePos = (walkCyclePos + 1) % 3;
         }
         setFrame((facingRight ? 4 : 8) + walkCyclePos);
+    }
+
+    /**
+     * Ported from {@code Player.Swim()}/{@code WaterJump()}: an alternating
+     * two-frame stroke, gated to fire only every {@link #SWIM_ANIM_INTERVAL_TICKS}
+     * ticks (not every frame) same as the original's own {@code swimmDelay}
+     * countdown - which pose depends on whether Mario is currently sinking
+     * ({@link #isFalling}, frames 16-19) or rising (frames 20-23), each split
+     * further by facing direction.
+     */
+    private void updateSwimAnimation(float frames) {
+        swimAnimTimer += frames;
+        if (swimAnimTimer < SWIM_ANIM_INTERVAL_TICKS) {
+            return;
+        }
+        swimAnimTimer = 0;
+        if (isFalling()) {
+            if (facingRight) {
+                setFrame(frame == 16 ? 17 : 16);
+            } else {
+                setFrame(frame == 18 ? 19 : 18);
+            }
+        } else {
+            if (facingRight) {
+                setFrame(frame == 20 ? 21 : 20);
+            } else {
+                setFrame(frame == 22 ? 23 : 22);
+            }
+        }
     }
 
     /**
@@ -799,6 +911,11 @@ public class Player extends Layer {
 
     public boolean isOnGround() {
         return onGround;
+    }
+
+    /** Set once at level load from {@code "Sea".equals(level.attribute)} - see {@link #water}'s doc. Never toggled mid-level, matching the original. */
+    public void setWater(boolean water) {
+        this.water = water;
     }
 
     /** True for Big/Fire Mario while holding down - see {@link #ducking}'s doc. */

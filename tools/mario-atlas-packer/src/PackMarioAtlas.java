@@ -45,15 +45,17 @@ import java.util.Map;
  * one consumer (MarioResourceManager) are both new code - there's no
  * original-engine string to stay compatible with.
  *
- * <p><b>Deliberately still excluded</b> (Step P2.1.2's own scope decision,
- * not an oversight): every Sea-attribute terrain/creature asset
- * (chocolate_Sea/brick_Sea/stone_Sea/pump variants/stone_Castle_Sea/
- * OrangePump/FishGrey/FishRed/OctoPussy/Bubble/Water) - would need a
- * brand-new {@link Theme} bucket (and a matching {@code
- * MarioResourceManager.loadTheme} mapping) that can't be verified against a
- * real level until Phase 2's own P2.6 (Sea) step actually lands; pack those
- * alongside that work instead of guessing the bucket now. CloudsNight's own
- * assets (bw_stone/bw_tree/bw_small_castle/bw_big_castle/bw_bouncer/
+ * <p>Sea-attribute terrain/creature assets (chocolate_Sea/brick_Sea/
+ * stone_Sea/pump variants/stone_Castle_Sea/FishGrey/FishRed/OctoPussy)
+ * landed with Step P2.6 (water/swim), in their own {@link Theme#SEA} bucket
+ * (see the class-level {@code AssetSpec} table and TERRAIN_TILES). "OrangePump"
+ * (a level-name-gated one-off pump recolor, {@code Mario.java}'s own
+ * {@code "OrangePump".equals(CurrentLevel.level_Name)} branch) and "Bubble"
+ * (a purely decorative particle {@code Player.java}'s own {@code AddBubbles()}
+ * spawns while swimming, no gameplay effect) are still deliberately excluded -
+ * neither affects whether a Sea level loads or plays correctly, re-check if a
+ * later pass wants the cosmetic polish. CloudsNight's own assets
+ * (bw_stone/bw_tree/bw_small_castle/bw_big_castle/bw_bouncer/
  * bw_rocket_launcher/bw_hammer) and "Clowd"-attribute's stone_clowd landed
  * with Step P2.5 - both turned out to need no new {@link Theme} bucket at
  * all (see TERRAIN_TILES' own doc on why). Also excluded: assets that look
@@ -82,7 +84,8 @@ public class PackMarioAtlas {
         COMMON("mario-common"),
         GROUND("mario-ground"),
         UNDERGROUND("mario-underground"),
-        CASTLE("mario-castle");
+        CASTLE("mario-castle"),
+        SEA("mario-sea");
 
         final String baseName;
 
@@ -108,15 +111,28 @@ public class PackMarioAtlas {
             new AssetSpec(Theme.GROUND, "chocolate", "chocolate.png", 1, 1),
             new AssetSpec(Theme.UNDERGROUND, "chocolate_underground", "chocolate_UnderGround.png", 1, 1),
             new AssetSpec(Theme.CASTLE, "chocolate_castle", "chocolate_Castle.png", 1, 1),
+            // Sea (World 2/7/8's underwater levels, step P2.6). "stone_castle_sea"
+            // is a second, distinct look Mario.java's own case 6 special-cases
+            // for LevelNumber==844 only (World 8's underwater castle approach) -
+            // see this class's own TERRAIN_TILES doc for how the two composites
+            // split. No Sea level ever places a "chocolate" tile (confirmed by
+            // reading all 5 converted Sea level JSONs), but the source art
+            // exists and is registered by the original engine, so it's packed
+            // for completeness the same way this table already does elsewhere.
+            new AssetSpec(Theme.SEA, "brick_sea", "brick_Sea.png", 1, 1),
+            new AssetSpec(Theme.SEA, "stone_sea", "stone_Sea.png", 1, 1),
+            new AssetSpec(Theme.SEA, "stone_castle_sea", "stone_Castle_Sea.png", 1, 1),
+            new AssetSpec(Theme.SEA, "chocolate_sea", "chocolate_Sea.png", 1, 1),
 
             // Pipes/pumps - "pump"/"pump_top" are shared Ground+UnderGround art in the
             // original (see actors.bricks.Pump's own doc), so they're COMMON, not
-            // GROUND-only; only the Castle recolor is theme-exclusive. World 1 never
-            // places a pipe on the "Sea" attribute.
+            // GROUND-only; the Castle and Sea recolors are theme-exclusive.
             new AssetSpec(Theme.COMMON, "pump", "pump.png", 1, 1),
             new AssetSpec(Theme.COMMON, "pump_top", "pump top.png", 1, 1),
             new AssetSpec(Theme.CASTLE, "pump_castle", "pump Castle.png", 1, 1),
             new AssetSpec(Theme.CASTLE, "pump_top_castle", "pump top Castle.png", 1, 1),
+            new AssetSpec(Theme.SEA, "pump_sea", "pump Sea.png", 1, 1),
+            new AssetSpec(Theme.SEA, "pump_top_sea", "pump top Sea.png", 1, 1),
             new AssetSpec(Theme.COMMON, "plant", "plant.png", 2, 1),
             new AssetSpec(Theme.COMMON, "plant_dark", "plantdark.png", 2, 1),
             new AssetSpec(Theme.COMMON, "hori_image", "HoriImage.png", 2, 1),
@@ -177,6 +193,16 @@ public class PackMarioAtlas {
             new AssetSpec(Theme.COMMON, "spikey", "Spikey.png", 4, 1),
             new AssetSpec(Theme.COMMON, "boss", "Boss.png", 3, 2),
             new AssetSpec(Theme.COMMON, "boss_fire", "BossFire.png", 2, 1),
+            // Water enemies (Objects/FishyWater.java, OctoPussy.java,
+            // FishyGround.java) - COMMON rather than SEA, since FishyGround's
+            // "jump out of the water" ambient spawner (SpawnController's own
+            // "FlyingFishes" flag) fires on Ground/Castle levels too (World
+            // 2/7's Level_23/73, World 8's Level_843 - none of them Sea
+            // attribute, confirmed by reading their own converted JSON), not
+            // just the Sea levels FishyWater/OctoPussy are placed directly in.
+            new AssetSpec(Theme.COMMON, "fish_grey", "FishGrey.png", 2, 1),
+            new AssetSpec(Theme.COMMON, "fish_red", "FishRed.png", 2, 1),
+            new AssetSpec(Theme.COMMON, "octopussy", "OctoPussy.png", 2, 1),
             // NOTE: the original Boss.java always throws bsLoader "BWHammer" regardless of
             // level theme (likely an oversight left in the original game) - preserved as-is.
             new AssetSpec(Theme.COMMON, "bw_hammer", "CloudsNight/Hammer.png", 4, 1),
@@ -218,6 +244,15 @@ public class PackMarioAtlas {
             new AssetSpec(Theme.COMMON, "cloudsnight", "CloudsNight.png", 1, 1),
             new AssetSpec(Theme.COMMON, "fence", "Fence.png", 1, 1),
             new AssetSpec(Theme.COMMON, "fence2", "Fence2.png", 1, 1),
+            // The Sea attribute's own backdrop - unlike the band above, this is
+            // tiled every 32px (not 1536px) starting at y=0, and its own source
+            // art is only 96px tall (see Mario.java's own `new Sprite(getImage(
+            // "Sea.png"), 32*i, 0)` loop, one Sprite per column, no vertical
+            // tiling) - a distinct BackgroundBand constructor overload handles
+            // the different tile width/count, see that class's own doc. Packed
+            // COMMON since attribute-based theme selection already gates
+            // whether it's ever requested (only Sea levels ask for it).
+            new AssetSpec(Theme.COMMON, "sea_background", "Sea.png", 1, 1),
 
             // CloudsNight (World 6's Level_63, its only level) reskins several
             // static/scenery assets to black-and-white variants - see this
@@ -320,7 +355,17 @@ public class PackMarioAtlas {
             // "stone_clowd" AssetSpec's own doc) - "bw_chocolate" fills the
             // sheet's unused second cell since it's already a valid COMMON
             // 32x32 asset, not because it's ever actually drawn.
-            new TerrainTile(Theme.COMMON, "tiles_clowd", "stone_clowd", "bw_chocolate")
+            new TerrainTile(Theme.COMMON, "tiles_clowd", "stone_clowd", "bw_chocolate"),
+            // Sea gets a real Theme bucket (unlike CloudsNight/Clowd above) -
+            // its own novel enemies/terrain/pump variants are numerous enough
+            // to justify one, matching the original plan's own §5 layout.
+            // World 8's Level_844 is the one exception needing a second,
+            // distinct composite (Mario.java's own case 6 special-cases
+            // `LevelNumber==844` to "stone_Castle_Sea" instead of the generic
+            // "stone_Sea") - LevelLoader.staticTilesRegion picks between the
+            // two by level number, not attribute, since both are "Sea".
+            new TerrainTile(Theme.SEA, "tiles_sea", "stone_sea", "chocolate_sea"),
+            new TerrainTile(Theme.SEA, "tiles_castle_sea", "stone_castle_sea", "chocolate_sea")
     );
     private static final int TILE_SHEET_COLS = 2;
     private static final int TILE_SIZE = 32;

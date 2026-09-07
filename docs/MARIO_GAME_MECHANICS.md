@@ -20,6 +20,9 @@ three planning documents:
   asset with original art at a higher resolution. §13 and §16 of this document (sprite
   sheets, reskin scope) are the technical reference that plan's asset-authoring work
   builds on.
+- [MARIO_RESKIN_EXECUTION.md](MARIO_RESKIN_EXECUTION.md) — the actionable, resourced
+  step-by-step reskin checklist (real asset-pack/tool links with checked license terms),
+  built directly on this document's §16 scope numbers.
 - [MARIO_LEVEL_ATLAS.md](MARIO_LEVEL_ATLAS.md) — every one of the 55 shipped levels,
   world by world, with a schematic minimap and full tile/enemy/checkpoint breakdown for
   each — the "how scenes are designed" companion to this document's actor/system focus.

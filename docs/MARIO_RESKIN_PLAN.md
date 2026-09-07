@@ -16,6 +16,12 @@ for how the atlas/sprite-sheet system actually works today (theme atlases, the
 `cols × rows` frame-grid convention, magenta masking, the per-cell vertical flip) — that
 section is the technical reference this plan's §3/§4 asset-authoring work builds on.
 
+**Ready to actually start sourcing/drawing assets?** See
+[MARIO_RESKIN_EXECUTION.md](MARIO_RESKIN_EXECUTION.md) — this plan's actionable
+companion: real, license-checked resource links (asset packs, fonts, audio, tools) for
+this plan's §3 sourcing strategy, plus a concrete, ordered step-by-step task list for §4's
+execution. This document stays the decisions/rationale record; that one is the checklist.
+
 **Revision note (2026-09-07):** this revision changes two things versus the first pass:
 (1) it folds in the high-resolution art upgrade the team wants, which — contrary to
 this plan's original §4 — is **not** a pure content swap under the current architecture

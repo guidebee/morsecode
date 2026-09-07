@@ -628,9 +628,12 @@ P2.9.5's own still-open on-device check)*
   it, and `MarioResourceManager#uiSkinYDown`'s font-flip patch didn't reach `CheckBox`/
   `TextField`'s own separate skin-style classes (checkbox labels, then the checkbox tick-mark
   artwork itself, rendered upside down until each got its own patch line).
-- [ ] P2.8.5.5 **Vertical slice:** use the finished panel to jump straight to `Level_14`'s
+- [x] P2.8.5.5 **Vertical slice:** use the finished panel to jump straight to `Level_14`'s
   axe and confirm P2.9.5's own still-outstanding check now takes under a minute instead of
-  a full level replay. Not yet run - the tooling itself only just finished on-device
+  a full level replay. Satisfied in practice, repeatedly - the Axe warp button was the
+  actual tool used to find and re-verify both P2.9.1 bugs (the axe-stuck wall-block, the
+  ghost-persistence fix) during P2.9.5 itself, each a warp-and-observe cycle well under a
+  minute.
   verification (button visibility, checkbox rendering); this is the one item still open.
 
 ## 8. Developer/QA debug tooling (design only - not yet implemented)

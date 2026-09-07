@@ -622,9 +622,12 @@ public class Player extends Layer {
                     // Ported from Player_Brick.collided's own `if (b.getID() == 13)
                     // p.Jump(-22)` - a Bouncer never lets Mario actually stand on
                     // it, always relaunching him instead (roughly double a normal
-                    // jump's impulse) - see Bouncer's own class doc.
+                    // jump's impulse) - see Bouncer's own class doc. Player.Jump(int)
+                    // itself (the explicit-gravity overload both this and
+                    // bounceOffEnemy() port from) always plays smb_stomp.
                     gravity = BOUNCER_LAUNCH_GRAVITY;
                     onGround = false;
+                    MarioResourceManager.sound("smb_stomp").play();
                 } else {
                     gravity = 0;
                     onGround = true;
@@ -888,7 +891,10 @@ public class Player extends Layer {
      * see {@code GameStateController}.
      */
     private void die() {
-        MarioResourceManager.sound("smb_mariodie").play();
+        // No smb_mariodie here - see this method's own doc ("instant, silent
+        // Restart()"); the original's Restart() plays no sound at all,
+        // confirmed by reading the source. A stray call here (since fixed)
+        // used to contradict that doc comment.
         changePowerState(PlayerPowerState.SMALL);
         speed = 0;
         gravity = 0;
@@ -924,10 +930,18 @@ public class Player extends Layer {
      * A small upward hop after stomping an enemy, ported from the
      * {@code game.player.Jump(-8)} call every stomp reaction makes in the
      * original (EnemyMashroom/EnemyTurtle/TurtleShell alike).
+     *
+     * <p>{@code Player.Jump(int)} - the explicit-gravity overload both this
+     * and the Bouncer's own relaunch (see {@code moveYWithCollision}) port
+     * from - always plays {@code smb_stomp}, confirmed by reading the source
+     * rather than assumed: a gap wider than docs/MARIO_PORT_PLAN_PHASE2.md
+     * Step P2.11.3's own "the Bouncer's launch" wording suggested, since
+     * every ordinary enemy stomp shares that exact same original method.
      */
     public void bounceOffEnemy() {
         gravity = -8f;
         onGround = false;
+        MarioResourceManager.sound("smb_stomp").play();
     }
 
     /** Ported from {@code Player.STAR()} - temporary invincibility (no speed/visual flourish yet). */

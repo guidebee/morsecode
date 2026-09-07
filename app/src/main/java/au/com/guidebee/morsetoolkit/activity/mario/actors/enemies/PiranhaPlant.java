@@ -27,10 +27,21 @@ import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
  * {@code KilledByFireBall()} has no such animation either, a deliberate
  * original difference here, not an oversight.
  *
- * <p>Spawned by {@code LevelLoader#spawnEnemies} from the top cell of every
- * "pump"/"PumpWarp" tile, except levels named {@code "OrangePump"} (World
- * 4-2's Clowd bonus area) - matching the original's own exclusion in
- * {@code Mario.java}'s case-12 block.
+ * <p>Spawned by {@code LevelLoader#spawnBricks}'s own {@code "pump"} case,
+ * immediately before that tile's {@code Pump} brick - not {@code
+ * spawnEnemies} (every other enemy's home) - specifically so it's appended
+ * to the layer first and therefore renders *behind* its own pipe (confirmed
+ * against the source: the original adds {@code PlantGroup} to the playfield
+ * before {@code BrickGroup}). Skips levels named {@code "OrangePump"} (World
+ * 4-2's Clowd bonus area) and {@code "PumpWarp"} tiles - both matching
+ * exclusions confirmed in the original's own case-12/case-66 blocks - and,
+ * deviating from the source (see that call site's own doc), any pipe shorter
+ * than 3 tiles: the original's fixed retracted-position offset needs that
+ * much room to fully hide a plant, and on-device testing showed a shorter
+ * pipe (several exist in World 1) leaving it either poking out past the
+ * pipe's own base or, once that was clamped away, hovering with no pipe body
+ * left below it to read as "retracted into" anything - neither looked right,
+ * so the spawn itself is skipped there instead.
  */
 public class PiranhaPlant extends Enemy {
 

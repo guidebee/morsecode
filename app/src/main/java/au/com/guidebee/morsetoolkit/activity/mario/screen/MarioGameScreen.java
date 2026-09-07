@@ -865,12 +865,18 @@ public class MarioGameScreen extends ScreenAdapter {
         } else {
             state.pause();
             pauseOverlay.show();
+            // Ported from Mario.java's own pause-key handler - plays on both
+            // directions of the toggle (see resumeGame's own matching call
+            // for the other direction, shared with PauseOverlay's own RESUME
+            // button).
+            MarioResourceManager.sound("smb_pause").play();
         }
     }
 
     private void resumeGame() {
         gamePlay.gameState().resume();
         pauseOverlay.hide();
+        MarioResourceManager.sound("smb_pause").play();
     }
 
     /**

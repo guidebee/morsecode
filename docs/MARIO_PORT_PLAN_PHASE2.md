@@ -500,18 +500,42 @@ testable on-device.
   this by adding `PlantGroup` to the playfield *before* `BrickGroup` (`Mario.java`'s own
   `addGroup` call sequence); ported the same ordering by moving the plant-spawn into
   `spawnBricks`'s own `"pump"` case, immediately before that tile's own `Pump` brick is
-  added, so it's now always behind its pipe.
+  added, so it's now always behind its pipe. **Second bug, same playtest:** the original's
+  own literal retracted-position offset (`+48`) only fits inside a pipe 3+ tiles tall - a
+  shorter one (several exist in World 1) let the plant's retracted body poke out past the
+  pipe's own base into the ground below, confirmed on-device. First fix attempt (clamp the
+  spawn Y to the pipe's own bottom edge) made it worse, not better, once tested: with no
+  room left below it, the plant just hovered near the pipe's rim with nothing reading as
+  "pipe" beneath it. Landed instead on skipping the spawn entirely for any pipe shorter
+  than 3 tiles - matches the classic game's own short entrance pipes (SMB1's 1-1 has two,
+  neither with a Piranha Plant; only its taller pipes get one).
 
-**Step P2.11 — Small fidelity fixes** *(cheap, do together)*
-- P2.11.1 `QuestionMark` grey tint on `UnderGround`/`Castle` levels (`question_mark_grey`
-  already packed).
-- P2.11.2 `smb_pause` on pause-toggle (both directions).
-- P2.11.3 `smb_stomp` on the flagpole `Bouncer`'s launch.
-- P2.11.4 Remove `Player.die()`'s `smb_mariodie` call (pit-falls are silent in the
-  original) - fix the code to match this port's own already-correct doc comment.
-- P2.11.5 **Vertical slice:** one smoke pass touching all four (an UnderGround "?"
+**Step P2.11 — Small fidelity fixes** *(cheap, do together)* — **implemented 2026-09-07,
+pending on-device verification (P2.11.5)**
+- [x] P2.11.1 `QuestionMark` grey tint on `UnderGround`/`Castle` levels (`question_mark_grey`
+  already packed) - `regionFor(attribute)` picks it there, matching the original's own
+  `game.GetAttribute()` check in `Bricks/QuestionMark.java`; every other attribute keeps
+  the normal yellow region.
+- [x] P2.11.2 `smb_pause` on pause-toggle (both directions) - `MarioGameScreen#togglePause`
+  (entering pause) and `#resumeGame` (leaving it, shared by the back-button toggle and
+  `PauseOverlay`'s own RESUME button) each play it once.
+- [x] P2.11.3 `smb_stomp` on the Bouncer's launch. **Correction while implementing:** the
+  original's `Player.Jump(int)` - the explicit-gravity overload the Bouncer's relaunch uses
+  (`p.Jump(-22)`) - is the *same* method every ordinary enemy stomp also uses (`Jump(-8)`,
+  confirmed by reading every stomp-reaction caller in the source), and always plays
+  `smb_stomp`. This port's own `bounceOffEnemy()` (the stomp side) played no sound at all
+  before this fix either - a gap wider than this step's own "the Bouncer's launch" wording
+  suggested. Both `Player#bounceOffEnemy` and `moveYWithCollision`'s own Bouncer branch now
+  play it.
+- [x] P2.11.4 Removed `Player.die()`'s `smb_mariodie` call (pit-falls are silent in the
+  original, confirmed by reading `Mario.java`'s own `Restart()` - it plays no sound at all)
+  - the code now matches this port's own already-correct "instant, silent Restart()" doc
+  comments (`die()`/`beginDeathAnimation()`'s own, both predating this fix).
+- [ ] P2.11.5 **Vertical slice:** one smoke pass touching all four (an UnderGround "?"
   block, a pause/resume, a `Bouncer`, a pit-fall) - no full replay needed, these are
-  independent one-line fixes.
+  independent one-line fixes. Built and installed to the test device; awaiting user
+  playtest. Worth also touching a plain enemy stomp while testing, given P2.11.3's own
+  widened scope above.
 
 **Step P2.12 — Cosmetic polish** *(optional - lower priority, judge by time remaining)*
 - P2.12.1 Ambient water bubbles (`Bubble.java`).

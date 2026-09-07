@@ -20,9 +20,9 @@ import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
  * Mushroom for small Mario or a Flower for already-big Mario), then
  * permanently turns into an {@link Iron} block.
  *
- * <p>Simplification: the original swaps to a "QuestionMarkGrey" image on
- * UnderGround/Castle levels - not packed into mario.atlas yet since Level 11
- * (Ground) never needs it; deferred to Step 11's scale-out.
+ * <p>Swaps to the grey ("question_mark_grey") region on UnderGround/Castle
+ * levels, matching the original's own {@code game.GetAttribute()} check -
+ * every other attribute (Ground/Sea) keeps the normal yellow region.
  */
 public class QuestionMark extends InteractiveBrick {
 
@@ -35,11 +35,16 @@ public class QuestionMark extends InteractiveBrick {
     private float animTimer;
 
     public QuestionMark(float x, float y, String attribute, String insideItem) {
-        super(MarioResourceManager.region("question_mark"),
+        super(MarioResourceManager.region(regionFor(attribute)),
                 MarioConfiguration.TILE_SIZE, MarioConfiguration.TILE_SIZE, x, y);
         setFrameSequence(IDLE_FRAMES);
         this.attribute = attribute;
         this.insideItem = insideItem;
+    }
+
+    private static String regionFor(String attribute) {
+        return "UnderGround".equals(attribute) || "Castle".equals(attribute)
+                ? "question_mark_grey" : "question_mark";
     }
 
     @Override

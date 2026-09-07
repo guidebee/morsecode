@@ -218,7 +218,21 @@ public final class LevelLoader {
                     // from the source rather than assumed. Excludes this
                     // level's own "OrangePump" bonus area, also matching the
                     // original.
-                    if (!"OrangePump".equals(level.levelName)) {
+                    // The original's own literal "+48" retracted-position
+                    // offset needs a pipe 3+ tiles tall to fully hide a
+                    // plant (48px offset + the plant's own 48px height =
+                    // 96px = 3 tiles) - several of World 1's own pipes are
+                    // only 2 tiles. Clamping the offset to fit was tried
+                    // first and made it worse, not better (confirmed
+                    // on-device): the clamped position left it hovering just
+                    // below the pipe's rim with no pipe body left beneath to
+                    // read as "inside" anything, looking like it was floating
+                    // rather than retracted. Skipping the spawn entirely for
+                    // anything shorter than 3 tiles instead matches how the
+                    // classic game's own short pipes work (SMB1's own 1-1
+                    // has two short entrance pipes with no Piranha Plant -
+                    // only its taller pipes further in have one).
+                    if (!"OrangePump".equals(level.levelName) && tile.lengthY >= 3) {
                         String plantRegion = "Ground".equals(level.attribute) ? "plant" : "plant_dark";
                         addEnemy(new PiranhaPlant(tile.x * tileSize + 16, tile.y * tileSize + 48, plantRegion));
                     }

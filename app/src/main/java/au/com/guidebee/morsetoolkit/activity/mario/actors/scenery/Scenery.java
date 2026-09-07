@@ -18,7 +18,16 @@ public class Scenery extends Layer {
     private final TextureRegion region;
 
     public Scenery(float x, float y, TextureRegion region) {
-        super(x, y, region.getRegionWidth(), region.getRegionHeight(), true);
+        this(x, y, region, region.getRegionWidth(), region.getRegionHeight());
+    }
+
+    /**
+     * Ported from {@code Mario.java}'s case 61 ("WhiteLine") - the one
+     * decoration that's stretched to an explicit size rather than drawn at
+     * its source pixel dimensions ({@code ImageUtil.resize(..., 32, 13*32)}).
+     */
+    public Scenery(float x, float y, TextureRegion region, float width, float height) {
+        super(x, y, width, height, true);
         this.region = region;
     }
 

@@ -205,6 +205,13 @@ public final class LevelLoader {
                     spawnTree(tile, "CloudsNight".equals(level.backgroundImage));
                     break;
                 case "pump":
+                // Ported from Mario.java's case 66 ("PumpWarp") - identical
+                // rendering/collision to a plain "pump" tile (confirmed by
+                // reading the source: same attribute dispatch, same top/body
+                // split); it's only *paired* with a same-level teleport
+                // (already handled separately by TeleportResolver reading
+                // LevelDefinition's own teleports data, not this tile).
+                case "PumpWarp":
                     for (int dy = 0; dy < tile.lengthY; dy++) {
                         boolean top = dy == 0;
                         add(new Pump(tile.x * tileSize, (tile.y + dy) * tileSize, level.attribute, top));
@@ -480,12 +487,42 @@ public final class LevelLoader {
                 forEachCell(tile, (x, y) -> MarioContext.spawn(new Scenery(x, y, MarioResourceManager.region("water"))));
                 continue;
             }
+            if ("Wall".equals(tile.type)) {
+                spawnWall(tile);
+                continue;
+            }
+            if ("WhiteLine".equals(tile.type)) {
+                float height = WHITE_LINE_HEIGHT_TILES * tileSize;
+                forEachCell(tile, (x, y) -> MarioContext.spawn(new Scenery(x, y,
+                        MarioResourceManager.region("white_line"), tileSize, height)));
+                continue;
+            }
             String regionName = sceneryRegion(tile.type, blackAndWhite);
             if (regionName == null) {
                 continue;
             }
             MarioContext.spawn(new Scenery(tile.x * tileSize, tile.y * tileSize,
                     MarioResourceManager.region(regionName)));
+        }
+    }
+
+    /** Ported from Mario.java's own literal {@code ImageUtil.resize(..., 32, 13*32)} - fixed regardless of the placing tile's own {@code lengthY}. */
+    private static final int WHITE_LINE_HEIGHT_TILES = 13;
+
+    /**
+     * Ported from {@code Mario.java}'s case 18 ("Wall") - a purely decorative,
+     * non-collided vertical strip: the top row uses frame 0, every row below
+     * uses frame 1 (no left/right cap distinction, unlike {@link #spawnTree}'s
+     * own trunk decoration).
+     */
+    private static void spawnWall(LevelDefinition.Tile tile) {
+        int tileSize = MarioConfiguration.TILE_SIZE;
+        TextureRegion[][] frames = MarioResourceManager.region("wall").split(tileSize, tileSize);
+        for (int dx = 0; dx < tile.lengthX; dx++) {
+            for (int dy = 0; dy < tile.lengthY; dy++) {
+                TextureRegion frame = frames[0][dy == 0 ? 0 : 1];
+                MarioContext.spawn(new Scenery((tile.x + dx) * tileSize, (tile.y + dy) * tileSize, frame));
+            }
         }
     }
 

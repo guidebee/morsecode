@@ -20,6 +20,7 @@ import com.guidebee.game.ui.InputEvent;
 import com.guidebee.game.ui.UIComponent;
 import com.guidebee.game.ui.drawable.TextureRegionDrawable;
 
+import au.com.guidebee.morsetoolkit.activity.BuildConfig;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioGamePlay;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
@@ -39,6 +40,7 @@ import au.com.guidebee.morsetoolkit.activity.mario.collision.LiftCollisionResolv
 import au.com.guidebee.morsetoolkit.activity.mario.collision.PlayerCollisionResolver;
 import au.com.guidebee.morsetoolkit.activity.mario.collision.ProjectileCollisionResolver;
 import au.com.guidebee.morsetoolkit.activity.mario.collision.TeleportResolver;
+import au.com.guidebee.morsetoolkit.activity.mario.debug.DebugPanel;
 import au.com.guidebee.morsetoolkit.activity.mario.fx.BackgroundBand;
 import au.com.guidebee.morsetoolkit.activity.mario.fx.BossFallingAnim;
 import au.com.guidebee.morsetoolkit.activity.mario.fx.Fireworks;
@@ -165,6 +167,15 @@ import java.util.Random;
 public class MarioGameScreen extends ScreenAdapter {
 
     private static final int BACK_BUTTON_SIZE = 16;
+    /**
+     * Debug-only corner button - deliberately bigger than {@link #BACK_BUTTON_SIZE}:
+     * a real device maps that constant to a genuinely hard-to-hit ~16dp target
+     * (confirmed the hard way - the button worked the moment it was tapped
+     * exactly on-center, but every less-precise real fingertip tap missed it
+     * entirely), and a debug/QA tool that's annoying to actually hit defeats
+     * its own purpose of making testing *faster*.
+     */
+    private static final int DEBUG_BUTTON_SIZE = 32;
     private static final int MARGIN = 8;
 
     // The same "style 08" joystick art Battle City loads for its own
@@ -230,6 +241,9 @@ public class MarioGameScreen extends ScreenAdapter {
     private final GestureDetector zoomDetector;
     private final ScoreHud scoreHud;
     private final PauseOverlay pauseOverlay;
+    /** Debug-only warp/cheat panel and its opening corner button - null outside a debug build, see {@link #createDebugTools}. */
+    private final DebugPanel debugPanel;
+    private final ImageButton debugButton;
 
     private final float clearR;
     private final float clearG;
@@ -246,6 +260,11 @@ public class MarioGameScreen extends ScreenAdapter {
     private boolean flagSliding;
     /** Guards {@link #flagPole}'s touch from re-triggering {@link #beginFlagSlide} once already sliding/walking. */
     private boolean flagPoleTouched;
+
+    /** Debug-only "never lose a life" toggle, reported by {@link #debugPanel} - see {@link #handlePlayerDeath}. */
+    private boolean debugInfiniteLives;
+    /** Debug-only fast-forward multiplier (1/2/4), reported by {@link #debugPanel} - see {@link #render}. */
+    private int debugTimeScale = 1;
 
     private float zoom = 1f;
     /** The gesture's {@code initialDistance} last seen - a change means a new pinch began. */
@@ -369,6 +388,21 @@ public class MarioGameScreen extends ScreenAdapter {
                 world.getWidthPx(), world.getHeightPx());
         camera.centerOn(player.getX(), player.getY());
         spawnController = new SpawnController(level);
+
+        // Debug-only warp/cheat tooling (docs/MARIO_PORT_PLAN_PHASE2.md §8) -
+        // compiled out of release builds via BuildConfig.DEBUG (§8.4), not
+        // just hidden at runtime, so there's no code path a release build
+        // could ship with this turned on by accident.
+        if (BuildConfig.DEBUG) {
+            debugButton = createDebugButton();
+            debugPanel = new DebugPanel(layerManager, MarioResourceManager.uiSkinYDown(), level, player,
+                    infiniteLives -> debugInfiniteLives = infiniteLives,
+                    timeScale -> debugTimeScale = timeScale);
+        } else {
+            debugButton = null;
+            debugPanel = null;
+        }
+
         repositionHud();
 
         float[] clear = clearColor(level.backgroundColor);
@@ -450,6 +484,35 @@ public class MarioGameScreen extends ScreenAdapter {
         return back;
     }
 
+    /**
+     * Opens/closes {@link #debugPanel} - only ever built in a debug build
+     * (see the constructor), positioned beside {@link #backButton} (see
+     * {@link #repositionHud}) and drawn from the same procedural-icon
+     * technique {@link #createBackIcon} uses, tinted orange so it's never
+     * mistaken for a real, player-facing control.
+     */
+    private ImageButton createDebugButton() {
+        ImageButton button = new ImageButton(createDebugIcon(DEBUG_BUTTON_SIZE, false), createDebugIcon(DEBUG_BUTTON_SIZE, true));
+        button.setSize(DEBUG_BUTTON_SIZE, DEBUG_BUTTON_SIZE);
+        button.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                debugPanel.toggle();
+            }
+        });
+        layerManager.addHUDComponent(button);
+        return button;
+    }
+
+    private static TextureRegionDrawable createDebugIcon(int size, boolean pressed) {
+        Pixmap pixmap = new Pixmap(size, size, Pixmap.Format.RGBA8888);
+        pixmap.setColor(1f, 0.6f, 0.2f, pressed ? 0.95f : 0.7f);
+        pixmap.fillCircle(size / 2, size / 2, size / 2 - 1);
+        Texture texture = new Texture(pixmap);
+        pixmap.dispose();
+        return new TextureRegionDrawable(new TextureRegion(texture));
+    }
+
     /** Re-anchors the HUD to a fixed screen position - see the class doc. */
     private void repositionHud() {
         // camera.getX()/getY() are already the true current (zoom-scaled)
@@ -478,6 +541,16 @@ public class MarioGameScreen extends ScreenAdapter {
                 scrollY + effectiveHeight - BACK_BUTTON_SIZE * zoom - MARGIN * zoom / 2f);
         scoreHud.reposition(scrollX, scrollY, effectiveWidth, effectiveHeight, zoom);
         pauseOverlay.reposition(scrollX, scrollY, effectiveWidth, effectiveHeight, zoom);
+        if (debugButton != null) {
+            // Top-right corner, below ScoreHud's own right-aligned "WORLD X-Y"
+            // label - deliberately NOT the bottom edge (that's the joystick/
+            // A-B button row - an earlier version of this put it there,
+            // directly under/behind button A) and NOT the top-left corner
+            // (SCORE/COINS/LIVES already stack there).
+            positionHudElement(debugButton, scrollX + effectiveWidth - DEBUG_BUTTON_SIZE * zoom - MARGIN * zoom,
+                    scrollY + (MARGIN + 24f) * zoom);
+            debugPanel.reposition(scrollX, scrollY + (MARGIN + 24f + DEBUG_BUTTON_SIZE + 4f) * zoom, zoom);
+        }
     }
 
     /**
@@ -591,28 +664,51 @@ public class MarioGameScreen extends ScreenAdapter {
         // freezes every actor's physics/timers for free, no per-actor
         // pause-awareness needed.
         boolean paused = gamePlay.gameState().isPaused();
-        layerManager.act(paused ? 0f : delta);
 
-        if (!paused) {
-            OscillatorClock.advance(delta);
-            PlayerCollisionResolver.resolvePickups(player, world);
-            EnemyCollisionResolver.resolve(player, world);
-            EnemyToEnemyResolver.resolve(world);
-            ProjectileCollisionResolver.resolve(world);
-            LiftCollisionResolver.resolve(player, world);
-            HazardCollisionResolver.resolve(player, world);
-            AxeResolver.resolve(player, world);
-            TeleportResolver.resolve(level.teleports, player);
-            spawnController.update(delta, camera, player);
-            updateLevelCompletion(delta);
+        // Debug-only fast-forward (docs/MARIO_PORT_PLAN_PHASE2.md §8.3.6):
+        // runs this same per-frame update multiple times at the normal,
+        // already-clamped delta, rather than scaling delta itself up - a
+        // single larger delta is exactly what MAX_DELTA_SECONDS above exists
+        // to prevent (tunneling through a thin collider), and that risk
+        // doesn't go away just because this time it's deliberate.
+        // debugTimeScale is always 1 outside a debug build (nothing ever
+        // sets it otherwise), so this loop runs exactly once in a release
+        // build, identical to before this feature existed.
+        int updateIterations = paused ? 1 : Math.max(1, debugTimeScale);
+        for (int i = 0; i < updateIterations; i++) {
+            layerManager.act(paused ? 0f : delta);
 
-            boolean hasStar = player.hasStar();
-            if (hasStar != starMusicActive) {
-                starMusicActive = hasStar;
-                startMusic(hasStar ? "Star" : levelAttribute);
+            if (!paused) {
+                OscillatorClock.advance(delta);
+                PlayerCollisionResolver.resolvePickups(player, world);
+                EnemyCollisionResolver.resolve(player, world);
+                EnemyToEnemyResolver.resolve(world);
+                ProjectileCollisionResolver.resolve(world);
+                LiftCollisionResolver.resolve(player, world);
+                HazardCollisionResolver.resolve(player, world);
+                AxeResolver.resolve(player, world);
+                TeleportResolver.resolve(level.teleports, player);
+                spawnController.update(delta, camera, player);
+                updateLevelCompletion(delta);
+
+                boolean hasStar = player.hasStar();
+                if (hasStar != starMusicActive) {
+                    starMusicActive = hasStar;
+                    startMusic(hasStar ? "Star" : levelAttribute);
+                }
+            }
+            if (levelState == LevelState.ADVANCING) {
+                // gamePlay.goToLevel already swapped this screen out from
+                // under the loop (see updateLevelCompletion's own ADVANCING
+                // case) - every field below is now stale, so stop instead of
+                // running further iterations against a detached level.
+                break;
             }
         }
 
+        if (debugPanel != null) {
+            debugPanel.update();
+        }
         scoreHud.update(gamePlay.gameState());
         // See CameraController's class doc - setZoom before centerOn so this
         // frame's clamp/re-centering uses the current zoom's effective
@@ -738,6 +834,13 @@ public class MarioGameScreen extends ScreenAdapter {
      * more to do.
      */
     private void handlePlayerDeath() {
+        // Debug-only (docs/MARIO_PORT_PLAN_PHASE2.md §8.3.4): the death
+        // animation/respawn Player#die()/beginDeathAnimation() already ran
+        // still plays out normally - only the life charge (and hence ever
+        // reaching GAME_OVER) is skipped.
+        if (debugInfiniteLives) {
+            return;
+        }
         if (!gamePlay.gameState().loseLife()) {
             return;
         }

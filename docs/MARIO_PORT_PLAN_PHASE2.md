@@ -497,14 +497,30 @@ order - see §8 for the full design; requested because manually replaying a whol
 reach one boss/pipe/pole for a single vertical-slice check is exactly the kind of
 time-consuming, error-prone verification this tooling exists to remove, starting with
 P2.9.5's own still-open on-device check)*
-- [ ] P2.8.5.1 `MarioSaveState` debug bypass + level warp picker (§8.3.1).
-- [ ] P2.8.5.2 In-level warp panel, data-driven from the current level's own checkpoints/
-  tiles (§8.3.2).
-- [ ] P2.8.5.3 God mode, infinite lives, power-state cycling, time-scale (§8.3.3-8.3.6).
-- [ ] P2.8.5.4 Debug-build gating, wired alongside the existing distribution gate (§8.4).
+- [x] P2.8.5.1 `MarioSaveState` debug bypass + level warp picker (§8.3.1). Implemented in
+  `MarioMenuScreen` - every level button unlocked in a debug build, tinted orange (not the
+  normal locked grey) when it's only unlocked this way; `MarioSaveState` itself untouched.
+- [x] P2.8.5.2 In-level warp panel, data-driven from the current level's own checkpoints/
+  tiles (§8.3.2). New `debug.DebugPanel`, opened via a debug-only corner button on
+  `MarioGameScreen` - one warp button per checkpoint and per "interesting" tile type, plus
+  manual tile-X/Y entry and a live Mario-tile-position readout.
+- [x] P2.8.5.3 God mode, infinite lives, power-state cycling, time-scale (§8.3.3-8.3.6).
+  `Player#debugInvincible`/`#debugCyclePowerState`, `MarioGameScreen#debugInfiniteLives`
+  (gates `handlePlayerDeath`'s life charge), `#debugTimeScale` (re-runs `render`'s own
+  per-frame update loop 1/2/4x at the normal clamped delta, not one larger delta).
+- [x] P2.8.5.4 Debug-build gating, wired alongside the existing distribution gate (§8.4).
+  `app/build.gradle` now sets `buildFeatures.buildConfig = true`; every debug-only code path
+  (menu bypass, corner button, panel construction) is behind `BuildConfig.DEBUG`, confirmed
+  absent from a `compileReleaseJavaWithJavac` build. Two bugs found and fixed by actually
+  testing on-device rather than just compiling clean (see this step's own follow-up notes
+  below): the corner button was first placed on the joystick/button row and invisible behind
+  it, and `MarioResourceManager#uiSkinYDown`'s font-flip patch didn't reach `CheckBox`/
+  `TextField`'s own separate skin-style classes (checkbox labels, then the checkbox tick-mark
+  artwork itself, rendered upside down until each got its own patch line).
 - [ ] P2.8.5.5 **Vertical slice:** use the finished panel to jump straight to `Level_14`'s
   axe and confirm P2.9.5's own still-outstanding check now takes under a minute instead of
-  a full level replay.
+  a full level replay. Not yet run - the tooling itself only just finished on-device
+  verification (button visibility, checkbox rendering); this is the one item still open.
 
 ## 8. Developer/QA debug tooling (design only - not yet implemented)
 

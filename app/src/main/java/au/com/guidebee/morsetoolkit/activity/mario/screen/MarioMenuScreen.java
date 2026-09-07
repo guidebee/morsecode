@@ -11,6 +11,7 @@ import com.guidebee.game.ui.Skin;
 import com.guidebee.game.ui.Table;
 import com.guidebee.game.ui.TextButton;
 
+import au.com.guidebee.morsetoolkit.activity.BuildConfig;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioGamePlay;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
@@ -33,7 +34,11 @@ import au.com.guidebee.morsetoolkit.activity.mario.state.MarioSaveState;
  * <p>A level button is disabled (see {@link #isUnlocked}) until the previous
  * level in its world - or, for a world's first level, the previous world's
  * last level - is cleared (see {@link MarioSaveState}); World 1's own first
- * level is always unlocked, there being no earlier level to require.
+ * level is always unlocked, there being no earlier level to require. In a
+ * debug build ({@link BuildConfig#DEBUG}), every level is selectable instead
+ * - see {@link #buildLevelList}'s own note - for
+ * docs/MARIO_PORT_PLAN_PHASE2.md §8.3.1's warp tooling; {@link MarioSaveState}
+ * itself is never written any differently either way.
  * Deliberately no lock on *entering* a world's level list itself (browsing
  * ahead is harmless) - only individual level buttons gate on progress.
  *
@@ -123,10 +128,23 @@ public class MarioMenuScreen extends ScreenAdapter {
 
         for (int levelNumber : levels) {
             TextButton button = new TextButton(LevelNumbering.label(levelNumber), skin);
-            boolean unlocked = isUnlocked(world, levelNumber);
+            boolean reallyUnlocked = isUnlocked(world, levelNumber);
+            // Debug builds only (see docs/MARIO_PORT_PLAN_PHASE2.md §8.3.1):
+            // every level is selectable regardless of MarioSaveState's real
+            // clear tracking, which is left untouched either way (see that
+            // section's own note on why this never writes to it) - a distinct
+            // orange tint (not the normal locked grey, not the normal
+            // unlocked look) marks a level that's only reachable this way, so
+            // a debug build never looks indistinguishable from a real
+            // unlocked/locked state.
+            boolean unlocked = reallyUnlocked || BuildConfig.DEBUG;
             button.setDisabled(!unlocked);
-            if (!unlocked) {
-                button.setColor(0.5f, 0.5f, 0.5f, 1f);
+            if (!reallyUnlocked) {
+                if (BuildConfig.DEBUG) {
+                    button.setColor(1f, 0.6f, 0.2f, 1f);
+                } else {
+                    button.setColor(0.5f, 0.5f, 0.5f, 1f);
+                }
             }
             button.addListener(new ClickListener() {
                 @Override

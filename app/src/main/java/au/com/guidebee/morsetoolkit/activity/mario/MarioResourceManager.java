@@ -8,9 +8,13 @@ import com.guidebee.game.graphics.Pixmap;
 import com.guidebee.game.graphics.Texture;
 import com.guidebee.game.graphics.TextureAtlas;
 import com.guidebee.game.graphics.TextureRegion;
+import com.guidebee.game.ui.CheckBox;
 import com.guidebee.game.ui.Label;
 import com.guidebee.game.ui.Skin;
 import com.guidebee.game.ui.TextButton;
+import com.guidebee.game.ui.TextField;
+import com.guidebee.game.ui.drawable.Drawable;
+import com.guidebee.game.ui.drawable.TextureRegionDrawable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -355,6 +359,26 @@ public final class MarioResourceManager {
      * shared "default" style objects, which every caller of {@link
      * #uiSkin()} - including {@code MarioMenuScreen} - reads by reference)
      * keeps the two contexts' fonts independent.
+     *
+     * <p>{@code CheckBox.CheckBoxStyle}/{@code TextField.TextFieldStyle} are
+     * each their own separate skin-style class (see {@code uiskin.json}'s own
+     * top-level entries) - despite {@code CheckBoxStyle} extending {@code
+     * TextButtonStyle} in code, {@code Skin} parses/stores each JSON block as
+     * an independent object with its own {@code font} reference, so patching
+     * {@code TextButtonStyle}'s font (above) does nothing for either of
+     * these; each needs its own patch line, which {@code debug.DebugPanel}
+     * (the first caller in this port to use either widget) surfaced the hard
+     * way - its checkbox labels rendered upside down while every plain
+     * TextButton beside them didn't.
+     *
+     * <p>Unlike a font glyph, a plain {@code TextureRegionDrawable} (every
+     * button/panel background this skin already used before {@code
+     * DebugPanel}) draws correctly either way - a symmetric rectangle looks
+     * the same flipped or not, which is exactly why this was never noticed
+     * until {@code checkboxOn}/{@code checkboxOff}'s own tick-mark artwork
+     * (asymmetric top-to-bottom) exposed it: those two, specifically, DO need
+     * flipping, same as any other asymmetric sprite in this port (see e.g.
+     * {@code fx.FallingDeadSprite}'s own {@code flipVertical}).
      */
     public static Skin uiSkinYDown() {
         if (uiSkinYDown == null) {
@@ -363,7 +387,22 @@ public final class MarioResourceManager {
             BitmapFont flippedFont = new BitmapFont(GameEngine.files.internal("skin/default/default.fnt"), true);
             uiSkinYDown.get(Label.LabelStyle.class).font = flippedFont;
             uiSkinYDown.get(TextButton.TextButtonStyle.class).font = flippedFont;
+            CheckBox.CheckBoxStyle checkBoxStyle = uiSkinYDown.get(CheckBox.CheckBoxStyle.class);
+            checkBoxStyle.font = flippedFont;
+            checkBoxStyle.checkboxOn = flipDrawableVertically(checkBoxStyle.checkboxOn);
+            checkBoxStyle.checkboxOff = flipDrawableVertically(checkBoxStyle.checkboxOff);
+            uiSkinYDown.get(TextField.TextFieldStyle.class).font = flippedFont;
         }
         return uiSkinYDown;
+    }
+
+    /** See {@link #uiSkinYDown()}'s own doc on why only asymmetric Drawables (like a checkbox's tick mark) need this. */
+    private static Drawable flipDrawableVertically(Drawable drawable) {
+        if (!(drawable instanceof TextureRegionDrawable)) {
+            return drawable;
+        }
+        TextureRegion flipped = new TextureRegion(((TextureRegionDrawable) drawable).getRegion());
+        flipped.flip(false, true);
+        return new TextureRegionDrawable(flipped);
     }
 }

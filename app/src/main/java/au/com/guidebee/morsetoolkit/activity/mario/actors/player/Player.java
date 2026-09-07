@@ -205,6 +205,15 @@ public class Player extends Layer {
     private float deathDelayTimer;
     private float deathGravity;
 
+    /**
+     * Debug-only "can't be hurt, ever" toggle - ORed into {@link #isInvincible()}
+     * alongside the existing star/hit/transition-shield timers rather than a
+     * separate check anywhere else. See docs/MARIO_PORT_PLAN_PHASE2.md §8.3.3;
+     * only ever set from {@code debug.DebugPanel}, itself only ever built
+     * behind {@code BuildConfig.DEBUG}.
+     */
+    private boolean debugInvincible;
+
     /** The current respawn point - starts at the level's spawn tile, advances via {@link #updateCheckpoint} while grounded. */
     private float checkpointX;
     private float checkpointY;
@@ -931,7 +940,37 @@ public class Player extends Layer {
     }
 
     public boolean isInvincible() {
-        return invincibleTimer > 0 || hasStar() || shieldTimer > 0;
+        return invincibleTimer > 0 || hasStar() || shieldTimer > 0 || debugInvincible;
+    }
+
+    /** Debug-only god mode - see {@link #debugInvincible}'s doc. */
+    public void setDebugInvincible(boolean invincible) {
+        debugInvincible = invincible;
+    }
+
+    public boolean isDebugInvincible() {
+        return debugInvincible;
+    }
+
+    /**
+     * Debug-only Small -> Big -> Fire -> Small cycle, reusing {@link #grow()}'s
+     * own morph-flipbook machinery for the first two steps and
+     * {@link #beginTransition} directly (bypassing {@link #shrink()}'s
+     * "Small means die" branch, which a debug cycle should never trigger) for
+     * the last. See docs/MARIO_PORT_PLAN_PHASE2.md §8.3.5. No-ops while a
+     * transition/death animation is already playing, same guard {@link #grow()}/
+     * {@link #shrink()} implicitly get from their own callers never firing
+     * mid-animation.
+     */
+    public void debugCyclePowerState() {
+        if (transitionFrames != null || dyingAnimated) {
+            return;
+        }
+        if (powerState == PlayerPowerState.FIRE) {
+            beginTransition("fire_to_small_mario", PlayerPowerState.SMALL, false);
+        } else {
+            grow();
+        }
     }
 
     public PlayerPowerState getPowerState() {

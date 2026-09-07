@@ -1,5 +1,7 @@
 package au.com.guidebee.morsetoolkit.activity.mario.level;
 
+import com.guidebee.game.graphics.TextureRegion;
+
 import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.Axe;
@@ -11,6 +13,7 @@ import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.InvisibleBrck;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.Iron;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.Pump;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.QuestionMark;
+import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.Tree;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.Boss;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.Enemy;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.EnemyMashroom;
@@ -18,6 +21,7 @@ import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.EnemyTurtle;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.EnemyTurtlePatrol;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.FlyingTurtlePatrol;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.OrbitingFireball;
+import au.com.guidebee.morsetoolkit.activity.mario.actors.items.Coin;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.lifts.Lift;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.projectiles.BossFire;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.scenery.Scenery;
@@ -144,6 +148,9 @@ public final class LevelLoader {
                     forEachCell(tile, (x, y) -> add(new Brick(x, y,
                             MarioResourceManager.region("bridge_blocks"), level.attribute)));
                     break;
+                case "tree":
+                    spawnTree(tile);
+                    break;
                 case "pump":
                     for (int dy = 0; dy < tile.lengthY; dy++) {
                         boolean top = dy == 0;
@@ -238,6 +245,24 @@ public final class LevelLoader {
     }
 
     /**
+     * Spawns every placed (as opposed to dispensed-from-a-hit-brick)
+     * collectible - just "Coin" for now, the only such type any World-1
+     * level places directly. Same {@link MarioContext} requirement as
+     * {@link #spawnBricks}.
+     */
+    public static void spawnItems(LevelDefinition level) {
+        for (LevelDefinition.Tile tile : level.tiles) {
+            if ("Coin".equals(tile.type)) {
+                forEachCell(tile, (x, y) -> {
+                    Coin coin = new Coin(x, y);
+                    MarioContext.world().addCollectible(coin);
+                    MarioContext.spawn(coin);
+                });
+            }
+        }
+    }
+
+    /**
      * Spawns every moving platform. Same {@link MarioContext} requirement as
      * {@link #spawnBricks}. A tile's {@code patrolLength} field carries the
      * original's "Points" constructor argument - not a patrol distance for
@@ -279,7 +304,10 @@ public final class LevelLoader {
      * level's bottom, which {@code Player}'s own fall-out check already
      * handles - the original's own "Lava" tile is likewise added to a
      * non-collided background sprite group, see docs/MARIO_PORT_PLAN_PHASE2.md
-     * Step P2.0). Every other background tile type (tree/mountain/clouds) is
+     * Step P2.0). A tree's own solid canopy + decorative trunk are handled
+     * separately by {@link #spawnTree} (called from {@link #spawnBricks} -
+     * the canopy row is a real, solid {@code InteractiveBrick}, not
+     * decoration). Every *other* background tile type (mountain/clouds) is
      * still left unrendered - visual polish outside Step 7.1's "world
      * mechanics" scope.
      */
@@ -321,6 +349,34 @@ public final class LevelLoader {
         for (int dx = 0; dx < tile.lengthX; dx++) {
             for (int dy = 0; dy < tile.lengthY; dy++) {
                 spawner.spawn((tile.x + dx) * tileSize, (tile.y + dy) * tileSize);
+            }
+        }
+    }
+
+    /**
+     * Ported from {@code Mario.java}'s case 17 ("tree"), "GreenAndTrees"
+     * branch only (see {@code Tree}'s own class doc for why): the top row
+     * (dy=0) is a solid, cap-selected {@link Tree} brick per column; every
+     * row below is purely decorative, and only in the strip's *middle*
+     * columns (matching the original's own {@code x==0}/
+     * {@code x==lengthX-1} exclusion for the trunk) - drawn via a
+     * pre-sliced single frame (index 3) of the "tree" region handed to
+     * {@code Scenery}, rather than adding a frame-slicing constructor to
+     * that class for one caller.
+     */
+    private static void spawnTree(LevelDefinition.Tile tile) {
+        int tileSize = MarioConfiguration.TILE_SIZE;
+        int lastColumn = tile.lengthX - 1;
+        TextureRegion trunkFrame = MarioResourceManager.region("tree")
+                .split(tileSize, tileSize)[0][3];
+        for (int dx = 0; dx < tile.lengthX; dx++) {
+            float x = (tile.x + dx) * tileSize;
+            add(new Tree(x, tile.y * tileSize, dx, lastColumn));
+            if (dx == 0 || dx == lastColumn) {
+                continue;
+            }
+            for (int dy = 1; dy < tile.lengthY; dy++) {
+                MarioContext.spawn(new Scenery(x, (tile.y + dy) * tileSize, trunkFrame));
             }
         }
     }

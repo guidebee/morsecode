@@ -282,6 +282,7 @@ public class MarioGameScreen extends ScreenAdapter {
         LevelLoader.spawnEnemies(level);
         LevelLoader.spawnLifts(level);
         LevelLoader.spawnHazards(level);
+        LevelLoader.spawnItems(level);
 
         gameController = createGameController();
         backButton = createBackButton();

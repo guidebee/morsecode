@@ -11,6 +11,12 @@ this document is Mario-specific; it doesn't re-explain GGE itself.
 yet. Treat each numbered step below as a checkpoint — build and smoke-test at each
 vertical slice rather than writing all modules before running anything.
 
+**Looking for the finished port instead of the plan?** See
+[MARIO_GAME_MECHANICS.md](MARIO_GAME_MECHANICS.md) — the as-built reference for physics,
+actors, collision, the level-data pipeline, and the sprite-sheet/atlas system, plus
+step-by-step recipes for adding new levels/enemies/bricks. This document (and
+[Phase 2](MARIO_PORT_PLAN_PHASE2.md)) is the *history* of how it got built.
+
 **Decisions locked in:**
 - **v1 scope = World 1 only** (`Level_11`–`Level_14` + their two bonus areas).
 - **Morse-code training (§9) is explicitly deferred** until World 1 is playable

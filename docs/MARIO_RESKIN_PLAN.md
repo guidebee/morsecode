@@ -11,6 +11,11 @@ higher-resolution look, while keeping every mechanic, level layout, and line of 
 code exactly as ported. This is engineering guidance, not legal advice — get an actual
 IP-law review before any public release regardless of following this plan.
 
+**Before touching asset code**, see [MARIO_GAME_MECHANICS.md §13](MARIO_GAME_MECHANICS.md#13-sprite-sheets-and-the-atlas-system)
+for how the atlas/sprite-sheet system actually works today (theme atlases, the
+`cols × rows` frame-grid convention, magenta masking, the per-cell vertical flip) — that
+section is the technical reference this plan's §3/§4 asset-authoring work builds on.
+
 **Revision note (2026-09-07):** this revision changes two things versus the first pass:
 (1) it folds in the high-resolution art upgrade the team wants, which — contrary to
 this plan's original §4 — is **not** a pure content swap under the current architecture

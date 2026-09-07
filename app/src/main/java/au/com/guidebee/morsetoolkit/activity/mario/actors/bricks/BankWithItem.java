@@ -43,8 +43,6 @@ public class BankWithItem extends InteractiveBrick {
     @Override
     public void hitFromBelow(Player player) {
         Iron iron = new Iron(getX(), getY(), attribute);
-        MarioContext.world().addBrick(iron);
-        MarioContext.spawn(iron);
         deactivate();
 
         switch (insideItem) {
@@ -64,7 +62,11 @@ public class BankWithItem extends InteractiveBrick {
                         MarioContext.spawn(mushroom);
                     }
                 });
+                // Ported from the original's own draw order (VolitileGroup
+                // added before BrickGroup) - see QuestionMark's own matching note.
                 MarioContext.spawn(reveal);
+                MarioContext.world().addBrick(iron);
+                MarioContext.spawn(iron);
                 break;
             }
             case "1UP": {
@@ -76,9 +78,16 @@ public class BankWithItem extends InteractiveBrick {
                     MarioContext.spawn(life);
                 });
                 MarioContext.spawn(reveal);
+                MarioContext.world().addBrick(iron);
+                MarioContext.spawn(iron);
                 break;
             }
             default:
+                // CoinAnim lives in the original's own AnimationGroup, added
+                // after BrickGroup - draws in front of the block, so iron
+                // spawns first here instead - see QuestionMark's own note.
+                MarioContext.world().addBrick(iron);
+                MarioContext.spawn(iron);
                 MarioContext.spawn(new CoinPopEffect(getX(), getY()));
                 break;
         }

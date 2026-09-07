@@ -27,8 +27,6 @@ public class BrickWithStar extends InteractiveBrick {
     @Override
     public void hitFromBelow(Player player) {
         Iron iron = new Iron(getX(), getY(), attribute);
-        MarioContext.world().addBrick(iron);
-        MarioContext.spawn(iron);
         deactivate();
 
         TextureRegion preview = MarioResourceManager.region("star")
@@ -38,6 +36,11 @@ public class BrickWithStar extends InteractiveBrick {
             MarioContext.world().addCollectible(star);
             MarioContext.spawn(star);
         });
+        // Ported from the original's own draw order (VolitileGroup - where
+        // StarAnim lives - added before BrickGroup) - see QuestionMark's own
+        // matching note.
         MarioContext.spawn(reveal);
+        MarioContext.world().addBrick(iron);
+        MarioContext.spawn(iron);
     }
 }

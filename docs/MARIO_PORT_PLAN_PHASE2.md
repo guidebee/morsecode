@@ -859,3 +859,17 @@ replicating), `Bouncer` now holds a direct reference to its own `Spring`
 `Player#moveYWithCollision`'s own launch branch - the actual, reliable moment of a bounce,
 matching player-visible intent (spring squishes when you bounce) even though it's wired
 through a different trigger than the source's own literal collision path.
+
+**User-reported, same day:** a hit "?"/brick's Mushroom/Flower/Star/1UP reveal rose up in
+*front of* the Iron block replacing it, instead of emerging from behind it. Root cause was
+the same shape as the Piranha Plant z-order bug (§9's own second entry above) - `QuestionMark`/
+`BankWithItem`/`BrickWithStar`/`InvisibleBrck`'s `hitFromBelow()` all spawned the `Iron`
+replacement *before* the `ItemReveal` effect, so later-spawned (later-appended, drawn in
+front) always won regardless of which one visually belongs on top. Confirmed against the
+source's own `playfield.addGroup(...)` order: `VolitileGroup` (where `MashroomAnim`/
+`FlowerAnim`/`StarAnim`/`LifeAnim` all live) is added *before* `BrickGroup` (`Iron`), so
+the original always draws a rising reveal behind the block - while `CoinAnim` (the
+"CoinInside" case) lives in `AnimationGroup`, added *after* `BrickGroup`, so a coin pop
+correctly stays in front and needed no change. Fixed in all four brick classes: the
+growth/star/life reveal now spawns before the Iron replacement; the coin-case spawn order
+is unchanged.

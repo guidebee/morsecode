@@ -63,8 +63,6 @@ public class QuestionMark extends InteractiveBrick {
     @Override
     public void hitFromBelow(Player player) {
         Iron iron = new Iron(getX(), getY(), attribute);
-        MarioContext.world().addBrick(iron);
-        MarioContext.spawn(iron);
         deactivate();
 
         if ("Mashroom".equals(insideItem)) {
@@ -88,8 +86,20 @@ public class QuestionMark extends InteractiveBrick {
                     MarioContext.spawn(mushroom);
                 }
             });
+            // Ported from the original's own draw order (VolitileGroup -
+            // where MashroomAnim/FlowerAnim live - added to the playfield
+            // *before* BrickGroup): the rising reveal renders behind the
+            // block it's replacing while it's still emerging, not in front
+            // of it - spawn it first.
             MarioContext.spawn(reveal);
+            MarioContext.world().addBrick(iron);
+            MarioContext.spawn(iron);
         } else {
+            // CoinAnim lives in the original's own AnimationGroup, added
+            // *after* BrickGroup - draws in front of the block, unlike the
+            // growth-item reveal above, so iron spawns first here instead.
+            MarioContext.world().addBrick(iron);
+            MarioContext.spawn(iron);
             MarioContext.spawn(new CoinPopEffect(getX(), getY()));
         }
     }

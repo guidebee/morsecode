@@ -47,8 +47,6 @@ public class InvisibleBrck extends InteractiveBrick {
     @Override
     public void hitFromBelow(Player player) {
         Iron iron = new Iron(getX(), getY(), attribute);
-        MarioContext.world().addBrick(iron);
-        MarioContext.spawn(iron);
         deactivate();
 
         if ("1UP".equals(insideItem)) {
@@ -59,8 +57,18 @@ public class InvisibleBrck extends InteractiveBrick {
                 MarioContext.world().addCollectible(life);
                 MarioContext.spawn(life);
             });
+            // Ported from the original's own draw order (VolitileGroup -
+            // where LifeAnim lives - added before BrickGroup) - see
+            // QuestionMark's own matching note.
             MarioContext.spawn(reveal);
+            MarioContext.world().addBrick(iron);
+            MarioContext.spawn(iron);
         } else {
+            // CoinAnim lives in the original's own AnimationGroup, added
+            // after BrickGroup - draws in front of the block, so iron spawns
+            // first here instead - see QuestionMark's own note.
+            MarioContext.world().addBrick(iron);
+            MarioContext.spawn(iron);
             MarioContext.spawn(new CoinPopEffect(getX(), getY()));
         }
     }

@@ -111,6 +111,39 @@ public final class MarioResourceManager {
     private MarioResourceManager() {
     }
 
+    /**
+     * Drops every cached atlas/sound/music/skin reference - call at the very
+     * start of a fresh {@code MarioGamePlay#create} (before {@link
+     * #loadCommon}), not just the first time.
+     *
+     * <p>Exiting the Mario activity ({@code finish()}) tears down its GL
+     * context, but this class's caches are all {@code static} fields that
+     * outlive any one {@code Activity} instance for as long as the process
+     * stays alive - reopening the activity creates a brand-new
+     * {@code GameEngine.assetManager} (see {@code GameActivityWrapper}) and a
+     * brand-new GL context, but without this reset, fields that are only
+     * lazily populated *once* ({@link #uiSkin}/{@link #uiSkinYDown}, and
+     * {@link #themeAtlas} whenever the first level loaded happens to share
+     * its predecessor's attribute) would keep pointing at textures that
+     * belonged to the now-destroyed context instead of reloading - which is
+     * exactly what produced a blank {@code MarioMenuScreen} (built from the
+     * stale {@link #uiSkin()}) on a second launch. The old GL objects
+     * themselves are never explicitly disposed here: their context is
+     * already gone, and calling {@code dispose()} on a stale texture handle
+     * risks deleting an unrelated texture the new context has since reused
+     * that same id for.
+     */
+    public static void reset() {
+        commonAtlas = null;
+        themeAtlas = null;
+        loadedThemeAttribute = null;
+        SOUNDS.clear();
+        MUSIC.clear();
+        CONTROLLER_TEXTURE_CACHE.clear();
+        uiSkin = null;
+        uiSkinYDown = null;
+    }
+
     /** Loads everything used regardless of level attribute - call once per app session (see {@code MarioGamePlay#create}). */
     public static void loadCommon() {
         GameEngine.assetManager.load(COMMON_ATLAS_PATH, TextureAtlas.class);

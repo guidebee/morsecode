@@ -140,7 +140,9 @@ public class Player extends Layer {
      * {@link #DUCK_OVERHEAD_CLEARANCE_PX} line - the original's crouch is a
      * selective *collision* shrink, not an actual hitbox resize (confirmed:
      * nothing in the original ever changes Mario's width/height while
-     * crouching, only which collisions register).
+     * crouching, only which collisions register). This gate is
+     * collision-only - the *visual* crouch pose is Small Mario's too, see
+     * {@link #updateAnimation}.
      */
     private boolean ducking;
     /** Ported from {@code Player_Brick}'s own {@code p.getY() + 32} threshold. */
@@ -551,10 +553,14 @@ public class Player extends Layer {
     private void updateAnimation(PlayerCommand command, float frames) {
         // Ported from Player.update()'s own KeyPressedDown block - takes
         // priority over every other pose, matching the original (its
-        // equivalent check runs last each tick, so it always wins). Frames
-        // 24/25 are the crouch pose in every Big/Fire strip - unused until
-        // now (see this class's own "4 cols x 7 rows" frame-layout doc).
-        if (ducking) {
+        // equivalent check runs last each tick, so it always wins), and is
+        // NOT gated on power state there (unlike this class's own `ducking`,
+        // which only affects collision - see that field's doc): Small
+        // Mario's "player" strip has the same 4 cols x 7 rows layout as
+        // Big/Fire (confirmed against WholeGame.java's own
+        // `getImages("player.png", 4, 7)` load call), so frames 24/25 are a
+        // real crouch pose there too, just with no collision effect.
+        if (keyPressedDown) {
             setFrame(facingRight ? 24 : 25);
             return;
         }

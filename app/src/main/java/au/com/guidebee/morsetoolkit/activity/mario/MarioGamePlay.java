@@ -29,6 +29,11 @@ public class MarioGamePlay extends GamePlay {
 
     @Override
     public void create() {
+        // See MarioResourceManager#reset's own doc: without this, reopening
+        // the activity after exiting once left MarioMenuScreen's very first
+        // frame blank, built from a Skin cached from the just-destroyed GL
+        // context.
+        MarioResourceManager.reset();
         MarioResourceManager.loadCommon();
         setScreen(new MarioMenuScreen(this));
     }
@@ -43,12 +48,28 @@ public class MarioGamePlay extends GamePlay {
     }
 
     /**
-     * World-1 levels a fresh {@link #startLevel} pick might need to arrive
-     * at from "the previous level's own checkpoint" - see that method's doc.
-     * 14 isn't included: nothing in v1 transitions *into* it except 13's own
-     * checkpoint, so it never needs to be searched as a *source*.
+     * Every menu-selectable level across all 8 worlds (matches
+     * {@code MarioMenuScreen}'s own {@code WORLD_LEVELS} flattened) - the
+     * full set of levels a fresh {@link #startLevel} pick might need to
+     * arrive at from "the previous level's own checkpoint" - see that
+     * method's doc. Originally only listed World 1's {11, 12, 13} (13 being
+     * the source of the *only* cross-level checkpoint that existed when this
+     * was written); once every world's levels were added, selecting e.g.
+     * Level 34 from the menu found no predecessor in that stale list and
+     * silently fell back to the level's own dead {@code pos} data, spawning
+     * Mario stuck inside a wall exactly like the Level-14 case this method's
+     * own doc already describes - just for every world past the first.
      */
-    private static final int[] PREDECESSOR_LEVELS = {11, 12, 13};
+    private static final int[] PREDECESSOR_LEVELS = {
+            11, 12, 13, 14,
+            21, 22, 23, 24,
+            31, 32, 33, 34,
+            41, 42, 43, 44,
+            51, 52, 53, 54,
+            61, 62, 63, 64,
+            71, 72, 73, 74,
+            81, 82, 83, 841, 842, 843, 844, 845,
+    };
 
     /**
      * Starts a brand-new game at the given level - see {@code MarioMenuScreen}.

@@ -463,19 +463,44 @@ testable on-device.
   it touches was already handled elsewhere (`TurtleShell`/`HelmetShell`'s own
   `killOverlappingEnemies`), not duplicated here. Items are excluded structurally (a
   separate actor list), matching the original's explicit exclusion.
-- [ ] P2.9.5 **Vertical slice:** replay a boss level end-to-end (e.g. `Level_14`) and confirm
+- [x] P2.9.5 **Vertical slice:** replay a boss level end-to-end (e.g. `Level_14`) and confirm
   the bridge visibly collapses and the boss falls; trigger a fireball kill and an
-  enemy-vs-enemy contact in the same session. Built and installed to the test device;
-  awaiting user playtest.
+  enemy-vs-enemy contact in the same session. On-device testing via the new P2.8.5 debug
+  panel found and fixed two real bugs along the way (both documented in P2.9.1's own entry
+  above): `AxeResolver` never releasing its wall-block once the axe was triggered (Mario
+  stuck in place instead of walking to the level-end checkpoint - user-confirmed fixed),
+  and `BossFallingAnim` reading `MarioContext.world()` for its own fall-out-of-view check
+  (the ghost stand-in could in principle outlive the level it was spawned in - fixed by
+  measuring the fall from its own spawn Y instead, not yet independently re-confirmed
+  on-device since testing moved on to the debug panel's own display bugs first).
 
-**Step P2.10 — Piranha Plant**
-- P2.10.1 Port `plant.java` as a new `actors/enemies/PiranhaPlant` (or similar):
-  retreat-when-Mario-is-near, pop out otherwise, hurts on touch unless starred, killed by
-  fireball/shell/stomped-shell (never by a direct jump-stomp, matching the original).
-- P2.10.2 Auto-spawn from pump/pipe-top tiles in `LevelLoader`, respecting the original's
-  exclusions (`"OrangePump"`-named levels, the 4-2 Clowd bonus).
-- P2.10.3 **Vertical slice:** any level with several pipes (e.g. World 1's `Level_11`) -
-  confirm plants pop/retreat correctly and don't spawn where excluded.
+**Step P2.10 — Piranha Plant** *(implemented 2026-09-07, pending on-device verification (P2.10.3))*
+- [x] P2.10.1 `actors/enemies/PiranhaPlant` - travels a fixed 96px range, pausing retracted
+  only while both near the bottom *and* Mario is within 100px (ported verbatim, including
+  the original's own quirk that it keeps rising once already mid-ascent even if Mario then
+  gets close - `CanStopMovingUp` is only ever checked at the very bottom). `onStomped`
+  delegates to `onTouchedSide` (never a real stomp, same pattern `Spikey` already uses);
+  `onDefeatedByProjectile` plays `smb_kick` and deactivates with no falling-dead sprite
+  (confirmed the original has none for this enemy either, unlike P2.9.2's ground-walkers).
+  Fireball/shell-kill needed no new plumbing - both already route through the same
+  `Enemy#onDefeatedByProjectile`/`world.getEnemies()` every other enemy uses.
+- [x] P2.10.2 `LevelLoader#spawnEnemies` spawns one per `"pump"` tile's own top cell
+  (`tile.y*32+48`, centered at `tile.x*32+16` in the pipe's 64px-wide mouth), skipping
+  `level.levelName.equals("OrangePump")` (World 4-2's Clowd bonus, `Level_94` in this port's
+  own numbering). **Correction while implementing:** the plan's own "pump/pipe-top tiles"
+  wording undersold one real exclusion found by reading the source - `"PumpWarp"` tiles
+  (case 66) never got a plant in the original either; its own would-be spawn line is
+  commented out there. Ported that exclusion too - only `"pump"`, not `"PumpWarp"`.
+- [ ] P2.10.3 **Vertical slice:** any level with several pipes (e.g. World 1's `Level_11`) -
+  confirm plants pop/retreat correctly and don't spawn where excluded. Built and installed
+  to the test device; awaiting user playtest.
+  **Bug found and fixed while playtesting:** plants first spawned from `spawnEnemies`
+  (called after `spawnBricks`), so they drew *in front of* their own pipe - visibly poking
+  out even while fully retracted. Confirmed against the source that the original avoids
+  this by adding `PlantGroup` to the playfield *before* `BrickGroup` (`Mario.java`'s own
+  `addGroup` call sequence); ported the same ordering by moving the plant-spawn into
+  `spawnBricks`'s own `"pump"` case, immediately before that tile's own `Pump` brick is
+  added, so it's now always behind its pipe.
 
 **Step P2.11 — Small fidelity fixes** *(cheap, do together)*
 - P2.11.1 `QuestionMark` grey tint on `UnderGround`/`Castle` levels (`question_mark_grey`

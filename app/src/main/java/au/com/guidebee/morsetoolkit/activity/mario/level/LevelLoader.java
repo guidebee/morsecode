@@ -31,6 +31,7 @@ import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.Helmet;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.Monkey;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.OctoPussy;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.OrbitingFireball;
+import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.PiranhaPlant;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.SonOfABuitch;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.items.Coin;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.lifts.BalanceLiftPlatform;
@@ -206,12 +207,27 @@ public final class LevelLoader {
                     spawnTree(tile, "CloudsNight".equals(level.backgroundImage));
                     break;
                 case "pump":
-                // Ported from Mario.java's case 66 ("PumpWarp") - identical
-                // rendering/collision to a plain "pump" tile (confirmed by
-                // reading the source: same attribute dispatch, same top/body
-                // split); it's only *paired* with a same-level teleport
-                // (already handled separately by TeleportResolver reading
-                // LevelDefinition's own teleports data, not this tile).
+                    // Ported from Mario.java's own case 12: a plant spawns
+                    // *before* the pump brick below (matching the original's
+                    // own PlantGroup-before-BrickGroup draw order - confirmed
+                    // by reading Mario.java's own playfield.addGroup(...)
+                    // call sequence), so it renders behind the pipe and stays
+                    // hidden while retracted instead of poking out in front
+                    // of it. Deliberately NOT "PumpWarp" (case 66) too - see
+                    // PiranhaPlant's own class doc on that exclusion, ported
+                    // from the source rather than assumed. Excludes this
+                    // level's own "OrangePump" bonus area, also matching the
+                    // original.
+                    if (!"OrangePump".equals(level.levelName)) {
+                        String plantRegion = "Ground".equals(level.attribute) ? "plant" : "plant_dark";
+                        addEnemy(new PiranhaPlant(tile.x * tileSize + 16, tile.y * tileSize + 48, plantRegion));
+                    }
+                    // Falls through - "PumpWarp" (case 66) renders identically
+                    // to a plain "pump" tile (confirmed by reading the source:
+                    // same attribute dispatch, same top/body split); it's only
+                    // *paired* with a same-level teleport (already handled
+                    // separately by TeleportResolver reading LevelDefinition's
+                    // own teleports data, not this tile).
                 case "PumpWarp":
                     for (int dy = 0; dy < tile.lengthY; dy++) {
                         boolean top = dy == 0;

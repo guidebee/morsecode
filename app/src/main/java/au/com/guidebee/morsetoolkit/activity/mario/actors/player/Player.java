@@ -592,8 +592,14 @@ public class Player extends Layer {
 
         if (dy > 0) {
             if (world.containsImpassableArea(getX(), newY, width, height, duckAboveY)) {
-                newY = (float) (((int) (newY + height) / tileSize) * tileSize - height);
+                // Looked up at this pre-snap newY, not the post-snap value
+                // below - once snapped, the player's feet sit exactly flush
+                // with the brick's top edge, and InteractiveBrick#overlaps's
+                // strict "y + height > getY()" no longer holds at that exact
+                // boundary, so the Bouncer would never be found (silently
+                // falling back to a normal stand instead of relaunching).
                 InteractiveBrick landedOn = world.findActiveBrickAt(getX(), newY, width, height);
+                newY = (float) (((int) (newY + height) / tileSize) * tileSize - height);
                 if (landedOn instanceof Bouncer) {
                     // Ported from Player_Brick.collided's own `if (b.getID() == 13)
                     // p.Jump(-22)` - a Bouncer never lets Mario actually stand on

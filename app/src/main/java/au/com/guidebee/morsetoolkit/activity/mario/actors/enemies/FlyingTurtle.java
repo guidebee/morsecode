@@ -27,12 +27,15 @@ import au.com.guidebee.morsetoolkit.activity.mario.world.TileMovement;
  * regardless of the current level's actual attribute, matching the
  * original's own {@code new EnemyTurtle(x, y, game, true, this.Color)} call.
  *
- * <p>The "flying_turtle"/"flying_turtle_dark" regions are 32x32 per frame,
- * 4 frames (128x32 total) - confirmed against the source PNG directly.
+ * <p>The "flying_turtle"/"flying_turtle_dark" regions are 32x48 per frame,
+ * 4 frames (128x48 total) - matches the original's own
+ * {@code getImages("FlyingTurtle.png", 4, 1)} (4 columns, 1 row), confirmed
+ * against the source PNG directly.
  */
 public class FlyingTurtle extends Enemy {
 
-    private static final int FRAME_SIZE = 32;
+    private static final int FRAME_WIDTH = 32;
+    private static final int FRAME_HEIGHT = 48;
     private static final float GRAVITY_STEP = 0.25f;
     private static final float GRAVITY_CAP = 5f;
     private static final float BOUNCE_GRAVITY = -8f;
@@ -45,7 +48,7 @@ public class FlyingTurtle extends Enemy {
     private boolean showingFirstFrame = true;
 
     public FlyingTurtle(float x, float y, String color) {
-        super(regionFor(color), FRAME_SIZE, FRAME_SIZE, x, y, false);
+        super(regionFor(color), FRAME_WIDTH, FRAME_HEIGHT, x, y, false);
         this.color = color;
     }
 

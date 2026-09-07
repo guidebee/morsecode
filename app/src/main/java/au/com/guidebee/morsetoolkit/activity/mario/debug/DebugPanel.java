@@ -1,7 +1,9 @@
 package au.com.guidebee.morsetoolkit.activity.mario.debug;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
@@ -55,7 +57,8 @@ public class DebugPanel {
     private static final float WARP_GRACE_SECONDS = 2f;
 
     private static final float BUTTON_WIDTH = 150f;
-    private static final float BUTTON_HEIGHT = 24f;
+    private static final float BUTTON_HEIGHT = 20f;
+    private static final float ROW_PAD = 2f;
 
     private final Table table;
     private final Player player;
@@ -67,39 +70,11 @@ public class DebugPanel {
     public DebugPanel(LayerManager layerManager, Skin skin, LevelDefinition level, Player player,
                        Consumer<Boolean> onInfiniteLivesToggle, IntConsumer onTimeScaleChange) {
         this.player = player;
+        // Both built up front, before any of the row-building lambdas below
+        // that reference them (a blank final field/local can't be read - even
+        // from inside a lambda - anywhere in the constructor before it's
+        // definitely assigned).
         table = new Table();
-
-        table.add(new Label("DEBUG PANEL", skin)).colspan(2).padBottom(4f).row();
-        coordinateLabel = new Label("", skin);
-        table.add(coordinateLabel).colspan(2).width(BUTTON_WIDTH * 2f).padBottom(6f).row();
-
-        CheckBox godModeBox = new CheckBox("GOD MODE", skin);
-        godModeBox.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
-                player.setDebugInvincible(godModeBox.isChecked());
-            }
-        });
-        table.add(godModeBox).width(BUTTON_WIDTH).height(BUTTON_HEIGHT).padBottom(4f);
-
-        CheckBox infiniteLivesBox = new CheckBox("INF LIVES", skin);
-        infiniteLivesBox.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
-                onInfiniteLivesToggle.accept(infiniteLivesBox.isChecked());
-            }
-        });
-        table.add(infiniteLivesBox).width(BUTTON_WIDTH).height(BUTTON_HEIGHT).padBottom(4f).row();
-
-        TextButton powerButton = new TextButton("CYCLE POWER", skin);
-        powerButton.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
-                player.debugCyclePowerState();
-            }
-        });
-        table.add(powerButton).width(BUTTON_WIDTH).height(BUTTON_HEIGHT).padBottom(6f);
-
         timeScaleButton = new TextButton("SPEED 1x", skin);
         timeScaleButton.addListener(new ClickListener() {
             @Override
@@ -111,61 +86,122 @@ public class DebugPanel {
                 onTimeScaleChange.accept(timeScale);
             }
         });
-        table.add(timeScaleButton).width(BUTTON_WIDTH).height(BUTTON_HEIGHT).padBottom(6f).row();
 
-        int column = 0;
+        // Built as a list of "rows" (each a Runnable that adds one row's own
+        // cells, ending in its own .row()) in the INTENDED top-to-bottom
+        // visual order, then applied to `table` in REVERSE - see this
+        // constructor's own trailing loop. Table's row stacking renders the
+        // *first*-added row at the *bottom* under this screen's y-down camera
+        // (confirmed on-device: PauseOverlay's own title/RESUME/QUIT rows
+        // render bottom-to-top the exact same way, just never flagged before
+        // since a 3-line pause menu still reads fine either way - a much
+        // longer panel like this one doesn't).
+        List<Runnable> rows = new ArrayList<>();
+
+        rows.add(() -> table.add(new Label("DEBUG PANEL", skin)).colspan(2).padBottom(ROW_PAD).row());
+
+        coordinateLabel = new Label("", skin);
+        rows.add(() -> table.add(coordinateLabel).colspan(2).width(BUTTON_WIDTH * 2f).padBottom(ROW_PAD).row());
+
+        rows.add(() -> {
+            CheckBox godModeBox = new CheckBox("GOD MODE", skin);
+            godModeBox.addListener(new ClickListener() {
+                @Override
+                public void clicked(InputEvent event, float x, float y) {
+                    player.setDebugInvincible(godModeBox.isChecked());
+                }
+            });
+            table.add(godModeBox).width(BUTTON_WIDTH).height(BUTTON_HEIGHT).padBottom(ROW_PAD);
+
+            CheckBox infiniteLivesBox = new CheckBox("INF LIVES", skin);
+            infiniteLivesBox.addListener(new ClickListener() {
+                @Override
+                public void clicked(InputEvent event, float x, float y) {
+                    onInfiniteLivesToggle.accept(infiniteLivesBox.isChecked());
+                }
+            });
+            table.add(infiniteLivesBox).width(BUTTON_WIDTH).height(BUTTON_HEIGHT).padBottom(ROW_PAD).row();
+        });
+
+        rows.add(() -> {
+            TextButton powerButton = new TextButton("CYCLE POWER", skin);
+            powerButton.addListener(new ClickListener() {
+                @Override
+                public void clicked(InputEvent event, float x, float y) {
+                    player.debugCyclePowerState();
+                }
+            });
+            table.add(powerButton).width(BUTTON_WIDTH).height(BUTTON_HEIGHT).padBottom(ROW_PAD);
+
+            table.add(timeScaleButton).width(BUTTON_WIDTH).height(BUTTON_HEIGHT).padBottom(ROW_PAD).row();
+        });
+
+        List<TextButton> warpButtons = new ArrayList<>();
         for (LevelDefinition.Checkpoint checkpoint : level.checkpoints) {
-            table.add(warpButton(skin, checkpoint.kind, (float) checkpoint.x, (float) checkpoint.y))
-                    .width(BUTTON_WIDTH).height(BUTTON_HEIGHT).padBottom(2f).padRight(2f);
-            column++;
-            if (column % 2 == 0) {
-                table.row();
-            }
+            warpButtons.add(warpButton(skin, checkpoint.kind, (float) checkpoint.x, (float) checkpoint.y));
         }
         for (LevelDefinition.Tile tile : level.tiles) {
             if (!INTERESTING_TILE_TYPES.contains(tile.type)) {
                 continue;
             }
-            float worldX = tile.x * MarioConfiguration.TILE_SIZE;
-            float worldY = tile.y * MarioConfiguration.TILE_SIZE;
-            table.add(warpButton(skin, tile.type, worldX, worldY))
-                    .width(BUTTON_WIDTH).height(BUTTON_HEIGHT).padBottom(2f).padRight(2f);
-            column++;
-            if (column % 2 == 0) {
-                table.row();
-            }
+            warpButtons.add(warpButton(skin, tile.type,
+                    tile.x * MarioConfiguration.TILE_SIZE, tile.y * MarioConfiguration.TILE_SIZE));
         }
-        if (column % 2 != 0) {
-            table.row();
+        // Two per row, in the SAME left-to-right/top-to-bottom reading order
+        // regardless of the reversal above - only whole *rows* flip, not the
+        // buttons within one, so pairing them up before reversing (rather
+        // than relying on some later row-by-row column-parity counter) keeps
+        // e.g. buttons 1-2 as row one, 3-4 as row two, both before reversal
+        // and after.
+        for (int i = 0; i < warpButtons.size(); i += 2) {
+            TextButton first = warpButtons.get(i);
+            TextButton second = i + 1 < warpButtons.size() ? warpButtons.get(i + 1) : null;
+            rows.add(() -> {
+                table.add(first).width(BUTTON_WIDTH).height(BUTTON_HEIGHT).padBottom(ROW_PAD).padRight(ROW_PAD);
+                if (second != null) {
+                    table.add(second).width(BUTTON_WIDTH).height(BUTTON_HEIGHT).padBottom(ROW_PAD);
+                }
+                table.row();
+            });
         }
 
         TextField tileXField = new TextField("", skin);
         tileXField.setTextFieldFilter(new TextField.TextFieldFilter.DigitsOnlyFilter());
         TextField tileYField = new TextField("", skin);
         tileYField.setTextFieldFilter(new TextField.TextFieldFilter.DigitsOnlyFilter());
-        table.add(new Label("Tile X/Y", skin)).padTop(4f);
-        Table tileFields = new Table();
-        tileFields.add(tileXField).width(60f);
-        tileFields.add(tileYField).width(60f).padLeft(4f);
-        table.add(tileFields).padTop(4f).row();
-
-        TextButton manualWarpButton = new TextButton("WARP TO TILE", skin);
-        manualWarpButton.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
-                warpToTile(tileXField.getText(), tileYField.getText());
-            }
+        rows.add(() -> {
+            table.add(new Label("Tile X/Y", skin)).padBottom(ROW_PAD);
+            Table tileFields = new Table();
+            tileFields.add(tileXField).width(60f);
+            tileFields.add(tileYField).width(60f).padLeft(ROW_PAD);
+            table.add(tileFields).padBottom(ROW_PAD).row();
         });
-        table.add(manualWarpButton).colspan(2).width(BUTTON_WIDTH).height(BUTTON_HEIGHT).padTop(4f).padBottom(6f).row();
 
-        TextButton closeButton = new TextButton("CLOSE", skin);
-        closeButton.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
-                hide();
-            }
+        rows.add(() -> {
+            TextButton manualWarpButton = new TextButton("WARP TO TILE", skin);
+            manualWarpButton.addListener(new ClickListener() {
+                @Override
+                public void clicked(InputEvent event, float x, float y) {
+                    warpToTile(tileXField.getText(), tileYField.getText());
+                }
+            });
+            table.add(manualWarpButton).colspan(2).width(BUTTON_WIDTH).height(BUTTON_HEIGHT).padBottom(ROW_PAD).row();
         });
-        table.add(closeButton).colspan(2).width(BUTTON_WIDTH).height(BUTTON_HEIGHT);
+
+        rows.add(() -> {
+            TextButton closeButton = new TextButton("CLOSE", skin);
+            closeButton.addListener(new ClickListener() {
+                @Override
+                public void clicked(InputEvent event, float x, float y) {
+                    hide();
+                }
+            });
+            table.add(closeButton).colspan(2).width(BUTTON_WIDTH).height(BUTTON_HEIGHT);
+        });
+
+        for (int i = rows.size() - 1; i >= 0; i--) {
+            rows.get(i).run();
+        }
 
         table.pack();
         table.setVisible(false);

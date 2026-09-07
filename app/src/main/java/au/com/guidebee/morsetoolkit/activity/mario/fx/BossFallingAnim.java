@@ -39,9 +39,26 @@ public class BossFallingAnim extends Sprite {
     private static final float INITIAL_DELAY_TICKS = 180f;
     private static final float ROAR_TICKS_BEFORE_FALL = 2f;
     private static final float FALL_SPEED = 3f;
-    private static final float FALL_OUT_MARGIN_PX = 200f;
+    /**
+     * How far past its own starting Y the boss falls before this and {@link
+     * #ghost} are removed - generously larger than any castle level's own
+     * height (the tallest, Level 14/64, is 800px total), so this always
+     * clears the visible level regardless of which one is playing.
+     *
+     * <p>Deliberately measured from {@link #startY} (this sprite's own spawn
+     * position), not {@code MarioContext.world().getHeightPx()} the way an
+     * earlier version of this class did: that read shared, static, mutable
+     * state every single frame across the several seconds this fall takes,
+     * for a check that's purely cosmetic ("has this scrolled off screen yet")
+     * and never needed level-specific accuracy in the first place - a needless
+     * dependency, and the prime suspect for an on-device bug where the ghost
+     * stayed on screen and never got cleaned up. A fixed distance computed
+     * once at construction removes that dependency entirely.
+     */
+    private static final float FALL_DISTANCE_PX = 1000f;
 
     private final MarioGhost ghost;
+    private final float startY;
     private float delayTicks = INITIAL_DELAY_TICKS;
     private float frameTimer;
     private boolean showingFirstFrame = true;
@@ -51,6 +68,7 @@ public class BossFallingAnim extends Sprite {
     private BossFallingAnim(float x, float y, MarioGhost ghost) {
         super(MarioResourceManager.region("boss"), FRAME_WIDTH, FRAME_HEIGHT);
         setPosition(x, y);
+        this.startY = y;
         this.ghost = ghost;
     }
 
@@ -82,7 +100,7 @@ public class BossFallingAnim extends Sprite {
 
         if (falling) {
             setY(getY() + FALL_SPEED * frames);
-            if (getY() > MarioContext.world().getHeightPx() + FALL_OUT_MARGIN_PX) {
+            if (getY() > startY + FALL_DISTANCE_PX) {
                 ghost.remove();
                 remove();
             }

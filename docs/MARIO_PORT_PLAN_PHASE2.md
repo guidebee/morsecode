@@ -428,6 +428,20 @@ testable on-device.
   visual, matching the original - level completion was never gated on the fight itself.
   Corrected `Axe.java`'s doc comment and this document's own §1.4 claim that no such code
   exists.
+  **Bug found via P2.8.5's own warp panel, fixed 2026-09-07:** `AxeResolver.resolve()`'s
+  wall-clamp (`if (player.getX() > axe.getX()) player.setX(axe.getX())`) never checked
+  `Axe#isTriggered` - the original's equivalent stops running at all once triggered
+  (`Player_Brick.collided`'s axe case calls `b.setActive(false)` right after triggering,
+  and a GTGE sprite with `active=false` never runs `update()` again), but this port's
+  standalone resolver had no such gate, so it kept clamping Mario back to the axe's X every
+  frame *after* `triggerAxe` had already put him under a forced walk-right command - visibly
+  "stuck" walking in place at the axe, both from a debug warp straight to it and from a
+  normal playthrough reaching it legitimately. Fixed by skipping a triggered axe's wall
+  entirely, matching the original. (The bridge tiles themselves staying solid/uncollapsed
+  underneath the purely-visual `BridgeBlackout` overlay is *not* a bug - confirmed against
+  `Mario.RemoveBridge`, which never touches `BrickGroup` either; Mario only ever walks
+  forward past this point, never back onto the collapsed span, so it's never actually
+  reachable to notice.)
 - [x] P2.9.2 `fx/FallingDeadSprite` - wired into `EnemyMashroom`/`EnemyTurtle`/
   `EnemyTurtlePatrol`/`FishyGround`/`FishyWater`/`FlyingTurtle`/`FlyingTurtlePatrol`/
   `HelmetShell`/`Monkey`/`Spikey`/`SpikeyEgg`/`TurtleShell`'s `onDefeatedByProjectile()`.

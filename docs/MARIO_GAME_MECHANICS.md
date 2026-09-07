@@ -17,8 +17,14 @@ three planning documents:
   plan docs if you want to know *why* something is shaped the way it is; read this one to
   know *what it is and how to add to it*.
 - [MARIO_RESKIN_PLAN.md](MARIO_RESKIN_PLAN.md) — the plan for replacing every Nintendo-derived
-  asset with original art at a higher resolution. §13 of this document (sprite sheets) is
-  the technical reference that plan's asset-authoring work builds on.
+  asset with original art at a higher resolution. §13 and §16 of this document (sprite
+  sheets, reskin scope) are the technical reference that plan's asset-authoring work
+  builds on.
+- [MARIO_LEVEL_ATLAS.md](MARIO_LEVEL_ATLAS.md) — every one of the 55 shipped levels,
+  world by world, with a schematic minimap and full tile/enemy/checkpoint breakdown for
+  each — the "how scenes are designed" companion to this document's actor/system focus.
+- [MARIO_PLAYER_GUIDE.md](MARIO_PLAYER_GUIDE.md) — the player-facing manual (controls,
+  power-ups, enemy field guide, world tour) with visuals pulled from the actual game art.
 
 All 8 worlds (~55 levels) are implemented and playable today, on placeholder
 Nintendo-derived art — see the phase-2 doc's "Decisions locked in" for the distribution
@@ -41,6 +47,7 @@ gate that stays in force until the reskin lands.
 13. [Sprite sheets and the atlas system](#13-sprite-sheets-and-the-atlas-system)
 14. [Recipes: extending the game](#14-recipes-extending-the-game)
 15. [Appendix: full asset and sound tables](#15-appendix-full-asset-and-sound-tables)
+16. [Reskin scope & priority](#16-reskin-scope--priority)
 
 ---
 
@@ -181,6 +188,8 @@ px/sec** — that's what every existing constant is expressed in.
 | `WATER_SURFACE_Y` | 64 | Absolute world Y every Sea level's water surface sits at (hardcoded, not derived from level data) |
 
 ### 4.3 Power states
+
+![Player power-state and transition sprite sheets](assets/mario-sprites/montages/player_states.png)
 
 `PlayerPowerState` is a 3-value enum carrying `(width, height, atlasRegionName)`:
 
@@ -480,6 +489,12 @@ level JSON can carry decorative/dead tile types (a few confirmed-dead ones are l
 
 ### 9.1 Enemies (`extends Enemy`)
 
+![Enemy sprite sheets](assets/mario-sprites/montages/enemies.png)
+
+*(Every sprite above is extracted directly from the packed `mario-common.atlas`,
+un-flipped to natural viewing orientation — see §13.4. This is the current
+Nintendo-derived placeholder art pending the reskin, not final art.)*
+
 `Enemy` (`actors/enemies/Enemy.java`) is the common base. It supplies:
 
 - `walkAndFall(delta, gravity, walkSpeed)` — constant-speed walk + gravity + wall-bounce,
@@ -540,6 +555,8 @@ a different radius (`j * 16px`), all reading a **shared** angle from `Oscillator
 in sync. `extraInfo` (`"CW"`/`"ACW"`) sets spin direction.
 
 ### 9.2 Bricks (`extends InteractiveBrick`)
+
+![Brick and item sprite sheets](assets/mario-sprites/montages/bricks_items.png)
 
 `InteractiveBrick` (`actors/bricks/InteractiveBrick.java`) supplies `isActive()`,
 `overlaps(...)`, `deactivate()`, and one overridable hook: `hitFromBelow(player)`
@@ -602,6 +619,8 @@ touch direction).
 | `BossFire` | Both a static placed hazard (Level 14's drifting flames) and `Boss`'s own thrown projectile — same class, two spawn sites |
 
 ### 9.7 Scenery (purely decorative, non-collided)
+
+![Scenery and backdrop sprite sheets](assets/mario-sprites/montages/scenery.png)
 
 `Scenery` draws a fixed image at a fixed position with no collision participation at all
 — the flagpole rod/ball, castles, lava, water backdrop, walls. `FlagPole` is the one part
@@ -964,3 +983,105 @@ too), `smb_world_clear`.
 
 **Music tracks** (`MarioResourceManager.MUSIC_TRACKS`, keyed by level `attribute` or
 `"Star"`): `Ground`, `UnderGround`, `Castle`, `Star`, `Sea`.
+
+## 16. Reskin scope & priority
+
+Concrete numbers for scoping [MARIO_RESKIN_PLAN.md](MARIO_RESKIN_PLAN.md)'s art-authoring
+work, computed directly from the shipped atlases (§13) and level data
+([MARIO_LEVEL_ATLAS.md §12](MARIO_LEVEL_ATLAS.md#12-whole-game-placement-totals)) — not
+estimates.
+
+### 16.1 Headline numbers
+
+| Metric | Count |
+|---|---|
+| Distinct visual assets to redraw (atlas regions / sprite sheets) | **129** |
+| Total individual animation frames across all of them | **603** |
+| Sound effects to replace | 23 (2 of which — `smb_vine`/`smb_warning` — are loaded but never played; safe to drop instead of replacing) |
+| Music tracks to replace | 5 |
+| User-facing text strings to rewrite | 3 today (home-screen label, launcher label, menu title) — see [MARIO_RESKIN_PLAN.md §1.3](MARIO_RESKIN_PLAN.md) |
+
+### 16.2 By category
+
+| Category | Sheets | Frames | Reskin note |
+|---|---|---|---|
+| Player | 15 | 307 | **The single biggest line item — but see §16.3, most of this isn't "new" art** |
+| Enemies (incl. plants/fish/boss) | 30 | 85 | The largest *headcount* of distinct characters to design |
+| Items/pickups (coins, power-ups, "?" block, brick fragments) | 11 | 38 | Small count, very high on-screen frequency — see §16.4 |
+| Bricks/world mechanisms (pipes, bouncer, rocket launcher, axe, bridge, chain/rope) | 17 | 33 | Mostly static/near-static art, low animation complexity |
+| Hazards/projectiles (fireball, lava, hammer, explosion, swim bubble) | 6 | 18 | Small, high-reuse effects |
+| Scenery/backdrops (castles, trees, flags, parallax backgrounds) | 24 | 42 | Includes 5 CloudsNight-specific "bw_" variants that may not need separate art if the reskin's night level uses a shader/tint instead (see §16.5) |
+| Static terrain (brick/stone/chocolate/pipe recolors × 5 themes) | 23 | 30 | Trivial per-tile complexity (mostly 1×1 32px tiles), but ×5 theme variants each |
+| HUD | 3 | 50 | `font` alone is 48 of those frames — a bitmap glyph set, not character art (see §16.5) |
+
+### 16.3 Player: 307 frames sounds huge, isn't really 307 unique drawings
+
+Of the player category's 15 sheets:
+
+- **3 are the real base characters** to design and animate: Small (4×7=28 frames), Big
+  (4×7=28), Fire (4×7=28) — **84 frames of genuinely new character art**, following the
+  frame-index convention in §13.3 (idle/airborne/walk-cycle/skid/swim/duck poses).
+- **4 are transition/morph flipbooks** between those states (Small→Big, Big→Fire,
+  Big→Small, Fire→Small, Small→Big-while-starred) — 12+10+10+10+12 = 54 frames, but these
+  are short in-between poses connecting art you're already drawing for the 3 base states,
+  not independent character designs.
+- **6 are Star-invincibility palette swaps** (`small_black_mario`, `small_green_mario`,
+  `small_red_mario`, `big_black_mario`, `big_green_mario`, `big_red_mario` — 4×7=28 frames
+  each, 168 frames total) that exist purely to reproduce the classic "flashing colors"
+  invincibility effect (`Player.updateStarColorCycle`, §4.4). **These do not need to be
+  hand-drawn at all** — a palette-swap/hue-shift filter applied at authoring time (or even
+  at runtime, if the new engine work wants to go that far) over the finished Small/Big art
+  reproduces the same effect for a fraction of the effort. Budget these as a post-process
+  step, not 168 frames of original art.
+- **`small_dead_mario` is a single static pose** — the sprite `Player.paint()` draws for
+  the entire enemy-hit-while-Small death animation (`dyingAnimated`, §4.4: launch up, then
+  fall). One frame of real art, not an animation.
+
+**Practical takeaway: budget full character-animation effort for ~84 base frames + ~54
+transition frames (~138 frames, across 3 power states), not 307.**
+
+### 16.4 Reskin priority, by on-screen frequency
+
+Cross-referencing [MARIO_LEVEL_ATLAS.md §12](MARIO_LEVEL_ATLAS.md#12-whole-game-placement-totals)'s
+placement counts against this table's asset list gives a concrete "what to draw first"
+order — an asset placed hundreds of times pays back reskin effort far faster than one
+placed once:
+
+1. **Player** (all 8 worlds, every frame of every level) and **`Brick`** (318 placements)
+   and the **static terrain tiles** (`stone`/`chocolate`, baked into every level's entire
+   floor/wall geometry) — by far the highest-visibility art in the game.
+2. **`EnemyMushroom`** (127 placements) and **`pump`**/pipes (118) and **`tree`** (109) —
+   the next tier of "seen in nearly every level."
+3. **`EnemyTurtle`**/turtle shell family (62), **`FireBar`**'s fireball art (59, reused
+   from the player's own fireball projectile — see §13.1's asset table), **`Iron`** (55),
+   **`QuestionMark`**/**`Bank`** family (45+23), **`FlyingTurtle`** (44).
+4. Everything else — the remaining ~15 enemy types and ~10 brick/mechanism types each
+   appear in single digits to low double digits of placements (see the full table in
+   [MARIO_LEVEL_ATLAS.md §12](MARIO_LEVEL_ATLAS.md#12-whole-game-placement-totals)) —
+   lowest reskin urgency, though still needed for full coverage before the P2.8 gate
+   closes (per [MARIO_RESKIN_PLAN.md §5](MARIO_RESKIN_PLAN.md)).
+
+### 16.5 Assets that might not need original art at all
+
+Worth a product decision before commissioning art for these — each has a plausible
+non-art-asset alternative:
+
+- **`font`/`info`/`info2`** (HUD) — `font` is a bitmap glyph atlas; a system/bundled font
+  (the same `uiSkin()`/`uiSkinYDown()` bitmap font already used for `ScoreHud`, see
+  `MarioResourceManager`) could replace it with zero new art. `info`/`info2` are debug
+  help-overlay screenshots (see §13.4's note on how they look when viewed raw) — confirm
+  they're still reachable/needed before including them in the art brief at all.
+- **The 6 Star-recolor player sheets** — see §16.3; a palette-swap filter, not hand-drawn
+  art.
+- **The 5 CloudsNight `bw_*` variants** (`bw_stone`, `bw_chocolate`, `bw_tree`,
+  `bw_small_castle`, `bw_big_castle`, `bw_bouncer`, `bw_rocket_launcher`, `bw_hammer`) —
+  since the *mechanic* is a straightforward reskin-time palette choice (this is one level
+  in the whole game — Level 6-3, see
+  [MARIO_LEVEL_ATLAS.md §6](MARIO_LEVEL_ATLAS.md#6-world-6--the-night-level)), a runtime
+  tint/desaturation shader over the normal Ground art is a legitimate alternative to
+  drawing 8 separate night-variant sheets, if the new engine work wants to spend a small
+  amount of shader effort to save a larger amount of art effort.
+- **Per-theme terrain recolors** (`brick`/`stone`/`chocolate` × Ground/UnderGround/Castle/
+  Sea, `pump`/`pump_top` × Castle/Sea) — genuinely simple enough (flat-colored 32px tiles)
+  that a first-pass palette variation from one base tile design is a reasonable scope
+  reduction versus 5 fully independent tile designs, if the new art style supports it.

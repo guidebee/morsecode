@@ -290,6 +290,14 @@ public class PackMarioAtlas {
             new AssetSpec(Theme.COMMON, "flag", "Flag.png", 1, 1),
             new AssetSpec(Theme.COMMON, "flag_top", "FlagTop.png", 1, 1),
             new AssetSpec(Theme.COMMON, "flag_sphere", "FlagSphere.png", 1, 1),
+            // "CloudsNight" or (literally) "Fence" background levels swap
+            // both to these recolors instead - Mario.java's own case 32,
+            // confirmed reachable across several World 3/5/6/7 levels (not
+            // "Fence2", a different, unrelated background name that keeps
+            // the plain flag) - a real gap found by a whole-game asset audit,
+            // not packed until now.
+            new AssetSpec(Theme.COMMON, "flag_fence", "FlagFence.png", 1, 1),
+            new AssetSpec(Theme.COMMON, "flag_sphere_fence", "FlagSphereFence.png", 1, 1),
             new AssetSpec(Theme.COMMON, "flag_win", "FlagWin.png", 1, 1),
             new AssetSpec(Theme.COMMON, "another_castle_message", "AnotherCastleMessage.png", 1, 1),
             new AssetSpec(Theme.COMMON, "quest_complete", "QuestComplete.png", 1, 1),

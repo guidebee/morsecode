@@ -636,7 +636,14 @@ P2.9.5's own still-open on-device check)*
   minute.
   verification (button visibility, checkbox rendering); this is the one item still open.
 
-## 8. Developer/QA debug tooling (design only - not yet implemented)
+## 8. Developer/QA debug tooling (implemented 2026-09-07)
+
+**Status:** everything below shipped as designed - see §7.2's own Step P2.8.5 for the
+as-built specifics (exact class/method names, the two on-device display bugs found and
+fixed while verifying it: the joystick-overlap/wrong-corner button placement, and the
+Table-row-order/checkbox-tick-mark rendering under this engine's y-down camera) and the
+P2.9.5/P2.10.3/etc. entries that used the finished panel afterward. Each design point below
+is annotated with what it actually became; nothing here is still a proposal.
 
 **Why this exists:** P2.9's own vertical slice (P2.9.5) needs replaying a full castle
 level - dodge every enemy, survive the whole bridge, reach the axe - just to check three
@@ -688,6 +695,11 @@ tint - so *every* level is selectable regardless of clear state, calling the exa
 `gamePlay.startLevel(levelNumber)` every normal button already calls. No new loading path;
 this is purely relaxing the one `if (!unlocked)` gate.
 
+**Implemented as:** `MarioMenuScreen#buildLevelList` - `BuildConfig.DEBUG` makes every
+button clickable; a level unlocked *only* this way (not by real progress) tints orange
+instead of the normal grey/locked look, exactly as designed. `MarioSaveState` is never
+written differently either way.
+
 #### 8.3.2 In-level warp (the main time-saver)
 
 A collapsible panel, opened from a small debug-only corner button (see §8.4), listing
@@ -713,6 +725,15 @@ it was, unlike a full `goToLevel` re-entry. Add a brief `player.setInvincibleFor
 warp so teleporting into a wall or next to an enemy doesn't cause an instant, confusing
 death before the tester gets their bearings.
 
+**Implemented as:** `debug.DebugPanel`, opened via a debug-only orange corner button on
+`MarioGameScreen` (top-right, below the "WORLD X-Y" label - an earlier placement directly
+on the joystick/A-B button row was invisible/unusable, moved after on-device testing
+caught it). Warp buttons generated exactly as designed (one per checkpoint, one per
+"interesting" tile type), plus the manual tile-X/Y fields and live coordinate readout.
+Rows render top-to-bottom correctly now too (a second on-device bug: this engine's y-down
+camera flips `Table`'s own row-stacking order, the same underlying issue that hit the
+checkbox tick-marks below - both fixed the same day).
+
 #### 8.3.3 God mode
 
 A `debugInvincible` boolean on `Player` (or a dedicated debug controller holding a
@@ -720,11 +741,23 @@ reference to it) that, while true, makes `isInvincible()` always return true - o
 extra `||` clause, no change to the existing star/hit/transition invincibility paths it
 sits alongside.
 
+**Implemented as:** `Player#debugInvincible`/`#setDebugInvincible`, OR'd into
+`isInvincible()` exactly as designed - a GOD MODE checkbox in the debug panel. Note (found
+during a later on-device session, not a gap in this design): god mode does *not* stop a
+pit-fall death, since `Player#die()`'s own pit-fall check is deliberately unconditional/
+bypasses `isInvincible()` even for a real star, matching the original - a debug tester
+should know this rather than be surprised by it.
+
 #### 8.3.4 Infinite lives
 
 Gate `MarioGameScreen#handlePlayerDeath`'s `gamePlay.gameState().loseLife()` call behind
 `!debugInfiniteLives` - dying still plays out visually (useful for testing the death
 animation itself), it just never charges a life or reaches game-over.
+
+**Implemented as:** `MarioGameScreen#debugInfiniteLives`, reported by the panel's own INF
+LIVES checkbox via a constructor callback (`DebugPanel` doesn't own game-state directly -
+both toggles it and time-scale below report back to `MarioGameScreen`, which does) -
+exactly as designed.
 
 #### 8.3.5 Power-state cycling
 
@@ -733,6 +766,14 @@ the existing `grow()`/transition machinery (widened to a public debug entry poin
 than duplicating power-state logic - lets a tester reach Fire Mario (fireball tests, P2.9)
 or Big Mario (ducking, P2.5) instantly instead of hunting down a mushroom and a flower in
 sequence.
+
+**Implemented as:** `Player#debugCyclePowerState()` - reuses `grow()` verbatim for
+Small→Big and Big→Fire (including its powerup jingle), but calls `beginTransition(...)`
+directly for Fire→Small rather than reusing `shrink()`, since `shrink()`'s own Small-state
+branch means "die" - not a sensible debug-cycle outcome. Guards against re-entry mid-morph
+(`transitionFrames != null`) - the same guard `grow()`/`shrink()` themselves gained later
+in the session once a real gap on that exact point turned up during the whole-game audit
+(§9).
 
 #### 8.3.6 Time-scale / fast-forward
 
@@ -745,6 +786,12 @@ real frame. Useful for skipping a boss's throw-timers, `SpawnController`'s ambie
 or P2.9.1's own 180-tick bridge-collapse hold without altering any of those timers'
 actual tuned values.
 
+**Implemented as:** `MarioGameScreen#debugTimeScale` (default `1`, always `1` outside a
+debug build since nothing else ever sets it), driving a `for` loop around the existing
+per-frame update block in `render` exactly as designed. The panel's own SPEED button
+cycles 1x→2x→4x→1x on tap, reporting back via the same constructor-callback pattern as
+infinite lives.
+
 ### 8.4 Access and gating
 
 The debug panel (and its corner toggle button) only exists when `BuildConfig.DEBUG` is
@@ -753,6 +800,11 @@ a runtime flag, so there's no code path that could ship it turned on by accident
 the same category of risk the reskin plan's own release gate already tracks (a build
 leaving the dev machine while it's not ready) - treat "does a release build even contain
 the debug panel" as one more line on that same checklist, not a separate concern.
+
+**Implemented as:** `app/build.gradle`'s `buildFeatures { buildConfig = true }` (not on by
+default under this project's AGP version - had to be turned on for `BuildConfig.DEBUG` to
+exist at all) plus every debug-only call site guarded by it - confirmed absent from a
+`compileReleaseJavaWithJavac` build, not just assumed.
 
 ### 8.5 What this deliberately reuses, not reinvents
 
@@ -873,3 +925,30 @@ the original always draws a rising reveal behind the block - while `CoinAnim` (t
 correctly stays in front and needed no change. Fixed in all four brick classes: the
 growth/star/life reveal now spawns before the Iron replacement; the coin-case spawn order
 is unchanged.
+
+**Whole-game asset audit, same day (session-closing request: "anything we don't use").**
+A fork enumerated every image the reference registers (`WholeGame.java`'s own
+`storeImage(s)` calls, 129 keys), traced which are actually read by reachable gameplay
+code, and diffed that against `PackMarioAtlas.java`'s own `ASSETS` table. Result: the two
+lists match almost exactly. Two real gaps found and fixed:
+- **`FlagFence`/`FlagSphereFence`** - `Mario.java`'s case 32 swaps the flagpole rod and
+  ball ornament to these recolors whenever a level's background is `"CloudsNight"` or
+  (literally) `"Fence"` - not `"Fence2"`, a different, unrelated background name that keeps
+  the plain flag. Confirmed reachable across several real levels (31/32/51/52/71 = Fence,
+  63 = CloudsNight, all already-shipped worlds). This port's `LevelLoader` always used the
+  plain `flag`/`flag_sphere` regardless. Packed both, wired the same condition.
+- (`RopeFence.png` was also flagged by the same pass, but turned out moot: this port's own
+  `"Rope"`/`"Chain"` tile types are never emitted by any converted level's JSON at all -
+  the plain `rope`/`chain` regions are themselves already-dead, pre-packed-ahead-of-need
+  assets with zero live spawn path, so their Fence recolor has nothing to attach to either.
+  Left unpacked; revisit only if a `"Rope"` tile ever actually appears in converted data.)
+
+Also re-surfaced (not new, already tracked): `OrangePump`/`OrangeTopPump` for World 4-2's
+Clowd bonus level (`Level_94`) - still open, still low-priority, still a real, reachable
+gap same as when it was first found.
+
+Everything else the audit checked (`AnotherCastleMessage`, `WhyYouDOThis.png`,
+`Princess.png`/`QuestComplete`, `Clowd.png`, `SlidingFlagDownAnim.png`, the background-set
+PNGs, the commented-out `WholeGame.java` registrations, `DeadMushroom.png`) turned out to
+be either already correctly wired, or confirmed dead in the *reference itself* (never
+reachable there either) - not gaps in this port.

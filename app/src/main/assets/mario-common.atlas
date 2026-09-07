@@ -114,65 +114,72 @@ flag
   orig: 4, 288
   offset: 0, 0
   index: -1
-player
+flag_fence
   rotate: false
   xy: 880, 902
+  size: 4, 288
+  orig: 4, 288
+  offset: 0, 0
+  index: -1
+player
+  rotate: false
+  xy: 886, 902
   size: 128, 224
   orig: 128, 224
   offset: 0, 0
   index: -1
 small_black_mario
   rotate: false
-  xy: 1010, 902
+  xy: 1016, 902
   size: 128, 224
   orig: 128, 224
   offset: 0, 0
   index: -1
 small_green_mario
   rotate: false
-  xy: 1140, 902
+  xy: 1146, 902
   size: 128, 224
   orig: 128, 224
   offset: 0, 0
   index: -1
 small_red_mario
   rotate: false
-  xy: 1270, 902
+  xy: 1276, 902
   size: 128, 224
   orig: 128, 224
   offset: 0, 0
   index: -1
 small_castle
   rotate: false
-  xy: 1400, 902
+  xy: 1406, 902
   size: 160, 160
   orig: 160, 160
   offset: 0, 0
   index: -1
 bw_small_castle
   rotate: false
-  xy: 1562, 902
+  xy: 1568, 902
   size: 160, 160
   orig: 160, 160
   offset: 0, 0
   index: -1
 enemy
   rotate: false
-  xy: 1724, 902
+  xy: 1730, 902
   size: 64, 128
   orig: 64, 128
   offset: 0, 0
   index: -1
 boss
   rotate: false
-  xy: 1790, 902
+  xy: 1796, 902
   size: 192, 128
   orig: 192, 128
   offset: 0, 0
   index: -1
 lava
   rotate: false
-  xy: 1984, 902
+  xy: 1990, 902
   size: 32, 128
   orig: 32, 128
   offset: 0, 0
@@ -681,58 +688,65 @@ flag_sphere
   orig: 32, 32
   offset: 0, 0
   index: -1
-flag_win
+flag_sphere_fence
   rotate: false
   xy: 1554, 1598
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
-small_dead_mario
+flag_win
   rotate: false
   xy: 1588, 1598
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
-tiles_cloudsnight
+small_dead_mario
   rotate: false
   xy: 1622, 1598
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+tiles_cloudsnight
+  rotate: false
+  xy: 1656, 1598
   size: 64, 32
   orig: 64, 32
   offset: 0, 0
   index: -1
 tiles_clowd
   rotate: false
-  xy: 1688, 1598
+  xy: 1722, 1598
   size: 64, 32
   orig: 64, 32
   offset: 0, 0
   index: -1
 bw_hammer
   rotate: false
-  xy: 1754, 1598
+  xy: 1788, 1598
   size: 112, 28
   orig: 112, 28
   offset: 0, 0
   index: -1
 boss_fire
   rotate: false
-  xy: 1868, 1598
+  xy: 1902, 1598
   size: 96, 16
   orig: 96, 16
   offset: 0, 0
   index: -1
 fire_ball
   rotate: false
-  xy: 1966, 1598
+  xy: 2, 1632
   size: 64, 16
   orig: 64, 16
   offset: 0, 0
   index: -1
 lift
   rotate: false
-  xy: 2, 1632
+  xy: 68, 1632
   size: 16, 16
   orig: 16, 16
   offset: 0, 0

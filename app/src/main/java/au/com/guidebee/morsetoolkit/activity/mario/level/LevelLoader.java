@@ -542,10 +542,15 @@ public final class LevelLoader {
                 // itself is the one part (the cloth) that slides once touched
                 // - see MarioGameScreen's level-completion state machine,
                 // which is what actually reacts to a touch this reports.
+                // Both recolor to "_fence" variants for "CloudsNight" or
+                // (literally) "Fence" backgrounds - not "Fence2", a
+                // different, unrelated name that keeps the plain flag -
+                // matching the original's own condition exactly.
+                boolean fenceFlag = "CloudsNight".equals(level.backgroundImage) || "Fence".equals(level.backgroundImage);
                 MarioContext.spawn(new Scenery(tile.x * tileSize + 14, tile.y * tileSize,
-                        MarioResourceManager.region("flag")));
+                        MarioResourceManager.region(fenceFlag ? "flag_fence" : "flag")));
                 MarioContext.spawn(new Scenery(tile.x * tileSize, tile.y * tileSize - tileSize,
-                        MarioResourceManager.region("flag_sphere")));
+                        MarioResourceManager.region(fenceFlag ? "flag_sphere_fence" : "flag_sphere")));
                 flagPole = new FlagPole(tile.x, tile.y);
                 MarioContext.spawn(flagPole);
                 continue;

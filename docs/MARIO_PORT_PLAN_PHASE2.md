@@ -353,3 +353,118 @@ rather than re-verifying the mechanic itself each time.
   format after several worlds' worth of levels exist to test against is more painful
   than picking a simple schema up front (e.g. a set of cleared level numbers is probably
   sufficient; resist adding more than `MarioMenuScreen` actually needs to render).
+
+## 7. Post-P2.8 gap audit (2026-09-07)
+
+All 8 worlds are now playable end-to-end and hand-tested (P2.8.1's exit criterion is
+met). Before handing off to the reskin plan, a systematic class-by-class comparison was
+run between `C:\workspace\Mario` and this port: four parallel sweeps covering
+`Objects/` (vs `actors/enemies` + `Player.java`), `Bricks/` (vs `actors/bricks` +
+`actors/lifts`), `Animations/`+`Collusion/` (vs `fx/` + `collision/`), and tile-dispatch/
+sound-effect/misc-systems completeness (`Mario.java`'s full construct switch,
+`AmitsAudioPlayer`, per-level invisible objects, warp zones, pause/cheats). Every finding
+below was cross-checked against real level data (`Levels/**` + the converted
+`level_*.json` files), not just the reference source, to separate genuine gaps from
+original code that's dead or unreachable in real play.
+
+**Correction to §1.4**: this document's own claim that "`Axe` is a one-line invisible
+wall... No animation trigger, no bridge-collapse code anywhere" is **wrong**, confirmed by
+this audit — see P2.9.1 below. `actors/bricks/Axe.java`'s doc comment repeats the same
+incorrect claim and needs correcting alongside that step's implementation.
+
+### 7.1 Findings
+
+Confirmed real gaps (reachable in actual gameplay, not dead original code):
+
+| # | Finding | Evidence it's real (not dead code) |
+|---|---|---|
+| 1 | Boss defeat has no "cut the bridge" finale — bridge tiles should blacken and the boss should fall, ported from `RemoveBridge()`/`Black.java`/`BossFallingAnim.java` | Triggered from `Collusion/Player_Brick.java:88-108`'s `getID()==15` branch (landing on the Axe from above) — live in every boss level, not commented out |
+| 2 | Piranha Plants aren't ported at all (`Objects/plant.java`) | Auto-spawned from nearly every pump/pipe-top tile per `SandBox/Mario.java` case 12 (excluded only for `"OrangePump"`-named levels and the 4-2 Clowd bonus); `plant`/`plant_dark` art already packed in the atlas, unused |
+| 3 | Enemies killed by a fireball/shell vanish instantly instead of flipping upside-down and falling off-screen (`Animations/FallingDeadSprites.java`) | Called from ~16 enemy classes' fireball-death methods (EnemyMashroom, EnemyTurtle(Patrol), FishyGround/Water, FlyingTurtle(Patrol), Helmet(Shell), Monkey, TurtleShell variants, Rocket, Spikey(Egg)) |
+| 4 | Fireballs disappear silently on impact instead of a small explosion + (on a wall hit) a bump sound (`Animations/Explosion.java`) | `Collusion/FireBallToBricks.java:46,52`, `FireBallToEnemys.java:90,104` |
+| 5 | Enemies never bounce off each other on contact (`Collusion/EnemyToEnemy.java`) | No port resolver exists for this pairing at all; original excludes items (mushroom/flower/life/star/coin) from the bounce, keep that exclusion |
+| 6 | Question Mark blocks always render the Ground-colored sprite, never the grey `UnderGround`/`Castle` tint | Confirmed real blocks affected in `level_12.json`, `level_34.json`, `level_42.json`; `question_mark_grey` already packed, unused |
+| 7 | Pause has no sound | Original plays `smb_pause` on both entering and leaving pause (`SandBox/Mario.java:530,540`) |
+| 8 | The flagpole's `Bouncer` launch has no sound | Original reuses `smb_stomp` as the "boing" (`Player.Jump(int)`, called from the Bouncer's own collision branch) |
+| 9 | Pit-fall death plays `smb_mariodie` | Original's pit-fall (`Restart()`) is silent — only the enemy-hit death path plays that sound; `actors/player/Player.java`'s own doc comment on `die()` already *claims* silence but the code doesn't match it |
+
+Lower-priority / cosmetic (real, but small payoff relative to effort):
+
+| # | Finding | Notes |
+|---|---|---|
+| 10 | No ambient rising-bubble particles while swimming (`Animations/Bubble.java`) | Purely decorative, `Objects/Player.java:105-108` spawns unconditionally while `Water` |
+| 11 | Pipe-entry checkpoints freeze real Mario in place instead of hiding him and showing an animated double sliding in (`MarioGoingDownAnimation`/`MarioGoingInPump`) | Current behavior isn't broken, just visually plainer than the original |
+| 12 | A brick that breaks while an enemy stands on it lets the enemy fall through immediately, instead of the original's brief `TemporaryAndInvisibleBrick` placeholder collider | Very obscure edge case (`Bricks/Brick.java:44`) |
+| 13 | Level 12's warp-zone room doesn't freeze the camera or show the secret pipe-count numbers graphic (`Player_InvisibleObjects.java`'s `StopScroll`/`StopScrollAndNumber`/`scroll` markers, `smb_world_clear` sound) | Cosmetic only — the warp pipes themselves already work correctly via the checkpoint system regardless of this |
+
+Needs a quick manual check before scoping (not yet confirmed as real or dead):
+
+| # | Item | What to check |
+|---|---|---|
+| 14 | Does a kicked turtle shell break bricks on contact? (`Collusion/Enemy_Brick.java`, 228 lines, not fully read) | Classic mechanic; likely partially covered by the generic `TileMovement` wall-bounce every enemy already uses, but shell-breaks-brick specifically wasn't verified either way |
+
+Confirmed dead/non-issues (no action needed): `LavaBubble` (never placed by any level),
+"big/small mountain"/"grass"/"sky" tile codes (never placed), code 43 `CheckPoint` and
+code 46 generic `Lift` (bodies commented out in the original itself), `AddBossFire` tile
+placement (never called — the live path is `Boss`'s own dynamic throw, already ported),
+standalone `Star` tile placement (only ever dispensed from bricks, already handled),
+`smb_vine`/`smb_warning` (loaded but never played in the original either), the original's
+empty cheat-code key-switch (`SandBox/Mario.java:2261-2308`, does nothing).
+
+### 7.2 Step sequence
+
+Same discipline as §4 — numbered to continue after P2.8, each ending with something
+testable on-device.
+
+**Step P2.9 — Boss finale + hit-feedback fidelity** *(highest priority — most visible)*
+- P2.9.1 Bridge-cut boss-defeat sequence: port `RemoveBridge()`/`Black.java`/
+  `BossFallingAnim.java`, wired from the same axe-landing contact `Collusion/
+  Player_Brick.java` gates on. Correct `actors/bricks/Axe.java`'s doc comment (and this
+  document's own §1.4) once implemented.
+- P2.9.2 `FallingDeadSprites` - one shared fx class, wired into every enemy's
+  `onDefeatedByProjectile()` (currently just `deactivate()`).
+- P2.9.3 Fireball impact `Explosion` puff + wall-hit bump sound, in `actors/projectiles/
+  FireBall.java`'s `explode()` and `collision/ProjectileCollisionResolver.java`.
+- P2.9.4 `EnemyToEnemy` bounce - new `collision/EnemyToEnemyResolver` (or fold into the
+  existing `EnemyCollisionResolver`), excluding items per the original.
+- P2.9.5 **Vertical slice:** replay a boss level end-to-end (e.g. `Level_14`) and confirm
+  the bridge visibly collapses and the boss falls; trigger a fireball kill and an
+  enemy-vs-enemy contact in the same session.
+
+**Step P2.10 — Piranha Plant**
+- P2.10.1 Port `plant.java` as a new `actors/enemies/PiranhaPlant` (or similar):
+  retreat-when-Mario-is-near, pop out otherwise, hurts on touch unless starred, killed by
+  fireball/shell/stomped-shell (never by a direct jump-stomp, matching the original).
+- P2.10.2 Auto-spawn from pump/pipe-top tiles in `LevelLoader`, respecting the original's
+  exclusions (`"OrangePump"`-named levels, the 4-2 Clowd bonus).
+- P2.10.3 **Vertical slice:** any level with several pipes (e.g. World 1's `Level_11`) -
+  confirm plants pop/retreat correctly and don't spawn where excluded.
+
+**Step P2.11 — Small fidelity fixes** *(cheap, do together)*
+- P2.11.1 `QuestionMark` grey tint on `UnderGround`/`Castle` levels (`question_mark_grey`
+  already packed).
+- P2.11.2 `smb_pause` on pause-toggle (both directions).
+- P2.11.3 `smb_stomp` on the flagpole `Bouncer`'s launch.
+- P2.11.4 Remove `Player.die()`'s `smb_mariodie` call (pit-falls are silent in the
+  original) - fix the code to match this port's own already-correct doc comment.
+- P2.11.5 **Vertical slice:** one smoke pass touching all four (an UnderGround "?"
+  block, a pause/resume, a `Bouncer`, a pit-fall) - no full replay needed, these are
+  independent one-line fixes.
+
+**Step P2.12 — Cosmetic polish** *(optional - lower priority, judge by time remaining)*
+- P2.12.1 Ambient water bubbles (`Bubble.java`).
+- P2.12.2 Pipe-entry animation (hide real Mario, show the sliding double).
+- P2.12.3 `TemporaryAndInvisibleBrick` placeholder under a breaking brick.
+- P2.12.4 Level 12 warp-zone camera-freeze + secret-numbers reveal (depends on P2.13.1's
+  finding for `Player_InvisibleObjects` - may be folded in or dropped as not worth the
+  camera-architecture change for a cosmetic payoff).
+
+**Step P2.13 — Verify-then-decide items**
+- P2.13.1 Read `Collusion/Enemy_Brick.java` fully; if a kicked shell breaking bricks is
+  real and reachable, add it (small, reuses the existing brick-break path); otherwise
+  mark it confirmed-dead and close this item.
+- P2.13.2 Fold the warp-zone camera-freeze decision (§7.1 #13) into P2.12.4's scope or
+  explicitly drop it - don't leave it open past this step.
+
+Once P2.9-P2.13 are done (or explicitly descoped per-item with a reason noted here),
+re-confirm P2.8's exit criterion still holds, then proceed to the reskin plan unchanged.

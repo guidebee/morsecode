@@ -41,6 +41,7 @@ import au.com.guidebee.morsetoolkit.activity.mario.actors.lifts.LiftFall;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.projectiles.BossFire;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.scenery.FlagPole;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.scenery.Scenery;
+import au.com.guidebee.morsetoolkit.activity.mario.actors.scenery.Spring;
 import au.com.guidebee.morsetoolkit.activity.mario.fx.LavaBall;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioWorld;
@@ -263,15 +264,17 @@ public final class LevelLoader {
                 case "RocketLauncher":
                     spawnRocketLauncher(tile);
                     break;
-                case "Bouncer":
-                    add(new Bouncer(tile.x * tileSize, tile.y * tileSize, "CloudsNight".equals(level.backgroundImage)));
-                    // The decorative Spring sits one tile above - see Bouncer's
-                    // own class doc for why it's plain Scenery here, not a real
-                    // actor. A single frame (index 0) of the 3-frame strip, since
-                    // its squish animation has no gameplay effect worth animating.
-                    MarioContext.spawn(new Scenery(tile.x * tileSize, tile.y * tileSize - tileSize,
-                            MarioResourceManager.region("spring").split(tileSize, tileSize * 2)[0][0]));
+                case "Bouncer": {
+                    Bouncer bouncer = new Bouncer(tile.x * tileSize, tile.y * tileSize, "CloudsNight".equals(level.backgroundImage));
+                    add(bouncer);
+                    // The decorative Spring sits one tile above - see
+                    // Bouncer's own class doc for how the two are linked so
+                    // it squishes on every launch.
+                    Spring spring = new Spring(tile.x * tileSize, tile.y * tileSize - tileSize);
+                    MarioContext.spawn(spring);
+                    bouncer.setSpring(spring);
                     break;
+                }
                 default:
                     break;
             }

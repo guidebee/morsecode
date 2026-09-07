@@ -677,6 +677,7 @@ public class Player extends Layer {
                     gravity = BOUNCER_LAUNCH_GRAVITY;
                     onGround = false;
                     MarioResourceManager.sound("smb_stomp").play();
+                    ((Bouncer) landedOn).triggerSpring();
                 } else {
                     gravity = 0;
                     onGround = true;

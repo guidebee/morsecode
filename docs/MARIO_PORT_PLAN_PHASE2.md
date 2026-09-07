@@ -842,3 +842,20 @@ the one where the fix would have been a regression, not an improvement).
   **regression**: freely walking back through already-explored terrain is correct, current
   behavior here, not a bug, and the classic whole-level "no backtracking" mechanic many
   players associate with NES Mario does not actually exist in this GTGE clone at all.
+
+**User-reported, same day, after this audit:** Level 52's Bouncer/Spring had no squish
+animation at all - the fork audits above focused on gameplay-affecting collision behavior
+and didn't flag this purely-cosmetic gap (an earlier session had explicitly documented it
+as a deliberate skip - "no gameplay effect worth animating" - which held up until a user
+actually saw a bare, static spring in play). Fixed: `actors/scenery/Spring.java` is now a
+real 3-frame animated sprite (ported from `Bricks/Spring.java` - a one-shot
+squish-and-recover strip, `60ms`/frame matching the source's own unmodified default
+`AnimatedSprite` timer, confirmed non-looping since the source never calls `setLoopAnim
+(true)`). Rather than reproduce the original's own geometry-dependent Spring-tile
+collision (Big/Fire Mario's taller hitbox can overlap the Spring tile sitting just above
+the Bouncer at the moment of landing; Small Mario's can't, a fragile distinction not worth
+replicating), `Bouncer` now holds a direct reference to its own `Spring`
+(`LevelLoader#spawnBricks`'s "Bouncer" case links them) and calls `Spring#play()` from
+`Player#moveYWithCollision`'s own launch branch - the actual, reliable moment of a bounce,
+matching player-visible intent (spring squishes when you bounce) even though it's wired
+through a different trigger than the source's own literal collision path.

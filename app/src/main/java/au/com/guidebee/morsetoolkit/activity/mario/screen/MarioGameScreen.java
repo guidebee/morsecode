@@ -39,6 +39,7 @@ import au.com.guidebee.morsetoolkit.activity.mario.level.LevelCatalog;
 import au.com.guidebee.morsetoolkit.activity.mario.level.LevelDefinition;
 import au.com.guidebee.morsetoolkit.activity.mario.level.LevelLoader;
 import au.com.guidebee.morsetoolkit.activity.mario.state.GameStateController;
+import au.com.guidebee.morsetoolkit.activity.mario.state.MarioSaveState;
 import au.com.guidebee.morsetoolkit.activity.mario.world.CameraController;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioWorld;
@@ -665,6 +666,11 @@ public class MarioGameScreen extends ScreenAdapter {
     private void advanceToNextLevel() {
         boolean advanced = gamePlay.goToLevel(pendingCheckpoint.nextLevel, pendingCheckpoint.locX, pendingCheckpoint.locY);
         if (advanced) {
+            // Marks *this* level cleared, not the target - any successful
+            // checkpoint transition out of a level (flag, pipe, WhyYouDOThis,
+            // Princess) counts, matching MarioSaveState's own doc on why a
+            // finer "did you reach the true end" distinction isn't tracked.
+            MarioSaveState.markCleared(level.levelNumber);
             levelState = LevelState.ADVANCING;
         } else {
             // Target level isn't shipped in v1 (see MarioGamePlay.goToLevel) -

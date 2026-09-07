@@ -60,6 +60,17 @@ public class Player extends Layer {
     private static final float MAX_SPEED = 60f;
     /** Ported from {@code Player.GoToRight/Left}'s {@code turbo} branch - same acceleration, higher cap. */
     private static final float MAX_SPEED_TURBO = 100f;
+    /**
+     * Ported from {@code Player.AutomaticGoRight()}'s own literal cap/step -
+     * the scripted forward-walk {@code MarioGameScreen} drives Mario through
+     * via {@link #forcedCommand} (the axe/bridge finale, the flagpole's own
+     * walk-to-checkpoint) is deliberately slower/gentler than any
+     * player-held movement, not just a reuse of {@link #MAX_SPEED}/{@link
+     * #ACCEL} - confirmed by reading the source rather than assumed (an
+     * earlier version of this class made exactly that assumption).
+     */
+    private static final float AUTO_WALK_MAX_SPEED = 40f;
+    private static final float AUTO_WALK_ACCEL = 1f;
 
     private static final float GRAVITY_STEP = 0.42f;
     private static final float GRAVITY_CAP = 10f;
@@ -139,6 +150,8 @@ public class Player extends Layer {
     /** Original's "Gravity" unit - vertical speed in px per 60fps tick. */
     private float gravity;
     private boolean onGround;
+    /** Set by {@link #landOnLift}, cleared by {@code LiftCollisionResolver} the moment it no longer finds a landing spot - see {@link #updateCheckpoint}'s own gate on it. */
+    private boolean onLift;
     private boolean facingRight = true;
     /** Set once at level load from {@code "Sea".equals(level.attribute)} - see {@link #setWater}. */
     private boolean water;
@@ -463,12 +476,15 @@ public class Player extends Layer {
 
     /**
      * Ported from {@code Player.update}'s {@code Timer save}-gated block:
-     * while grounded, every second, promote the current position to the
-     * respawn point if it's moved far enough from the last one - see
-     * {@link #CHECKPOINT_SAVE_INTERVAL_SECONDS}'s doc.
+     * while grounded and not on a moving lift (ported from that same block's
+     * own {@code !OnLift} check - a respawn point saved on a lift's current
+     * position could land Mario off its track, or over empty space, by the
+     * time he actually respawns there), every second, promote the current
+     * position to the respawn point if it's moved far enough from the last
+     * one - see {@link #CHECKPOINT_SAVE_INTERVAL_SECONDS}'s doc.
      */
     private void updateCheckpoint(float delta) {
-        if (!onGround) {
+        if (!onGround || onLift) {
             return;
         }
         checkpointSaveTimer += delta;
@@ -531,9 +547,14 @@ public class Player extends Layer {
     }
 
     private void applyHorizontalInput(PlayerCommand command, float frames) {
+        // A scripted auto-walk (forcedCommand != null) uses AutomaticGoRight()'s
+        // own slower cap/step instead of GoToRight/Left's - see AUTO_WALK_MAX_SPEED's doc.
+        boolean autoWalk = forcedCommand != null;
         // Ported from Player.Speed()'s own `if (Water) turbo = false` - no
         // turbo while swimming, regardless of the run input.
-        float maxSpeed = command.runHeld && !water ? MAX_SPEED_TURBO : MAX_SPEED;
+        float maxSpeed = autoWalk ? AUTO_WALK_MAX_SPEED
+                : command.runHeld && !water ? MAX_SPEED_TURBO : MAX_SPEED;
+        float accel = autoWalk ? AUTO_WALK_ACCEL : ACCEL;
         // Ported from Player.update()'s own three-way friction branch:
         // `if (!Water) {...} else if (Water & !OnGround) {} else if
         // (OnGround) {...}` - free-swimming (water and airborne) applies NO
@@ -560,12 +581,12 @@ public class Player extends Layer {
                     // one finger shouldn't cost all of Mario's speed the
                     // instant it lifts.
                     ? Math.min(-maxSpeed, speed + FRICTION * frames)
-                    : Math.max(speed - ACCEL * frames, -maxSpeed);
+                    : Math.max(speed - accel * frames, -maxSpeed);
         } else if (command.right) {
             facingRight = true;
             speed = speed > maxSpeed
                     ? Math.max(maxSpeed, speed - FRICTION * frames)
-                    : Math.min(speed + ACCEL * frames, maxSpeed);
+                    : Math.min(speed + accel * frames, maxSpeed);
         } else if (!noFriction) {
             decaySpeedTowardZero(frames);
         }
@@ -760,6 +781,18 @@ public class Player extends Layer {
      * including that it still plays the powerup jingle).
      */
     public void grow() {
+        // Guards against re-entering mid-morph - see beginTransition's own
+        // doc for why this matters here specifically: EnemyCollisionResolver
+        // runs independently of Player#act's own early-return freeze, so an
+        // enemy touching Mario mid-grow could otherwise call shrink() (via
+        // Enemy#onTouchedSide) and overwrite this transition with a new one
+        // built against the *old*, not-yet-applied powerState - for a
+        // Small->Big grow specifically, that reads powerState as still
+        // SMALL and kills Mario instead of hurting him. Same guard
+        // debugCyclePowerState() already uses.
+        if (transitionFrames != null || dyingAnimated) {
+            return;
+        }
         if (powerState == PlayerPowerState.SMALL) {
             beginTransition(hasStar() ? "small_to_big_star_mario" : "small_to_big_mario",
                     PlayerPowerState.BIG, true);
@@ -778,6 +811,13 @@ public class Player extends Layer {
      */
     public void shrink() {
         if (isInvincible()) {
+            return;
+        }
+        // See grow()'s own matching guard doc - same re-entrancy risk applies
+        // in this direction too (a second hit landing mid-shrink, before
+        // shrink()'s own INVINCIBLE_SECONDS grant from a *previous* call even
+        // takes effect the very first frame it's set).
+        if (transitionFrames != null) {
             return;
         }
         if (powerState == PlayerPowerState.FIRE) {
@@ -801,10 +841,12 @@ public class Player extends Layer {
      * paused via {@code pauseEnemys()} until it finishes), this drives
      * {@link #paint}'s render directly and only freezes the player itself
      * (via {@link #act}'s early return while {@link #transitionFrames} is
-     * set) - simpler, and enemies are rendered harmless anyway since
-     * {@link #shrink()} already grants {@link #INVINCIBLE_SECONDS} up front
-     * for the shrink case (the grow case was never in danger either way,
-     * since nothing in this port damages Mario while growing).
+     * set) - simpler, but doesn't freeze the *world*: {@code
+     * EnemyCollisionResolver} still runs every frame during a transition, so
+     * {@link #grow()}/{@link #shrink()} both guard against re-entering
+     * mid-morph instead (see their own doc) rather than relying on nothing
+     * being able to touch Mario while frozen the way the original's own
+     * {@code pauseEnemys()} guaranteed.
      *
      * @param preShiftUp32 true only for Small -> Big: the strip's cells are
      *                     all Big-sized (32x64, confirmed against the source
@@ -1058,6 +1100,12 @@ public class Player extends Layer {
         setX(getX() + dx);
         gravity = 0;
         onGround = true;
+        onLift = true;
+    }
+
+    /** Cleared by {@code LiftCollisionResolver} the moment it no longer finds a landing spot for the player - see {@link #onLift}'s own doc. */
+    public void setOnLift(boolean onLift) {
+        this.onLift = onLift;
     }
 
     /**

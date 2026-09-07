@@ -82,6 +82,7 @@ public class EnemyTurtle extends Enemy {
     /** Ported from {@code Objects/EnemyTurtle.java}'s own {@code KilledByFireBall} - see {@code FallingDeadSprite}'s class doc. */
     @Override
     public void onDefeatedByProjectile() {
+        MarioResourceManager.sound("smb_kick").play();
         FallingDeadSprite.spawn(getX(), getY(), regionFor(attribute).split(FRAME_WIDTH, FRAME_HEIGHT)[0][0]);
         deactivate();
     }

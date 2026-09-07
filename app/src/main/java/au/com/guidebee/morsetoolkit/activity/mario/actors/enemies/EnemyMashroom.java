@@ -67,6 +67,7 @@ public class EnemyMashroom extends Enemy {
     /** Ported from {@code Objects/EnemyMashroom.java}'s own {@code KilledByFireBall} - flips and drops the current pose off screen, matching every other enemy's fireball death (see {@code FallingDeadSprite}'s class doc). */
     @Override
     public void onDefeatedByProjectile() {
+        MarioResourceManager.sound("smb_kick").play();
         FallingDeadSprite.spawn(getX(), getY(),
                 MarioResourceManager.region("enemy").split(32, 32)[frameA / 2][frameA % 2]);
         deactivate();

@@ -20,6 +20,11 @@ public final class LiftCollisionResolver {
         if (!player.isFalling()) {
             return;
         }
+        // Cleared up front, re-set by landOnLift below only if still riding
+        // one this frame - see Player#onLift's own doc (its own
+        // updateCheckpoint gate is the reason this needs to actively track
+        // "no longer on a lift", not just "was on one at some point").
+        player.setOnLift(false);
         int width = (int) player.getWidth();
         int height = (int) player.getHeight();
         for (LiftSurface lift : world.getLifts()) {

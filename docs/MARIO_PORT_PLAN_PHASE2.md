@@ -761,3 +761,81 @@ tile data (already how `CheckpointResolver`/`LevelLoader` read a level). The deb
 is a thin UI over these, not a second implementation of level loading or physics - keeps
 its own risk of *introducing* a bug low, which matters since it's specifically the tool
 used to catch bugs elsewhere.
+
+## 9. Final pre-reskin audit (2026-09-07)
+
+With P2.9-P2.13 closed, a second 4-way fork audit (enemies/projectiles; bricks/lifts/
+items; Player's own mechanics in full depth; level-flow/checkpoints/HUD/camera/audio)
+re-compared the whole port against `C:\workspace\Mario` one more time before the reskin
+handoff, explicitly scoped to skip everything already in §7's table or closed under
+P2.9-P2.13. Eight findings came back; seven were real and fixed below, one was
+investigated and resolved as *not* a gap (full reasoning under its own heading, since it's
+the one where the fix would have been a regression, not an improvement).
+
+- **`smb_kick` missing on two enemies' fireball/shell death.** `EnemyMashroom`/`EnemyTurtle`
+  `onDefeatedByProjectile()` spawned the falling-dead sprite and deactivated, but never
+  played the sound every other such enemy does (`EnemyTurtlePatrol`, `FishyGround`,
+  `FishyWater`, `FlyingTurtle(Patrol)`, `HelmetShell`, `Monkey`, `SonOfABuitch`,
+  `OctoPussy`, `Spikey(Egg)`, `TurtleShell`) - almost certainly an oversight from P2.9.2's
+  own ~16-class pass. Fixed - one line each.
+- **`BankWithItem` never grows Big/Fire Mario into a Flower.** Its own doc comment claimed
+  the original only has one branch here - that was wrong, caught by re-reading
+  `Bricks/BankWithItem.java` directly: it checks `player.getID()` for cases 2/3 (big/fire)
+  exactly the way `QuestionMark` already correctly does. Reachable from `BrickWithMushroom`
+  tiles in at least a dozen levels including World 1's own Level 12. Fixed - ported the
+  same big/small split `QuestionMark` already has.
+- **`Bank`'s 100-coin limit was a 100-hit counter, not the original's ~1.67-second timer.**
+  The source's own `ActiveCoins` decrements once per game *tick* in `update()` once the
+  first hit sets `active = true`, not once per hit - effectively unlimited in the port's
+  old hit-counter form, since no player hits a block 100 times. Fixed - `Bank` now tracks a
+  tick-based countdown from the first hit, matching the original's real-time window, and
+  gained the same bump-hop reaction on every dispensed coin (`Bounce()` in the original,
+  reusing `Brick`'s own bump-parabola pattern here).
+- **`Iron` never plays its spawn-in bounce.** Every Iron in the original hops up then
+  settles right after spawning (a `Gravity`-ramp `update()`, same shape `Brick`'s own bump
+  animation already simplifies to a time-based parabola for) - this port's `Iron` was
+  purely static. Reachable every single time any brick in the game gets exhausted, not
+  just the level-placed ones. Fixed - reused the same parabola `Brick`'s bump already uses.
+- **`shrink()`/`grow()` had no re-entry guard mid-morph.** `EnemyCollisionResolver` runs
+  independently of `Player#act`'s own freeze-while-transitioning early return, so an enemy
+  touching Mario mid-grow could call `shrink()` and overwrite the in-progress transition
+  with one built against the *old*, not-yet-applied `powerState` - for a Small->Big grow
+  specifically, `powerState` still reads `SMALL`, so this could kill Mario instead of
+  hurting him. `debugCyclePowerState()` (added for the P2.8.5 debug panel) already guards
+  on `transitionFrames != null` - `grow()`/`shrink()` now do too, closing the same gap in
+  the paths that actually matter during real play.
+- **Checkpoint-save didn't exclude standing on a lift.** The original's own `Timer
+  save`-gated block checks `OnGround & !OnLift`; this port's `updateCheckpoint()` only
+  checked `onGround` - a respawn point could be saved mid-ride on a moving platform,
+  landing a later respawn off its current track or over empty space. Fixed - added an
+  `onLift` flag, set by `landOnLift()` and cleared by `LiftCollisionResolver` the moment it
+  no longer finds a landing spot, gating `updateCheckpoint()` the same way the original does.
+- **Scripted auto-walk used player-held movement's speed profile, not the original's own
+  slower one.** Every forced-right sequence this port drives (`MarioGameScreen#triggerAxe`,
+  the flagpole's walk-to-checkpoint) flows through the same `applyHorizontalInput()` as
+  real input (60 cap, +2/tick accel) - the original's own `AutomaticGoRight()`, the method
+  every one of those exact same scripted moments actually calls
+  (`BossFallingAnim`/`MarioSlidingDown`/`Player_Brick`'s own axe case, confirmed by reading
+  each caller), caps at 40 and accelerates at +1/tick - noticeably gentler. Fixed - `Player`
+  now picks the auto-walk profile whenever `forcedCommand != null`, matching the original's
+  own distinction.
+- **Investigated, not a gap: the "one-way scroll" `getScreenX()<0`/`>608` check in
+  `Mario.java`'s main loop.** First read as the classic NES "can't scroll backward past
+  where the camera's already advanced" wall - real, and genuinely missing here, would have
+  been a significant find. Closer reading changed that conclusion: `Mario.java`'s own
+  update-order traces as `GoToLeft/Right()` (adjusts `speed` only) -> `color_background
+  .setToCenter(player)` (re-centers the camera on Mario's *pre-this-frame-movement*
+  position, itself clamped to the level's own bounds, mirroring what this port's
+  `CameraController` already does) -> the `getScreenX()` check itself -> `playfield
+  .update(l)` (where movement is actually applied, *after* this whole block). Since the
+  camera fully re-centers on Mario every frame in *both* directions (nothing in
+  `setToCenter`/`Background.setLocation` is direction-limited), the only way `getScreenX()`
+  can land outside `[0,608]` right after being centered is if the *level-bounds* clamp
+  stopped it from centering exactly - i.e. Mario is near the level's own absolute left/right
+  edge, not "somewhere the camera has already scrolled past mid-level." This port's own
+  `Player.moveXWithCollision` (`Math.max(0, getX()+dx)`) and `CameraController`'s matching
+  level-bounds clamp already cover that same narrow case. Implementing a literal port of
+  this check - a general leftward wall wherever Mario currently stands - would have been a
+  **regression**: freely walking back through already-explored terrain is correct, current
+  behavior here, not a bug, and the classic whole-level "no backtracking" mechanic many
+  players associate with NES Mario does not actually exist in this GTGE clone at all.

@@ -2,25 +2,33 @@ package au.com.guidebee.morsetoolkit.activity.mario.actors.projectiles;
 
 import com.guidebee.game.microedition.Sprite;
 
+import java.util.Random;
+
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.hazards.Hazard;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
 
 /**
- * A hammer thrown by a "hammer bro"-mode {@code Boss}, ported from
- * {@code Objects/Hammer.java}'s continuous-throw constructor (the original's
- * other constructor, a one-shot pre-aimed throw, has no caller anywhere in
- * the source and isn't ported). Arcs under gravity and constant horizontal
- * drift; never bounces or collides with terrain (matches the original - it
- * only ever disappears by falling past the level's bottom).
+ * A hammer thrown by a "hammer bro"-mode {@code Boss} or by {@code Monkey},
+ * ported from {@code Objects/Hammer.java}'s two constructors: {@link
+ * #Hammer(float, float, float, float)} is {@code Boss}'s own continuous
+ * throw (externally-computed speed/gravity, always leftward in the
+ * original); {@link #Hammer(float, float, boolean)} is {@code Monkey}'s own
+ * one-shot throw (random speed/gravity picked fresh per throw, direction
+ * toward wherever the player currently is). Arcs under gravity and constant
+ * horizontal drift either way; never bounces or collides with terrain -
+ * only ever disappears by falling past the level's bottom.
  *
  * <p>The original's {@code Xspeedinvert}/{@code PositiveX} fields are dead
- * code on this path (this constructor always leaves {@code PositiveX} false,
- * so the {@code moveX(Xspeedinvert)} branch never runs) - only {@code Xspeed}
- * matters here, so this class skips both. Likewise the original's small
- * per-throw jitter (`Utility.getRandom(-10, 10) / 10`, integer division of an
- * int in [-10,10] by 10) rounds to zero the overwhelming majority of the
- * time and is skipped rather than replicated as a near-no-op.
+ * code on {@code Boss}'s own throw path (that constructor always leaves
+ * {@code PositiveX} false, so the {@code moveX(Xspeedinvert)} branch never
+ * runs) - only {@code Xspeed} matters there, so this class skips both;
+ * {@code Monkey}'s throw path is what actually exercises the
+ * "toward the player" direction choice. Likewise the original's small
+ * per-throw jitter on {@code Boss}'s path (`Utility.getRandom(-10, 10) / 10`,
+ * integer division of an int in [-10,10] by 10) rounds to zero the
+ * overwhelming majority of the time and is skipped rather than replicated
+ * as a near-no-op.
  *
  * <p>The "bw_hammer" region is 28x28 per frame, 4 frames (112x28 total) -
  * confirmed against {@code WholeGame.java}'s
@@ -39,6 +47,8 @@ public class Hammer extends Sprite implements Hazard {
     private static final float ANIMATION_INTERVAL = 0.1f;
     private static final float FALL_OUT_MARGIN_PX = 200f;
 
+    private static final Random RANDOM = new Random();
+
     private final float xSpeed;
     private float gravity;
     private boolean active = true;
@@ -53,6 +63,17 @@ public class Hammer extends Sprite implements Hazard {
         setPosition(x, y);
         this.xSpeed = xSpeed;
         this.gravity = gravity;
+    }
+
+    /**
+     * Ported from {@code Monkey}'s own throw ({@code Objects/Hammer.java}'s
+     * first constructor): fresh random speed/gravity every throw, direction
+     * toward wherever the player is right now.
+     *
+     * @param towardLeft true if the player is currently to the left (ported from {@code Monkey.HammerThrow}'s own `player.getX() < this.getX()` check).
+     */
+    public Hammer(float x, float y, boolean towardLeft) {
+        this(x, y, towardLeft ? -(2 + RANDOM.nextInt(2)) : (2 + RANDOM.nextInt(2)), -4 - RANDOM.nextInt(4));
     }
 
     @Override

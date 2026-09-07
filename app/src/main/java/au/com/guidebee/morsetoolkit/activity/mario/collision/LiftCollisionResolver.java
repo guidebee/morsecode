@@ -1,6 +1,6 @@
 package au.com.guidebee.morsetoolkit.activity.mario.collision;
 
-import au.com.guidebee.morsetoolkit.activity.mario.actors.lifts.Lift;
+import au.com.guidebee.morsetoolkit.activity.mario.actors.lifts.LiftSurface;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.player.Player;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioWorld;
 
@@ -22,9 +22,10 @@ public final class LiftCollisionResolver {
         }
         int width = (int) player.getWidth();
         int height = (int) player.getHeight();
-        for (Lift lift : world.getLifts()) {
+        for (LiftSurface lift : world.getLifts()) {
             if (lift.isLandingSpot(player.getX(), player.getY(), width, height)) {
                 player.landOnLift(lift.getTopY(), lift.getDeltaX());
+                lift.onRidden();
                 return;
             }
         }

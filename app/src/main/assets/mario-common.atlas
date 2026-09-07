@@ -136,16 +136,23 @@ lava
   orig: 32, 128
   offset: 0, 0
   index: -1
-rocket_launcher
+water
   rotate: false
   xy: 1550, 1384
   size: 32, 128
   orig: 32, 128
   offset: 0, 0
   index: -1
-another_castle_message
+rocket_launcher
   rotate: false
   xy: 1584, 1384
+  size: 32, 128
+  orig: 32, 128
+  offset: 0, 0
+  index: -1
+another_castle_message
+  rotate: false
+  xy: 1618, 1384
   size: 384, 128
   orig: 384, 128
   offset: 0, 0

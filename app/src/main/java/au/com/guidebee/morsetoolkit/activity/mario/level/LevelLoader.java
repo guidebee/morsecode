@@ -6,23 +6,34 @@ import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.Axe;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.Bank;
+import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.BankWithItem;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.Brick;
+import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.Bouncer;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.BrickWithStar;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.InteractiveBrick;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.InvisibleBrck;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.Iron;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.Pump;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.QuestionMark;
+import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.RocketLauncher;
+import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.RocketLauncherBody;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.Tree;
+import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.WoodenBridge;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.Boss;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.Enemy;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.EnemyMashroom;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.EnemyTurtle;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.EnemyTurtlePatrol;
+import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.FlyingTurtle;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.FlyingTurtlePatrol;
+import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.Helmet;
+import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.Monkey;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.OrbitingFireball;
+import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.SonOfABuitch;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.items.Coin;
+import au.com.guidebee.morsetoolkit.activity.mario.actors.lifts.BalanceLiftPlatform;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.lifts.Lift;
+import au.com.guidebee.morsetoolkit.activity.mario.actors.lifts.LiftFall;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.projectiles.BossFire;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.scenery.Scenery;
 import au.com.guidebee.morsetoolkit.activity.mario.fx.LavaBall;
@@ -138,6 +149,18 @@ public final class LevelLoader {
                 case "InvisibleBrckWithCoin":
                     forEachCell(tile, (x, y) -> add(new InvisibleBrck(x, y, level.attribute, "CoinInside")));
                     break;
+                case "BrickWithMushroom":
+                    forEachCell(tile, (x, y) -> add(new BankWithItem(x, y, level.attribute, "Mashroom")));
+                    break;
+                case "BrickWith1UP":
+                    forEachCell(tile, (x, y) -> add(new BankWithItem(x, y, level.attribute, "1UP")));
+                    break;
+                case "BrickWithCoin":
+                    forEachCell(tile, (x, y) -> add(new BankWithItem(x, y, level.attribute, "CoinInside")));
+                    break;
+                case "WoodenBridge":
+                    forEachCell(tile, (x, y) -> add(new WoodenBridge(x, y)));
+                    break;
                 case "Iron":
                     forEachCell(tile, (x, y) -> add(new Iron(x, y, level.attribute)));
                     break;
@@ -153,6 +176,30 @@ public final class LevelLoader {
                         boolean top = dy == 0;
                         add(new Pump(tile.x * tileSize, (tile.y + dy) * tileSize, level.attribute, top));
                     }
+                    break;
+                case "HoriImage": {
+                    // Ported from Mario.java's case 44 - two 64x64 pieces side by side, 64px apart.
+                    TextureRegion[][] frames = MarioResourceManager.region("hori_image").split(64, 64);
+                    float x = tile.x * tileSize;
+                    float y = tile.y * tileSize;
+                    add(new Pump(x, y, frames[0][0]));
+                    add(new Pump(x + 64, y, frames[0][1]));
+                    break;
+                }
+                case "PumpImage":
+                    add(new Pump(tile.x * tileSize, tile.y * tileSize, MarioResourceManager.region("pump")));
+                    break;
+                case "RocketLauncher":
+                    spawnRocketLauncher(tile);
+                    break;
+                case "Bouncer":
+                    add(new Bouncer(tile.x * tileSize, tile.y * tileSize));
+                    // The decorative Spring sits one tile above - see Bouncer's
+                    // own class doc for why it's plain Scenery here, not a real
+                    // actor. A single frame (index 0) of the 3-frame strip, since
+                    // its squish animation has no gameplay effect worth animating.
+                    MarioContext.spawn(new Scenery(tile.x * tileSize, tile.y * tileSize - tileSize,
+                            MarioResourceManager.region("spring").split(tileSize, tileSize * 2)[0][0]));
                     break;
                 default:
                     break;
@@ -181,6 +228,20 @@ public final class LevelLoader {
                 case "EnemyTurtle":
                     forEachCell(tile, (x, y) -> addEnemy(new EnemyTurtle(x, y, level.attribute)));
                     break;
+                case "Helmet":
+                    forEachCell(tile, (x, y) -> addEnemy(new Helmet(x, y, helmetColor(level.attribute))));
+                    break;
+                case "Monkey":
+                    forEachCell(tile, (x, y) -> addEnemy(new Monkey(x, y)));
+                    break;
+                case "FlyingTurtle":
+                    // Ported from Mario.java's case 20: "normal" only for Ground, "dark" for everything else.
+                    forEachCell(tile, (x, y) -> addEnemy(new FlyingTurtle(x, y,
+                            "Ground".equals(level.attribute) ? "normal" : "dark")));
+                    break;
+                case "SonOfABuitch":
+                    forEachCell(tile, (x, y) -> addEnemy(new SonOfABuitch(x)));
+                    break;
                 case "EnemyTurtlePatrol":
                     addEnemy(new EnemyTurtlePatrol(tile.x * tileSize, tile.y * tileSize, tile.patrolLength));
                     break;
@@ -203,6 +264,17 @@ public final class LevelLoader {
                     break;
             }
         }
+    }
+
+    /** Ported from {@code Mario.java}'s case 27 ("Helmet") - the palette isn't level data, it's picked from the level's own attribute at spawn time. */
+    private static String helmetColor(String attribute) {
+        if ("UnderGround".equals(attribute)) {
+            return "dark";
+        }
+        if ("Castle".equals(attribute)) {
+            return "white";
+        }
+        return "normal";
     }
 
     /** Ported from {@code Mario.java}'s case 28/29 - {@code count} {@code OrbitingFireball}s around one pivot, spaced {@code FIRE_BAR_RADIUS_STEP}px apart. */
@@ -269,6 +341,16 @@ public final class LevelLoader {
     public static void spawnLifts(LevelDefinition level) {
         int tileSize = MarioConfiguration.TILE_SIZE;
         for (LevelDefinition.Tile tile : level.tiles) {
+            if ("BalenceLift".equals(tile.type)) {
+                spawnBalanceLift(tile);
+                continue;
+            }
+            if ("LiftFall".equals(tile.type)) {
+                LiftFall fall = new LiftFall(tile.x * tileSize, tile.y * tileSize, tile.patrolLength);
+                MarioContext.world().addLift(fall);
+                MarioContext.spawn(fall);
+                continue;
+            }
             Lift.Motion motion = liftMotion(tile.type);
             if (motion == null) {
                 continue;
@@ -292,6 +374,22 @@ public final class LevelLoader {
             default:
                 return null;
         }
+    }
+
+    /**
+     * Ported from {@code Lifts/BalenceLiftParent.java}'s own constructor -
+     * the child spawns {@code bridgeLength} tiles right of and 2 tiles below
+     * the parent (see {@code BalanceLiftPlatform}'s class doc for why the
+     * pair's shared physics live on one linked object instead of two).
+     */
+    private static void spawnBalanceLift(LevelDefinition.Tile tile) {
+        int tileSize = MarioConfiguration.TILE_SIZE;
+        BalanceLiftPlatform parent = new BalanceLiftPlatform(tile.x * tileSize, tile.y * tileSize);
+        BalanceLiftPlatform child = new BalanceLiftPlatform(
+                (tile.x + tile.bridgeLength) * tileSize, tile.y * tileSize + 2 * tileSize);
+        BalanceLiftPlatform.link(parent, child);
+        addBalanceLiftPlatform(parent);
+        addBalanceLiftPlatform(child);
     }
 
     /**
@@ -319,6 +417,10 @@ public final class LevelLoader {
                 MarioContext.spawn(new LavaBall(tile.x * tileSize));
                 continue;
             }
+            if ("Water".equals(tile.type)) {
+                forEachCell(tile, (x, y) -> MarioContext.spawn(new Scenery(x, y, MarioResourceManager.region("water"))));
+                continue;
+            }
             String regionName = sceneryRegion(tile.type);
             if (regionName == null) {
                 continue;
@@ -338,6 +440,26 @@ public final class LevelLoader {
                 return "big_castle";
             default:
                 return null;
+        }
+    }
+
+    /**
+     * Ported from {@code Mario.java}'s case 19 - the first row is the
+     * shooting turret head, every row after it a plain solid body segment
+     * (row 1 and row 2+ use different frames of the same strip, matching
+     * the original's own {@code y==1}/{@code else} split).
+     */
+    private static void spawnRocketLauncher(LevelDefinition.Tile tile) {
+        int tileSize = MarioConfiguration.TILE_SIZE;
+        TextureRegion[][] frames = MarioResourceManager.region("rocket_launcher").split(tileSize, tileSize);
+        for (int dy = 0; dy < tile.lengthY; dy++) {
+            float x = tile.x * tileSize;
+            float y = (tile.y + dy) * tileSize;
+            if (dy == 0) {
+                add(new RocketLauncher(x, y, frames[0][0]));
+            } else {
+                add(new RocketLauncherBody(x, y, frames[dy == 1 ? 1 : 2][0]));
+            }
         }
     }
 
@@ -395,5 +517,10 @@ public final class LevelLoader {
     private static void addLift(Lift lift) {
         MarioContext.world().addLift(lift);
         MarioContext.spawn(lift);
+    }
+
+    private static void addBalanceLiftPlatform(BalanceLiftPlatform platform) {
+        MarioContext.world().addLift(platform);
+        MarioContext.spawn(platform);
     }
 }

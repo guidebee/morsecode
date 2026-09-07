@@ -6,6 +6,7 @@ import com.guidebee.game.microedition.Layer;
 
 import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
+import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.Bouncer;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.InteractiveBrick;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.projectiles.FireBall;
 import au.com.guidebee.morsetoolkit.activity.mario.input.MarioInputController;
@@ -60,6 +61,8 @@ public class Player extends Layer {
     private static final float GRAVITY_CAP = 10f;
     private static final float JUMP_BASE = -11f;
     private static final float JUMP_SPEED_BONUS_DIVISOR = 60f;
+    /** Ported from {@code Player_Brick.collided}'s own {@code p.Jump(-22)} for a Bouncer - see {@code Bouncer}'s class doc. */
+    private static final float BOUNCER_LAUNCH_GRAVITY = -22f;
 
     private static final float WALK_CYCLE_THRESHOLD = 160f;
 
@@ -509,8 +512,18 @@ public class Player extends Layer {
         if (dy > 0) {
             if (world.containsImpassableArea(getX(), newY, width, height, duckAboveY)) {
                 newY = (float) (((int) (newY + height) / tileSize) * tileSize - height);
-                gravity = 0;
-                onGround = true;
+                InteractiveBrick landedOn = world.findActiveBrickAt(getX(), newY, width, height);
+                if (landedOn instanceof Bouncer) {
+                    // Ported from Player_Brick.collided's own `if (b.getID() == 13)
+                    // p.Jump(-22)` - a Bouncer never lets Mario actually stand on
+                    // it, always relaunching him instead (roughly double a normal
+                    // jump's impulse) - see Bouncer's own class doc.
+                    gravity = BOUNCER_LAUNCH_GRAVITY;
+                    onGround = false;
+                } else {
+                    gravity = 0;
+                    onGround = true;
+                }
             } else {
                 onGround = false;
             }

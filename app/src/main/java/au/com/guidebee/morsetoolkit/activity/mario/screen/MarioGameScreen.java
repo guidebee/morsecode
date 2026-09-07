@@ -45,6 +45,7 @@ import au.com.guidebee.morsetoolkit.activity.mario.world.CameraController;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioWorld;
 import au.com.guidebee.morsetoolkit.activity.mario.world.OscillatorClock;
+import au.com.guidebee.morsetoolkit.activity.mario.world.SpawnController;
 
 /**
  * Steps 5-8 vertical slice: a level's interactive bricks, items,
@@ -195,6 +196,7 @@ public class MarioGameScreen extends ScreenAdapter {
     private final MarioWorld world;
     private final Player player;
     private final CameraController camera;
+    private final SpawnController spawnController;
     private final String levelAttribute;
 
     private final GameController gameController;
@@ -319,6 +321,7 @@ public class MarioGameScreen extends ScreenAdapter {
         camera = new CameraController(viewportWidth, viewportHeight,
                 world.getWidthPx(), world.getHeightPx());
         camera.centerOn(player.getX(), player.getY());
+        spawnController = new SpawnController(level);
         repositionHud();
 
         float[] clear = clearColor(level.backgroundColor);
@@ -514,6 +517,7 @@ public class MarioGameScreen extends ScreenAdapter {
             HazardCollisionResolver.resolve(player, world);
             AxeResolver.resolve(player, world);
             TeleportResolver.resolve(level.teleports, player);
+            spawnController.update(delta, camera, player);
             updateLevelCompletion(delta);
 
             boolean hasStar = player.hasStar();

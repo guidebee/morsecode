@@ -180,6 +180,11 @@ public class PackMarioAtlas {
             new AssetSpec(Theme.COMMON, "fire_ball", "FireBall.png", 4, 1),
             new AssetSpec(Theme.COMMON, "lava", "Lava.png", 1, 1),
             new AssetSpec(Theme.COMMON, "lava_ball", "LavaBall.png", 2, 1),
+            // A plain decorative background image (like "lava" - one tall,
+            // unsliced picture drawn per placed cell), used even on non-Sea
+            // attribute levels (e.g. World 3's Level_31) - not Sea-physics
+            // related, so not part of this plan's Sea-theme deferral.
+            new AssetSpec(Theme.COMMON, "water", "Water.png", 1, 1),
             // 4-frame strip (128x32, confirmed against the source PNG), cycled
             // 0,1,2,3,2,1 by Axe.java - see actors.bricks.Axe.
             new AssetSpec(Theme.COMMON, "axe", "Axe.png", 4, 1),

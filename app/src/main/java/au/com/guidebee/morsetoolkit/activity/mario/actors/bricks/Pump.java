@@ -19,6 +19,11 @@ public class Pump extends InteractiveBrick {
         super(regionFor(attribute, top), x, y);
     }
 
+    /** Ported from {@code Mario.java}'s case 44/45 ("HoriImage"/"PumpImage") - a pipe-styled solid decoration with an explicit image, not attribute-derived. */
+    public Pump(float x, float y, TextureRegion region) {
+        super(region, x, y);
+    }
+
     private static TextureRegion regionFor(String attribute, boolean top) {
         boolean castle = "Castle".equals(attribute);
         if (top) {

@@ -43,7 +43,7 @@ import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
  * width instead of stretching one draw call over it (which would blur a
  * small source tile badly).
  */
-public class Lift extends Layer {
+public class Lift extends Layer implements LiftSurface {
 
     private static final float PHYSICS_FPS = 60f;
     private static final float VERTICAL_OSCILLATION_RATE = 0.015f;

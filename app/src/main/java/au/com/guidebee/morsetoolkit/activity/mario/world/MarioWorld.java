@@ -12,7 +12,7 @@ import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.InteractiveBric
 import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.Enemy;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.hazards.Hazard;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.items.Collectible;
-import au.com.guidebee.morsetoolkit.activity.mario.actors.lifts.Lift;
+import au.com.guidebee.morsetoolkit.activity.mario.actors.lifts.LiftSurface;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.projectiles.FireBall;
 
 /**
@@ -33,7 +33,7 @@ public class MarioWorld extends TiledLayer {
     private final List<Collectible> collectibles = new ArrayList<>();
     private final List<Enemy> enemies = new ArrayList<>();
     private final List<FireBall> fireBalls = new ArrayList<>();
-    private final List<Lift> lifts = new ArrayList<>();
+    private final List<LiftSurface> lifts = new ArrayList<>();
     private final List<Hazard> hazards = new ArrayList<>();
     private final List<Axe> axes = new ArrayList<>();
 
@@ -83,12 +83,12 @@ public class MarioWorld extends TiledLayer {
         return fireBalls;
     }
 
-    public void addLift(Lift lift) {
+    public void addLift(LiftSurface lift) {
         lifts.add(lift);
     }
 
     /** Not treated as solid terrain (see {@link #containsImpassableArea}) - a lift only ever catches a rider via {@code LiftCollisionResolver}. */
-    public List<Lift> getLifts() {
+    public List<LiftSurface> getLifts() {
         return lifts;
     }
 

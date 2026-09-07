@@ -516,10 +516,19 @@ public class Player extends Layer {
         }
         if (command.left) {
             facingRight = false;
-            speed = Math.max(speed - ACCEL * frames, -maxSpeed);
+            speed = speed < -maxSpeed
+                    // Turbo just released mid-run: ease back down to the
+                    // slower cap via ordinary friction instead of snapping
+                    // straight to it - releasing Fire to reach for Jump with
+                    // one finger shouldn't cost all of Mario's speed the
+                    // instant it lifts.
+                    ? Math.min(-maxSpeed, speed + FRICTION * frames)
+                    : Math.max(speed - ACCEL * frames, -maxSpeed);
         } else if (command.right) {
             facingRight = true;
-            speed = Math.min(speed + ACCEL * frames, maxSpeed);
+            speed = speed > maxSpeed
+                    ? Math.max(maxSpeed, speed - FRICTION * frames)
+                    : Math.min(speed + ACCEL * frames, maxSpeed);
         } else if (!noFriction) {
             decaySpeedTowardZero(frames);
         }

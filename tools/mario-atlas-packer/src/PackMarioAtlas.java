@@ -1,4 +1,5 @@
 import javax.imageio.ImageIO;
+import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -308,7 +309,7 @@ public class PackMarioAtlas {
             if (img == null) {
                 throw new IllegalStateException("Failed to read " + f);
             }
-            loaded.add(new LoadedAsset(spec, img));
+            loaded.add(new LoadedAsset(spec, applyMagentaMask(img)));
         }
         for (TerrainTile tile : TERRAIN_TILES) {
             loaded.add(new LoadedAsset(
@@ -421,6 +422,39 @@ public class PackMarioAtlas {
         }
         System.out.println("Wrote " + atlasFile + " (" + placements.size()
                 + " regions across " + pages.size() + " page(s))");
+    }
+
+    /**
+     * Replicates the original engine's own default image loading exactly:
+     * {@code com.golden.gamedev.Game} constructs its {@code bsLoader} as
+     * {@code new BaseLoader(bsIO, Color.MAGENTA)}, and {@code BaseLoader}'s
+     * {@code getImage(name)}/{@code getImages(name, col, row)} - the plain
+     * overloads {@code WholeGame.java} uses for every single registered
+     * asset, confirmed by grep: no call site ever passes the {@code false}
+     * that would opt out - both default {@code useMask=true}, which
+     * {@code ImageUtil.applyMask} implements as an *exact* RGB match against
+     * the mask color, turning any such pixel fully transparent (alpha 0,
+     * RGB unchanged). Without this, any source PNG that relies on this
+     * old-style "magenta = transparent" convention instead of real alpha
+     * (confirmed by hand: {@code turtle.png}/{@code EnemyTurtlePatrol.png}
+     * are both fully-opaque, alpha-less {@code P}-mode PNGs with a solid
+     * magenta background) packs with an opaque purple background instead of
+     * a transparent one. Applying this unconditionally to every asset (not
+     * just the ones currently known to need it) matches the original
+     * exactly and is a no-op for any asset that has no magenta pixels to
+     * begin with (real-alpha PNGs, or ones whose background just isn't
+     * magenta) - cheaper and more robust than special-casing per asset.
+     */
+    private static BufferedImage applyMagentaMask(BufferedImage img) {
+        int maskRgb = Color.MAGENTA.getRGB();
+        BufferedImage masked = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        for (int y = 0; y < img.getHeight(); y++) {
+            for (int x = 0; x < img.getWidth(); x++) {
+                int argb = img.getRGB(x, y);
+                masked.setRGB(x, y, (argb | 0xFF000000) == maskRgb ? argb & 0x00FFFFFF : argb);
+            }
+        }
+        return masked;
     }
 
     private static BufferedImage findImage(List<LoadedAsset> loaded, AssetSpec spec) {

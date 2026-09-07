@@ -10,13 +10,25 @@ import au.com.guidebee.morsetoolkit.activity.mario.fx.BrickFragment;
 /**
  * A plain breakable brick, ported from {@code Bricks/Brick.java}. Big/fire
  * Mario breaks it into 4 physics-driven fragments (see {@link BrickFragment});
- * small Mario just bonks it - solid, nothing else happens. The original's
- * small-bonk "jitter" (the whole tile briefly jolting up/down) is a minor
- * cosmetic flourish and is skipped here.
+ * small Mario just bonks it - solid, and (see {@link #act}) the tile hops up
+ * a few pixels and settles back, with a "smb_bump" sound, ported from the
+ * original's own {@code HitFromDown()} (its {@code Gravity}/{@code Jump}
+ * fields drive the exact same kind of bounce via its own {@code update()} -
+ * this port uses a plain time-based parabola instead of replicating that
+ * tick-by-tick gravity/bitwise-NOT dance, which reads as an original-engine
+ * oddity rather than an intentional shape worth preserving verbatim).
  */
 public class Brick extends InteractiveBrick {
 
+    private static final float PHYSICS_FPS = 60f;
+    /** ~9 original ticks - matches {@code Bricks/Brick.java}'s own {@code Gravity} ramp from -5 back up past +4. */
+    private static final float BUMP_DURATION_TICKS = 9f;
+    private static final float BUMP_PEAK_OFFSET_PX = 10f;
+
     private final String attribute;
+    private final float restY;
+    /** &gt;= 0 while the bump animation plays, in original-tick units; negative means "not bumping". */
+    private float bumpTicks = -1;
 
     public Brick(float x, float y, String attribute) {
         this(x, y, MarioResourceManager.themedRegion("brick", attribute), attribute);
@@ -34,6 +46,23 @@ public class Brick extends InteractiveBrick {
     public Brick(float x, float y, TextureRegion region, String fragmentAttribute) {
         super(region, x, y);
         this.attribute = fragmentAttribute;
+        this.restY = y;
+    }
+
+    @Override
+    public void act(float delta) {
+        super.act(delta);
+        if (bumpTicks < 0) {
+            return;
+        }
+        bumpTicks += delta * PHYSICS_FPS;
+        if (bumpTicks >= BUMP_DURATION_TICKS) {
+            bumpTicks = -1;
+            setY(restY);
+        } else {
+            float t = bumpTicks / BUMP_DURATION_TICKS;
+            setY(restY - BUMP_PEAK_OFFSET_PX * 4f * t * (1f - t));
+        }
     }
 
     @Override
@@ -41,6 +70,9 @@ public class Brick extends InteractiveBrick {
         if (player.getPowerState() != PlayerPowerState.SMALL) {
             BrickFragment.spawnBreak(getX(), getY(), attribute);
             deactivate();
+        } else {
+            MarioResourceManager.sound("smb_bump").play();
+            bumpTicks = 0;
         }
     }
 }

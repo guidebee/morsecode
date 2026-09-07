@@ -25,6 +25,7 @@ import au.com.guidebee.morsetoolkit.activity.mario.actors.items.Coin;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.lifts.Lift;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.projectiles.BossFire;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.scenery.Scenery;
+import au.com.guidebee.morsetoolkit.activity.mario.fx.LavaBall;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioWorld;
 
@@ -312,6 +313,10 @@ public final class LevelLoader {
         for (LevelDefinition.Tile tile : level.tiles) {
             if ("Lava".equals(tile.type)) {
                 forEachCell(tile, (x, y) -> MarioContext.spawn(new Scenery(x, y, MarioResourceManager.region("lava"))));
+                continue;
+            }
+            if ("LavaBall".equals(tile.type)) {
+                MarioContext.spawn(new LavaBall(tile.x * tileSize));
                 continue;
             }
             String regionName = sceneryRegion(tile.type);

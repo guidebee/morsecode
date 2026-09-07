@@ -31,6 +31,7 @@ import au.com.guidebee.morsetoolkit.activity.mario.collision.HazardCollisionReso
 import au.com.guidebee.morsetoolkit.activity.mario.collision.LiftCollisionResolver;
 import au.com.guidebee.morsetoolkit.activity.mario.collision.PlayerCollisionResolver;
 import au.com.guidebee.morsetoolkit.activity.mario.collision.ProjectileCollisionResolver;
+import au.com.guidebee.morsetoolkit.activity.mario.collision.TeleportResolver;
 import au.com.guidebee.morsetoolkit.activity.mario.hud.PauseOverlay;
 import au.com.guidebee.morsetoolkit.activity.mario.hud.ScoreHud;
 import au.com.guidebee.morsetoolkit.activity.mario.input.MarioInputController;
@@ -512,6 +513,7 @@ public class MarioGameScreen extends ScreenAdapter {
             LiftCollisionResolver.resolve(player, world);
             HazardCollisionResolver.resolve(player, world);
             AxeResolver.resolve(player, world);
+            TeleportResolver.resolve(level.teleports, player);
             updateLevelCompletion(delta);
 
             boolean hasStar = player.hasStar();

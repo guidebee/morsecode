@@ -48,13 +48,13 @@ import java.util.Map;
  * <p>Sea-attribute terrain/creature assets (chocolate_Sea/brick_Sea/
  * stone_Sea/pump variants/stone_Castle_Sea/FishGrey/FishRed/OctoPussy)
  * landed with Step P2.6 (water/swim), in their own {@link Theme#SEA} bucket
- * (see the class-level {@code AssetSpec} table and TERRAIN_TILES). "OrangePump"
- * (a level-name-gated one-off pump recolor, {@code Mario.java}'s own
- * {@code "OrangePump".equals(CurrentLevel.level_Name)} branch) and "Bubble"
- * (a purely decorative particle {@code Player.java}'s own {@code AddBubbles()}
- * spawns while swimming, no gameplay effect) are still deliberately excluded -
- * neither affects whether a Sea level loads or plays correctly, re-check if a
- * later pass wants the cosmetic polish. CloudsNight's own assets
+ * (see the class-level {@code AssetSpec} table and TERRAIN_TILES); "Bubble"
+ * (the ambient particle {@code Player.java}'s own {@code AddBubbles()} spawns
+ * while swimming) joined that same bucket with Step P2.12.1's cosmetic pass.
+ * "OrangePump" (a level-name-gated one-off pump recolor, {@code Mario.java}'s
+ * own {@code "OrangePump".equals(CurrentLevel.level_Name)} branch) is still
+ * deliberately excluded - doesn't affect whether that level loads or plays
+ * correctly, re-check if a later pass wants it too. CloudsNight's own assets
  * (bw_stone/bw_tree/bw_small_castle/bw_big_castle/bw_bouncer/
  * bw_rocket_launcher/bw_hammer) and "Clowd"-attribute's stone_clowd landed
  * with Step P2.5 - both turned out to need no new {@link Theme} bucket at
@@ -123,6 +123,11 @@ public class PackMarioAtlas {
             new AssetSpec(Theme.SEA, "stone_sea", "stone_Sea.png", 1, 1),
             new AssetSpec(Theme.SEA, "stone_castle_sea", "stone_Castle_Sea.png", 1, 1),
             new AssetSpec(Theme.SEA, "chocolate_sea", "chocolate_Sea.png", 1, 1),
+            // Ambient swim-bubble particle (Player.java's own AddBubbles()) -
+            // Sea-exclusive (Player#setWater is only ever true for a
+            // Sea-attribute level, never toggled elsewhere), so this bucket,
+            // not COMMON - see docs/MARIO_PORT_PLAN_PHASE2.md Step P2.12.1.
+            new AssetSpec(Theme.SEA, "bubble", "Bubble.png", 4, 1),
 
             // Pipes/pumps - "pump"/"pump_top" are shared Ground+UnderGround art in the
             // original (see actors.bricks.Pump's own doc), so they're COMMON, not

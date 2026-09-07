@@ -474,7 +474,7 @@ testable on-device.
   measuring the fall from its own spawn Y instead, not yet independently re-confirmed
   on-device since testing moved on to the debug panel's own display bugs first).
 
-**Step P2.10 — Piranha Plant** *(implemented 2026-09-07, pending on-device verification (P2.10.3))*
+**Step P2.10 — Piranha Plant** *(implemented and on-device verified 2026-09-07)*
 - [x] P2.10.1 `actors/enemies/PiranhaPlant` - travels a fixed 96px range, pausing retracted
   only while both near the bottom *and* Mario is within 100px (ported verbatim, including
   the original's own quirk that it keeps rising once already mid-ascent even if Mario then
@@ -491,9 +491,9 @@ testable on-device.
   wording undersold one real exclusion found by reading the source - `"PumpWarp"` tiles
   (case 66) never got a plant in the original either; its own would-be spawn line is
   commented out there. Ported that exclusion too - only `"pump"`, not `"PumpWarp"`.
-- [ ] P2.10.3 **Vertical slice:** any level with several pipes (e.g. World 1's `Level_11`) -
-  confirm plants pop/retreat correctly and don't spawn where excluded. Built and installed
-  to the test device; awaiting user playtest.
+- [x] P2.10.3 **Vertical slice:** any level with several pipes (e.g. World 1's `Level_11`) -
+  confirm plants pop/retreat correctly and don't spawn where excluded. User-confirmed
+  working on-device 2026-09-07.
   **Bug found and fixed while playtesting:** plants first spawned from `spawnEnemies`
   (called after `spawnBricks`), so they drew *in front of* their own pipe - visibly poking
   out even while fully retracted. Confirmed against the source that the original avoids
@@ -510,8 +510,8 @@ testable on-device.
   than 3 tiles - matches the classic game's own short entrance pipes (SMB1's 1-1 has two,
   neither with a Piranha Plant; only its taller pipes get one).
 
-**Step P2.11 — Small fidelity fixes** *(cheap, do together)* — **implemented 2026-09-07,
-pending on-device verification (P2.11.5)**
+**Step P2.11 — Small fidelity fixes** *(cheap, do together)* — **implemented and on-device
+verified 2026-09-07**
 - [x] P2.11.1 `QuestionMark` grey tint on `UnderGround`/`Castle` levels (`question_mark_grey`
   already packed) - `regionFor(attribute)` picks it there, matching the original's own
   `game.GetAttribute()` check in `Bricks/QuestionMark.java`; every other attribute keeps
@@ -531,29 +531,77 @@ pending on-device verification (P2.11.5)**
   original, confirmed by reading `Mario.java`'s own `Restart()` - it plays no sound at all)
   - the code now matches this port's own already-correct "instant, silent Restart()" doc
   comments (`die()`/`beginDeathAnimation()`'s own, both predating this fix).
-- [ ] P2.11.5 **Vertical slice:** one smoke pass touching all four (an UnderGround "?"
+- [x] P2.11.5 **Vertical slice:** one smoke pass touching all four (an UnderGround "?"
   block, a pause/resume, a `Bouncer`, a pit-fall) - no full replay needed, these are
-  independent one-line fixes. Built and installed to the test device; awaiting user
-  playtest. Worth also touching a plain enemy stomp while testing, given P2.11.3's own
-  widened scope above.
+  independent one-line fixes. User-confirmed working on-device 2026-09-07.
 
-**Step P2.12 — Cosmetic polish** *(optional - lower priority, judge by time remaining)*
-- P2.12.1 Ambient water bubbles (`Bubble.java`).
-- P2.12.2 Pipe-entry animation (hide real Mario, show the sliding double).
-- P2.12.3 `TemporaryAndInvisibleBrick` placeholder under a breaking brick.
-- P2.12.4 Level 12 warp-zone camera-freeze + secret-numbers reveal (depends on P2.13.1's
-  finding for `Player_InvisibleObjects` - may be folded in or dropped as not worth the
-  camera-architecture change for a cosmetic payoff).
+**Step P2.12 — Cosmetic polish** *(optional - lower priority, judge by time remaining)* —
+**implemented and on-device verified 2026-09-07 (12.1-12.3), 12.4 explicitly dropped**
+- [x] P2.12.1 Ambient water bubbles (`fx/Bubble.java`) - `Player#updateBubbles` spawns one
+  at Mario's own position every 1-2 seconds while underwater (ported from `AddBubbles()`),
+  rising until it clears the same absolute water-surface line `Player` itself surfaces at.
+  New `"bubble"` region packed into the `SEA` atlas bucket (`Theme.SEA`, Sea-exclusive per
+  `Player#setWater`'s own doc) - the packer's own class doc previously called this out as
+  deliberately unpacked pending exactly this pass.
+- [x] P2.12.2 Pipe-entry animation (hide real Mario, show the sliding double) -
+  `MarioGameScreen#beginTransition` now hides `player` and spawns `fx/PipeEntryAnimation`
+  for a pipe checkpoint (horizontal: animated walk-right cycle sliding right, matching the
+  original's own frame range 4-6; vertical: static standing pose sliding down, matching the
+  original's own plain image snapshot), for this port's already-established
+  `PIPE_ENTRY_SECONDS` rather than the original's own two different literal tick counts.
+- [x] P2.12.3 `TemporaryInvisibleBrick` placeholder under a breaking brick - `Brick
+  #hitFromBelow` spawns one (a runtime-generated transparent region, matching `fx
+  .BridgeBlackout`'s own "nothing to source, generate it" precedent) alongside the existing
+  fragment break, keeping that tile briefly solid for ~10 original ticks so anything
+  standing exactly on top the instant it breaks doesn't fall through a frame early.
+- [x] P2.12.4 **Explicitly dropped**, resolving P2.13.2's own "fold in or drop" decision at
+  the same time. Read `Player_InvisibleObjects.java`: the camera-freeze/secret-numbers
+  reveal is collision-triggered by invisible marker sprites placed at specific level
+  positions, and confirmed by checking `level_12.json` directly - **this port's own level
+  converter never extracted that marker data in the first place** (no such tile type
+  appears anywhere in the file). Reproducing this would mean extending the converter tool
+  and regenerating Level 12's data, plus new camera-freeze state `CameraController` has no
+  equivalent of today, plus re-packing two number-image assets this project's own atlas
+  packer already documented as superseded/dead - a disproportionate cross-cutting change
+  for a hidden room reveal with zero gameplay effect (the warp pipes themselves already
+  work correctly via the checkpoint system either way, per §7.1's own audit note).
+- [x] P2.12.5 **Vertical slice:** a Sea level for the bubbles, any pipe entrance for the
+  sliding double, a Big/Fire Mario brick break for the placeholder brick. User-confirmed
+  working on-device 2026-09-07.
 
-**Step P2.13 — Verify-then-decide items**
-- P2.13.1 Read `Collusion/Enemy_Brick.java` fully; if a kicked shell breaking bricks is
-  real and reachable, add it (small, reuses the existing brick-break path); otherwise
-  mark it confirmed-dead and close this item.
-- P2.13.2 Fold the warp-zone camera-freeze decision (§7.1 #13) into P2.12.4's scope or
-  explicitly drop it - don't leave it open past this step.
+**Step P2.13 — Verify-then-decide items** — **both items closed 2026-09-07**
+- [x] P2.13.1 Read `Collusion/Enemy_Brick.java` fully (confirmed live/reachable -
+  `Enemy_Brick_CollisionManager.checkCollision()` runs every frame in `Mario.java`'s main
+  loop) - **confirmed-dead relative to this item's own premise.** There is no "kicked
+  shell breaks bricks" code path anywhere in this file; `bri`/the brick side of the
+  collision is only ever read for position/angle math and `isJump()` (is it mid-bounce), never
+  told to break. What *is* real: any enemy touching a brick from the side bounces off it
+  (already correctly handled by this port's existing `Enemy#walkAndFall`/`TileMovement
+  .moveX` wall-reversal - confirmed by reading `TurtleShell`'s own `moving` branch, nothing
+  missing here) - and one genuinely odd, narrow quirk: a *moving* shell specifically
+  (`MovingTurtelShell`/`MovingHelmetShell`, case 104/107) self-destructs via its own
+  `CollidedWithMovingShell()`→`KilledByFireBall()` alias whenever it gets within 16px of
+  *any* brick, on the *same* collision event that also runs the normal wall-bounce logic
+  right below it - i.e. the original's own code has a kicked shell simultaneously "bounce
+  off" and "die from touching" the same wall. Read as original-engine bug/quirk, not a
+  deliberate feature - reproducing it would make the classic "kick a shell down a hallway"
+  mechanic worse, not more faithful, so deliberately not ported.
+- [x] P2.13.2 Resolved alongside P2.12.4 - explicitly dropped, not folded in.
+
+Both of Step P2.13's items are now closed with no code changes needed - existing
+architecture already covers everything real and reachable here.
 
 Once P2.9-P2.13 are done (or explicitly descoped per-item with a reason noted here),
 re-confirm P2.8's exit criterion still holds, then proceed to the reskin plan unchanged.
+
+**P2.9-P2.13 are now all done or explicitly descoped (2026-09-07).** P2.8's own exit
+criterion (§P2.8.1: all 8 worlds playable end-to-end, no known regressions) is *not* yet
+formally re-confirmed, though - everything above was verified via targeted spot-checks
+(Level 14's boss finale, World 1's pipes/plants, one Sea level, one breaking brick), not a
+full end-to-end replay of every world. Whether that spot-check coverage is enough to call
+§P2.8.1 satisfied, or whether a broader pass is wanted first, is a call for whoever picks
+this up next to make explicitly before starting P2.8.2/8.3's asset-export/reskin handoff -
+not assumed silently.
 
 **Step P2.8.5 — Debug/QA tooling** *(added 2026-09-07, out of the original P2.9-P2.13
 order - see §8 for the full design; requested because manually replaying a whole world to

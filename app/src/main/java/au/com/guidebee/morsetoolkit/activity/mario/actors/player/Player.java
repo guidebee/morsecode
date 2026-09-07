@@ -9,10 +9,13 @@ import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.Bouncer;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.InteractiveBrick;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.projectiles.FireBall;
+import au.com.guidebee.morsetoolkit.activity.mario.fx.Bubble;
 import au.com.guidebee.morsetoolkit.activity.mario.input.MarioInputController;
 import au.com.guidebee.morsetoolkit.activity.mario.input.PlayerCommand;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioWorld;
+
+import java.util.Random;
 
 /**
  * Mario's physics/state machine, ported from the original engine's
@@ -50,6 +53,7 @@ import au.com.guidebee.morsetoolkit.activity.mario.world.MarioWorld;
 public class Player extends Layer {
 
     private static final float PHYSICS_FPS = 60f;
+    private static final Random RANDOM = new Random();
 
     private static final float ACCEL = 2f;
     private static final float FRICTION = 1f;
@@ -81,6 +85,9 @@ public class Player extends Layer {
     private static final float WATER_FORCE_SINK_GRAVITY = 2f;
     /** Ported from {@code Player.update}'s own {@code swimmDelay} (4 original ticks between each stroke-frame toggle). */
     private static final float SWIM_ANIM_INTERVAL_TICKS = 4f;
+    /** Ported from {@code AddBubbles}'s own {@code Utility.getRandom(1,2)*60} tick range. */
+    private static final float BUBBLE_DELAY_MIN_SECONDS = 1f;
+    private static final float BUBBLE_DELAY_MAX_SECONDS = 2f;
 
     private static final float WALK_CYCLE_THRESHOLD = 160f;
 
@@ -136,6 +143,8 @@ public class Player extends Layer {
     /** Set once at level load from {@code "Sea".equals(level.attribute)} - see {@link #setWater}. */
     private boolean water;
     private float swimAnimTimer;
+    /** Counts down to the next ambient {@link Bubble} spawn while {@link #water} - see {@link #updateBubbles}. */
+    private float bubbleTimer;
 
     private float walkCycleAccumulator;
     private int walkCyclePos;
@@ -390,6 +399,7 @@ public class Player extends Layer {
         applyJump(command);
         applyWaterSurfaceConstraints();
         applyGravity(frames);
+        updateBubbles(delta);
 
         moveXWithCollision(speed / 20f * frames);
         moveYWithCollision(gravity * frames);
@@ -430,6 +440,24 @@ public class Player extends Layer {
         }
         if (getY() < WATER_SURFACE_Y) {
             setY(WATER_SURFACE_Y);
+        }
+    }
+
+    /**
+     * Ported from {@code Player.update}'s own {@code AddBubbles()}: while
+     * underwater (regardless of {@link #onGround}, matching the original),
+     * spawns a {@link Bubble} at Mario's current position every 1-2 seconds.
+     * Purely decorative.
+     */
+    private void updateBubbles(float delta) {
+        if (!water) {
+            return;
+        }
+        bubbleTimer -= delta;
+        if (bubbleTimer <= 0) {
+            Bubble.spawn(getX(), getY());
+            bubbleTimer = BUBBLE_DELAY_MIN_SECONDS
+                    + RANDOM.nextInt((int) (BUBBLE_DELAY_MAX_SECONDS - BUBBLE_DELAY_MIN_SECONDS) + 1);
         }
     }
 

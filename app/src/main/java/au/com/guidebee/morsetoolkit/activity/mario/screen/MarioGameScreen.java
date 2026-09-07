@@ -44,6 +44,7 @@ import au.com.guidebee.morsetoolkit.activity.mario.debug.DebugPanel;
 import au.com.guidebee.morsetoolkit.activity.mario.fx.BackgroundBand;
 import au.com.guidebee.morsetoolkit.activity.mario.fx.BossFallingAnim;
 import au.com.guidebee.morsetoolkit.activity.mario.fx.Fireworks;
+import au.com.guidebee.morsetoolkit.activity.mario.fx.PipeEntryAnimation;
 import au.com.guidebee.morsetoolkit.activity.mario.hud.PauseOverlay;
 import au.com.guidebee.morsetoolkit.activity.mario.hud.ScoreHud;
 import au.com.guidebee.morsetoolkit.activity.mario.input.MarioInputController;
@@ -898,6 +899,13 @@ public class MarioGameScreen extends ScreenAdapter {
             currentMusic.stop();
         }
         boolean isPipe = checkpoint.kind.startsWith("InsidePump");
+        if (isPipe) {
+            // Ported from Player_CheckPoint.collided's own case 24/25: the
+            // real Player is hidden and a sliding double takes its place for
+            // the transition's duration - see PipeEntryAnimation's own doc.
+            player.setVisible(false);
+            PipeEntryAnimation.spawn(player, "InsidePumpHorzontally".equals(checkpoint.kind), PIPE_ENTRY_SECONDS);
+        }
         // Ported from Player_CheckPoint.collided's own ID-27/28 cases: both
         // comment out their would-be smb_stage_clear.play() call (unlike
         // every other kind, which does play something) - a beanstalk

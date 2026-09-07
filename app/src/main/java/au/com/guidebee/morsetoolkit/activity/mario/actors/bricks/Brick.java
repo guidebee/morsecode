@@ -69,6 +69,11 @@ public class Brick extends InteractiveBrick {
     public void hitFromBelow(Player player) {
         if (player.getPowerState() != PlayerPowerState.SMALL) {
             BrickFragment.spawnBreak(getX(), getY(), attribute);
+            // Ported from the original's own HitFromDown(): a brief invisible
+            // solid stand-in left behind for ~10 ticks so anything standing
+            // exactly on top the instant this brick breaks doesn't fall
+            // through a frame early - see TemporaryInvisibleBrick's own doc.
+            TemporaryInvisibleBrick.spawnAt(getX(), getY());
             deactivate();
         } else {
             MarioResourceManager.sound("smb_bump").play();

@@ -31,6 +31,16 @@ public class FlagPole extends Layer {
     private static final int POLE_HEIGHT_TILES = 9;
     private static final float SLIDE_SPEED = 3f;
     private static final float PHYSICS_FPS = 60f;
+    /**
+     * The real NES game's flagpole-height score tiers (lowest grab to
+     * highest) - not ported from this project's own reference source, which
+     * has no working score system to match at all (every score-related line
+     * in {@code Mario.java}'s {@code DrawScore} and {@code Player.java}'s
+     * {@code IncreaseLife} is commented out, confirmed by reading both), so
+     * this is a deliberate extension of the port's own already-added scoring
+     * (see {@code ScoreHud}), not a fidelity port.
+     */
+    private static final int[] HEIGHT_BONUS_SCORES = {100, 400, 800, 2000, 5000};
 
     private final TextureRegion cloth = MarioResourceManager.region("flag_top");
     private final float stopY;
@@ -61,6 +71,14 @@ public class FlagPole extends Layer {
 
     public void startSliding() {
         sliding = true;
+    }
+
+    /** Higher up the pole at the moment of {@link #overlaps}'s own touch = a bigger bonus - see {@link #HEIGHT_BONUS_SCORES}'s own doc. */
+    public int heightBonusScore(Player player) {
+        float fraction = 1f - (player.getY() - touchTop) / (touchBottom - touchTop);
+        fraction = Math.max(0f, Math.min(1f, fraction));
+        int tier = Math.min(HEIGHT_BONUS_SCORES.length - 1, (int) (fraction * HEIGHT_BONUS_SCORES.length));
+        return HEIGHT_BONUS_SCORES[tier];
     }
 
     @Override

@@ -818,8 +818,22 @@ public class Player extends Layer {
      * fall-out check) stays the original's instant, silent {@code Restart()}
      * instead - that distinction (animated "you died" beat vs. silent
      * respawn) is the original's own, not new here.
+     *
+     * <p>Guarded against re-entry: {@code EnemyCollisionResolver} re-checks
+     * every enemy Mario still overlaps every frame, and this death has no
+     * immediate invincibility window of its own (unlike {@link #shrink()}'s
+     * other two branches, which set one right away) - in the original, a
+     * dying Mario stops being "Mario" to collision entirely (its own
+     * {@code Decerease()} swaps in a dead-state ID immediately); here, {@link
+     * #dyingAnimated} already being true is that same signal, so without this
+     * guard the same still-overlapping enemy re-triggered this method - and
+     * replayed "smb_mariodie" - every single frame until Mario finally fell
+     * clear of it.
      */
     private void beginDeathAnimation() {
+        if (dyingAnimated) {
+            return;
+        }
         MarioResourceManager.sound("smb_mariodie").play();
         dyingAnimated = true;
         deathDelayTimer = DEATH_INITIAL_DELAY_SECONDS;

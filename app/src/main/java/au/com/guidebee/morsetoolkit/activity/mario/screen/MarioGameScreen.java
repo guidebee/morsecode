@@ -26,6 +26,7 @@ import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.player.Player;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.scenery.FlagPole;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.scenery.FlagWinBanner;
+import au.com.guidebee.morsetoolkit.activity.mario.actors.scenery.Scenery;
 import au.com.guidebee.morsetoolkit.activity.mario.collision.AxeResolver;
 import au.com.guidebee.morsetoolkit.activity.mario.collision.CheckpointResolver;
 import au.com.guidebee.morsetoolkit.activity.mario.collision.EnemyCollisionResolver;
@@ -35,6 +36,7 @@ import au.com.guidebee.morsetoolkit.activity.mario.collision.PlayerCollisionReso
 import au.com.guidebee.morsetoolkit.activity.mario.collision.ProjectileCollisionResolver;
 import au.com.guidebee.morsetoolkit.activity.mario.collision.TeleportResolver;
 import au.com.guidebee.morsetoolkit.activity.mario.fx.BackgroundBand;
+import au.com.guidebee.morsetoolkit.activity.mario.fx.Fireworks;
 import au.com.guidebee.morsetoolkit.activity.mario.hud.PauseOverlay;
 import au.com.guidebee.morsetoolkit.activity.mario.hud.ScoreHud;
 import au.com.guidebee.morsetoolkit.activity.mario.input.MarioInputController;
@@ -42,6 +44,7 @@ import au.com.guidebee.morsetoolkit.activity.mario.input.PlayerCommand;
 import au.com.guidebee.morsetoolkit.activity.mario.level.LevelCatalog;
 import au.com.guidebee.morsetoolkit.activity.mario.level.LevelDefinition;
 import au.com.guidebee.morsetoolkit.activity.mario.level.LevelLoader;
+import au.com.guidebee.morsetoolkit.activity.mario.level.LevelNumbering;
 import au.com.guidebee.morsetoolkit.activity.mario.state.GameStateController;
 import au.com.guidebee.morsetoolkit.activity.mario.state.MarioSaveState;
 import au.com.guidebee.morsetoolkit.activity.mario.world.CameraController;
@@ -49,6 +52,8 @@ import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioWorld;
 import au.com.guidebee.morsetoolkit.activity.mario.world.OscillatorClock;
 import au.com.guidebee.morsetoolkit.activity.mario.world.SpawnController;
+
+import java.util.Random;
 
 /**
  * Steps 5-8 vertical slice: a level's interactive bricks, items,
@@ -196,6 +201,8 @@ public class MarioGameScreen extends ScreenAdapter {
 
     private enum LevelState {PLAYING, ENTERING, ADVANCING, GAME_OVER}
 
+    private static final Random RANDOM = new Random();
+
     private final MarioGamePlay gamePlay;
     private final LevelDefinition level;
     private final LayerManager layerManager;
@@ -326,7 +333,8 @@ public class MarioGameScreen extends ScreenAdapter {
         gameController = createGameController();
         backButton = createBackButton();
         zoomDetector = createZoomDetector();
-        scoreHud = new ScoreHud(layerManager, MarioResourceManager.uiSkinYDown());
+        scoreHud = new ScoreHud(layerManager, MarioResourceManager.uiSkinYDown(),
+                LevelNumbering.label(level.levelNumber));
         pauseOverlay = new PauseOverlay(layerManager, MarioResourceManager.uiSkinYDown(),
                 this::resumeGame, gamePlay::goToMenu);
         MarioInputController input = new MarioInputController(gameController);
@@ -638,20 +646,30 @@ public class MarioGameScreen extends ScreenAdapter {
                 // checkpoint further down the level - see beginFlagSlide's doc.
                 if (flagPole != null && !flagPoleTouched && flagPole.overlaps(player)) {
                     flagPoleTouched = true;
+                    gamePlay.gameState().addScore(flagPole.heightBonusScore(player));
                     beginFlagSlide();
                     break;
                 }
                 LevelDefinition.Checkpoint hit = CheckpointResolver.findTouched(level.checkpoints, player);
                 if (hit != null) {
-                    if ("CheckPoints".equals(hit.kind)) {
-                        // Reached directly without ever touching a pole (a
-                        // level with no "Flag" tile, or Mario somehow
-                        // skirting around it) - matches the original's own
-                        // Player_CheckPoint case 23, which has no such gate
-                        // either.
-                        beginCelebration(hit);
-                    } else {
-                        beginTransition(hit);
+                    switch (hit.kind) {
+                        case "CheckPoints":
+                            // Reached directly without ever touching a pole (a
+                            // level with no "Flag" tile, or Mario somehow
+                            // skirting around it) - matches the original's own
+                            // Player_CheckPoint case 23, which has no such
+                            // gate either.
+                            beginCelebration(hit);
+                            break;
+                        case "WhyYouDOThis":
+                            beginAnotherCastleMessage(hit, "another_castle_message");
+                            break;
+                        case "Princess":
+                            beginAnotherCastleMessage(hit, "quest_complete");
+                            break;
+                        default:
+                            beginTransition(hit);
+                            break;
                     }
                 }
                 break;
@@ -801,11 +819,10 @@ public class MarioGameScreen extends ScreenAdapter {
      * Stage two of the level-end flagpole (or a plain-contact "CheckPoints"
      * checkpoint with no pole at all) - ported from {@code Player_CheckPoint
      * .collided}'s own case 23: hides Mario (its {@code p.setActive(false)}),
-     * raises a {@link FlagWinBanner} beside the castle, and plays the
-     * stage-clear fanfare before {@link #advanceToNextLevel} loads the next
-     * level. The original's random fireworks flourish is skipped (purely
-     * cosmetic, see docs/MARIO_PORT_PLAN.md Step 7.1's already-established
-     * scope).
+     * raises a {@link FlagWinBanner} beside the castle, a 50% chance of a
+     * {@link Fireworks} burst (matching the original's own {@code
+     * Random().nextBoolean()} gate), and plays the stage-clear fanfare before
+     * {@link #advanceToNextLevel} loads the next level.
      */
     private void beginCelebration(LevelDefinition.Checkpoint checkpoint) {
         pendingCheckpoint = checkpoint;
@@ -815,10 +832,42 @@ public class MarioGameScreen extends ScreenAdapter {
         player.setVisible(false);
         transitionTimer = CELEBRATION_SECONDS;
         MarioContext.spawn(new FlagWinBanner((float) checkpoint.x, (float) checkpoint.y));
+        if (RANDOM.nextBoolean()) {
+            Fireworks.spawnAt((float) checkpoint.x);
+        }
         if (currentMusic != null) {
             currentMusic.stop();
         }
         MarioResourceManager.sound("smb_stage_clear").play();
+    }
+
+    /**
+     * The "castle with no flagpole" ending every non-final world's boss level
+     * uses ({@code WhyYouDOThis}), plus World 8's own true-ending checkpoint
+     * ({@code Princess}) - ported from {@code Player_CheckPoint.collided}'s
+     * case 16/26: stop Mario just short of the checkpoint and hold on a
+     * full-screen message ("your princess is in another castle" / "quest
+     * complete") before advancing. Neither case stops the level's music or
+     * plays a sound in the original (confirmed by reading the source), unlike
+     * every other checkpoint kind here, so this doesn't either. The original's
+     * own separate black backdrop behind the message is skipped - the message
+     * art already carries a fully opaque border of its own (confirmed by
+     * inspecting its corner pixels), so that backdrop was always entirely
+     * hidden behind it in practice. Princess still advances (loops back to
+     * World 1) where the original's own equivalent call is commented out and
+     * simply never proceeds - see {@code advanceToNextLevel}'s own doc for why
+     * that dead end isn't reproduced here.
+     */
+    private void beginAnotherCastleMessage(LevelDefinition.Checkpoint checkpoint, String regionName) {
+        pendingCheckpoint = checkpoint;
+        levelState = LevelState.ENTERING;
+        flagSliding = false;
+        player.setInvincibleFor(TRANSITION_INVINCIBILITY_SECONDS);
+        player.setForcedCommand(new PlayerCommand());
+        player.setX((float) checkpoint.x - player.getWidth());
+        transitionTimer = CELEBRATION_SECONDS;
+        MarioContext.spawn(new Scenery((float) checkpoint.x - 224f, (float) checkpoint.y - 192f,
+                MarioResourceManager.region(regionName)));
     }
 
     private void advanceToNextLevel() {

@@ -7,14 +7,18 @@ import com.guidebee.game.ui.Skin;
 import au.com.guidebee.morsetoolkit.activity.mario.state.GameStateController;
 
 /**
- * The classic top-of-screen SCORE/COINS/LIVES bar, plus a centered one-shot
- * message label (used for "GAME OVER" - see {@code MarioGameScreen#handlePlayerDeath}).
- * Built from the engine's bundled {@code skin/default} font/skin (see
- * {@code MarioResourceManager#uiSkin()}) rather than sliced digit-sprite art
- * like Battle City's/Flappy Bird's own score HUDs - avoids needing new atlas
- * art for a HUD the original engine never actually finished itself (its own
- * {@code DrawScore}'s SCORE/TIME lines are commented out, and
- * {@code Player.IncreaseLife()}'s body is commented out too).
+ * The classic top-of-screen SCORE/COINS/LIVES/WORLD bar, plus a centered
+ * one-shot message label (used for "GAME OVER" - see {@code
+ * MarioGameScreen#handlePlayerDeath}). Built from the engine's bundled
+ * {@code skin/default} font/skin (see {@code MarioResourceManager#uiSkin()})
+ * rather than sliced digit-sprite art like Battle City's/Flappy Bird's own
+ * score HUDs - avoids needing new atlas art for a HUD the original engine
+ * never actually finished itself (its own {@code DrawScore}'s SCORE/TIME
+ * lines are commented out, and {@code Player.IncreaseLife()}'s body is
+ * commented out too - so unlike {@link #worldLabel}'s own "WORLD X-Y" text,
+ * which {@code DrawScore} does draw for real, the original has no lives
+ * display of any kind to match; this port's own LIVES label is an addition
+ * needed to make the game-over flow a real feature).
  *
  * <p>Like every other HUD element in {@code MarioGameScreen} (see its class
  * doc), these Labels render through the shared, moving/zooming world camera,
@@ -29,16 +33,24 @@ public class ScoreHud {
 
     private final Label scoreLabel;
     private final Label livesLabel;
+    private final Label worldLabel;
     private final Label messageLabel;
 
-    public ScoreHud(LayerManager layerManager, Skin skin) {
+    /** @param worldLevelLabel "1-1"/"8-5" etc (see {@code LevelNumbering#label}) - constant for the level's whole lifetime, so this is set once here rather than in {@link #update}. */
+    public ScoreHud(LayerManager layerManager, Skin skin, String worldLevelLabel) {
         scoreLabel = new Label("", skin);
         livesLabel = new Label("", skin);
+        worldLabel = new Label("WORLD " + worldLevelLabel, skin);
+        // Constant for the level's whole lifetime (see this constructor's own
+        // doc) - packed once here so reposition() can right-align it by its
+        // real width instead of an initial zero-size Label default.
+        worldLabel.pack();
         messageLabel = new Label("", skin);
         messageLabel.setVisible(false);
 
         layerManager.addHUDComponent(scoreLabel);
         layerManager.addHUDComponent(livesLabel);
+        layerManager.addHUDComponent(worldLabel);
         layerManager.addHUDComponent(messageLabel);
     }
 
@@ -78,6 +90,13 @@ public class ScoreHud {
 
         livesLabel.setScale(zoom);
         livesLabel.setPosition(screenLeft + MARGIN * zoom, screenTop + (MARGIN + LINE_HEIGHT) * zoom);
+
+        // Ported from DrawScore's own right-side "WORLD"/world-number text,
+        // set apart from the left-aligned SCORE/COINS/LIVES stack above.
+        worldLabel.setScale(zoom);
+        worldLabel.setPosition(
+                screenLeft + screenWidth - (worldLabel.getWidth() + MARGIN) * zoom,
+                screenTop + MARGIN * zoom);
 
         messageLabel.setScale(zoom);
         messageLabel.setPosition(

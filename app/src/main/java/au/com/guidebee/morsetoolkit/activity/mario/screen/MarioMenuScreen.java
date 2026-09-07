@@ -14,6 +14,7 @@ import com.guidebee.game.ui.TextButton;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioGamePlay;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
+import au.com.guidebee.morsetoolkit.activity.mario.level.LevelNumbering;
 import au.com.guidebee.morsetoolkit.activity.mario.state.MarioSaveState;
 
 /**
@@ -53,17 +54,8 @@ import au.com.guidebee.morsetoolkit.activity.mario.state.MarioSaveState;
  */
 public class MarioMenuScreen extends ScreenAdapter {
 
-    /** Each world's main levels, in play order - World 8 alone has 8, not 4 (ends in the {@code Princess} finale). */
-    private static final int[][] WORLD_LEVELS = {
-            {11, 12, 13, 14},
-            {21, 22, 23, 24},
-            {31, 32, 33, 34},
-            {41, 42, 43, 44},
-            {51, 52, 53, 54},
-            {61, 62, 63, 64},
-            {71, 72, 73, 74},
-            {81, 82, 83, 841, 842, 843, 844, 845},
-    };
+    /** @see LevelNumbering#WORLD_LEVELS */
+    private static final int[][] WORLD_LEVELS = LevelNumbering.WORLD_LEVELS;
 
     private final LayerManager layerManager;
     private final MarioGamePlay gamePlay;
@@ -130,7 +122,7 @@ public class MarioMenuScreen extends ScreenAdapter {
         table.add(new Label("WORLD " + (world + 1), skin)).padBottom(24f).row();
 
         for (int levelNumber : levels) {
-            TextButton button = new TextButton(levelLabel(world, levelNumber), skin);
+            TextButton button = new TextButton(LevelNumbering.label(levelNumber), skin);
             boolean unlocked = isUnlocked(world, levelNumber);
             button.setDisabled(!unlocked);
             if (!unlocked) {
@@ -155,19 +147,6 @@ public class MarioMenuScreen extends ScreenAdapter {
         });
         table.add(backButton).width(140f).height(44f).padTop(14f);
         return table;
-    }
-
-    /** "1-1".."1-4"/"8-5" etc. - matches the original doc's own labeling scheme (World-Level), including World 8's 5th-8th levels past its own 4-level pattern. */
-    private static String levelLabel(int world, int levelNumber) {
-        int[] levels = WORLD_LEVELS[world];
-        int indexInWorld = 0;
-        for (int i = 0; i < levels.length; i++) {
-            if (levels[i] == levelNumber) {
-                indexInWorld = i;
-                break;
-            }
-        }
-        return (world + 1) + "-" + (indexInWorld + 1);
     }
 
     /** World 1's own first level needs no prior clear; every other level needs the one immediately before it (in its own world, or the previous world's last level) cleared. */

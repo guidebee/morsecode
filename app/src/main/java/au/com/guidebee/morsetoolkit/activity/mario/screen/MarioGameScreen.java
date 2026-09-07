@@ -24,6 +24,8 @@ import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioGamePlay;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.player.Player;
+import au.com.guidebee.morsetoolkit.activity.mario.actors.scenery.FlagPole;
+import au.com.guidebee.morsetoolkit.activity.mario.actors.scenery.FlagWinBanner;
 import au.com.guidebee.morsetoolkit.activity.mario.collision.AxeResolver;
 import au.com.guidebee.morsetoolkit.activity.mario.collision.CheckpointResolver;
 import au.com.guidebee.morsetoolkit.activity.mario.collision.EnemyCollisionResolver;
@@ -168,10 +170,17 @@ public class MarioGameScreen extends ScreenAdapter {
     private static final String CONTROLLER_BUTTON_B_NORMAL = "controller/Buttons/Button_08_Normal_Virgin.png";
     private static final String CONTROLLER_BUTTON_B_PRESSED = "controller/Buttons/Button_08_Pressed_Virgin.png";
 
-    /** How long the "walk into the flag/castle" sequence plays before the next level loads - {@code "CheckPoints"} kind only. */
-    private static final float FLAG_WALK_SECONDS = 1.2f;
     /** How long a pipe-entry checkpoint holds Mario still before the next level loads. */
     private static final float PIPE_ENTRY_SECONDS = 0.6f;
+    /**
+     * How long the castle-arrival celebration ({@link FlagWinBanner} rising,
+     * "smb_stage_clear" playing) shows before the next level loads - ported
+     * from {@code Player_CheckPoint.collided}'s own {@code
+     * DelayToNextCheckPoint = 400} (its own per-tick counter, not seconds;
+     * chosen here to comfortably outlast the banner's own rise, see {@link
+     * FlagWinBanner}).
+     */
+    private static final float CELEBRATION_SECONDS = 3f;
     /** Comfortably longer than either delay above, so a stray hit can't interrupt the sequence - see {@code Player#setInvincibleFor}. */
     private static final float TRANSITION_INVINCIBILITY_SECONDS = 5f;
     /** How long the "GAME OVER" message shows before returning to the menu - see the class doc's "Pause / game over" section. */
@@ -199,6 +208,8 @@ public class MarioGameScreen extends ScreenAdapter {
     private final CameraController camera;
     private final SpawnController spawnController;
     private final String levelAttribute;
+    /** Null for levels with no "Flag" tile (the castle/boss-only ones) - see {@link #updateLevelCompletion}'s PLAYING case. */
+    private final FlagPole flagPole;
 
     private final GameController gameController;
     private final ImageButton backButton;
@@ -218,8 +229,10 @@ public class MarioGameScreen extends ScreenAdapter {
     private LevelState levelState = LevelState.PLAYING;
     private LevelDefinition.Checkpoint pendingCheckpoint;
     private float transitionTimer;
-    /** True during a flag checkpoint's fall-down-the-pole phase, before the walk-right phase starts - see {@link #beginTransition}. */
+    /** True during the flagpole's fall-down phase, before the walk-right phase starts - see {@link #beginFlagSlide}. */
     private boolean flagSliding;
+    /** Guards {@link #flagPole}'s touch from re-triggering {@link #beginFlagSlide} once already sliding/walking. */
+    private boolean flagPoleTouched;
 
     private float zoom = 1f;
     /** The gesture's {@code initialDistance} last seen - a change means a new pinch began. */
@@ -303,7 +316,7 @@ public class MarioGameScreen extends ScreenAdapter {
         // Scenery goes first so bricks/enemies/the player draw in front of it.
         MarioContext.init(layerManager, world, gamePlay.gameState());
         OscillatorClock.reset();
-        LevelLoader.spawnScenery(level);
+        flagPole = LevelLoader.spawnScenery(level);
         LevelLoader.spawnBricks(level);
         LevelLoader.spawnEnemies(level);
         LevelLoader.spawnLifts(level);
@@ -619,9 +632,27 @@ public class MarioGameScreen extends ScreenAdapter {
                     handlePlayerDeath();
                     break;
                 }
+                // Ported from Player_Flag.collided: touching the pole itself
+                // (at any height along it - see FlagPole#overlaps) starts the
+                // slide, well before Mario ever reaches the real "CheckPoints"
+                // checkpoint further down the level - see beginFlagSlide's doc.
+                if (flagPole != null && !flagPoleTouched && flagPole.overlaps(player)) {
+                    flagPoleTouched = true;
+                    beginFlagSlide();
+                    break;
+                }
                 LevelDefinition.Checkpoint hit = CheckpointResolver.findTouched(level.checkpoints, player);
                 if (hit != null) {
-                    beginTransition(hit);
+                    if ("CheckPoints".equals(hit.kind)) {
+                        // Reached directly without ever touching a pole (a
+                        // level with no "Flag" tile, or Mario somehow
+                        // skirting around it) - matches the original's own
+                        // Player_CheckPoint case 23, which has no such gate
+                        // either.
+                        beginCelebration(hit);
+                    } else {
+                        beginTransition(hit);
+                    }
                 }
                 break;
             case ENTERING:
@@ -636,7 +667,19 @@ public class MarioGameScreen extends ScreenAdapter {
                         PlayerCommand walkForward = new PlayerCommand();
                         walkForward.right = true;
                         player.setForcedCommand(walkForward);
-                        transitionTimer = FLAG_WALK_SECONDS;
+                    }
+                    break;
+                }
+                if (pendingCheckpoint == null) {
+                    // Walking forward toward the castle's own "CheckPoints"
+                    // checkpoint (the pole's own touch already handled above,
+                    // in PLAYING, doesn't apply here since forced movement
+                    // never goes through Player's normal input polling) -
+                    // reusing the same finder keeps this in sync with
+                    // whatever kinds/positions a level's JSON actually has.
+                    LevelDefinition.Checkpoint arrival = CheckpointResolver.findTouched(level.checkpoints, player);
+                    if (arrival != null) {
+                        beginCelebration(arrival);
                     }
                     break;
                 }
@@ -698,27 +741,19 @@ public class MarioGameScreen extends ScreenAdapter {
     }
 
     /**
-     * Ported from the original's {@code Player_CheckPoint.collided}/
-     * {@code Player_Flag.collided}: locks out normal input, shields Mario
-     * from any stray hit for the duration, and - for the level-end flag
-     * specifically - walks him forward into the castle instead of just
-     * standing still, matching the original's more elaborate
-     * {@code MarioSlidingDown} sequence in spirit if not in frame-by-frame
-     * detail (see docs/MARIO_PORT_PLAN.md Step 7.1).
+     * Ported from the original's {@code Player_CheckPoint.collided} (pipe/
+     * beanstalk/"WhyYouDOThis" kinds only - see {@link #beginFlagSlide}/
+     * {@link #beginCelebration} for the flagpole's own two-stage sequence):
+     * locks out normal input and shields Mario from any stray hit while the
+     * checkpoint's own brief animation plays before {@link #pendingCheckpoint}
+     * loads.
      */
     private void beginTransition(LevelDefinition.Checkpoint checkpoint) {
         pendingCheckpoint = checkpoint;
         levelState = LevelState.ENTERING;
         player.setInvincibleFor(TRANSITION_INVINCIBILITY_SECONDS);
-
-        boolean isFlag = "CheckPoints".equals(checkpoint.kind);
-        // Flag: fall down the pole first (see updateLevelCompletion's
-        // ENTERING case) before walking right into the castle. Pipe: hold
-        // still the whole time - both start from the same forced-neutral
-        // command.
-        flagSliding = isFlag;
         player.setForcedCommand(new PlayerCommand());
-        transitionTimer = isFlag ? Float.MAX_VALUE : PIPE_ENTRY_SECONDS;
+        transitionTimer = PIPE_ENTRY_SECONDS;
 
         if (currentMusic != null) {
             currentMusic.stop();
@@ -730,10 +765,60 @@ public class MarioGameScreen extends ScreenAdapter {
         // transition is silent, confirmed by reading the source rather than
         // assumed.
         boolean isClowd = checkpoint.kind.startsWith("Clowd");
-        String sound = isFlag ? "smb_flagpole" : isPipe ? "smb_pipe" : isClowd ? null : "smb_stage_clear";
+        String sound = isPipe ? "smb_pipe" : isClowd ? null : "smb_stage_clear";
         if (sound != null) {
             MarioResourceManager.sound(sound).play();
         }
+    }
+
+    /**
+     * Stage one of the level-end flagpole, ported from {@code Player_Flag
+     * .collided}: touching the pole (see {@link FlagPole#overlaps}, tested by
+     * {@link #updateLevelCompletion}'s PLAYING case) stops the music, plays
+     * the flagpole sound, and lets Mario fall - {@link #updateLevelCompletion}'s
+     * ENTERING case carries him the rest of the way (down the pole, then
+     * walking right) until he reaches the level's own "CheckPoints"
+     * checkpoint, which is what {@link #beginCelebration} actually reacts to.
+     * Deliberately doesn't set {@link #pendingCheckpoint} yet - that's how
+     * {@code updateLevelCompletion} tells "still sliding/walking" apart from
+     * "celebration under way".
+     */
+    private void beginFlagSlide() {
+        levelState = LevelState.ENTERING;
+        player.setInvincibleFor(TRANSITION_INVINCIBILITY_SECONDS);
+        flagSliding = true;
+        player.setForcedCommand(new PlayerCommand());
+        if (flagPole != null) {
+            flagPole.startSliding();
+        }
+        if (currentMusic != null) {
+            currentMusic.stop();
+        }
+        MarioResourceManager.sound("smb_flagpole").play();
+    }
+
+    /**
+     * Stage two of the level-end flagpole (or a plain-contact "CheckPoints"
+     * checkpoint with no pole at all) - ported from {@code Player_CheckPoint
+     * .collided}'s own case 23: hides Mario (its {@code p.setActive(false)}),
+     * raises a {@link FlagWinBanner} beside the castle, and plays the
+     * stage-clear fanfare before {@link #advanceToNextLevel} loads the next
+     * level. The original's random fireworks flourish is skipped (purely
+     * cosmetic, see docs/MARIO_PORT_PLAN.md Step 7.1's already-established
+     * scope).
+     */
+    private void beginCelebration(LevelDefinition.Checkpoint checkpoint) {
+        pendingCheckpoint = checkpoint;
+        levelState = LevelState.ENTERING;
+        flagSliding = false;
+        player.setForcedCommand(new PlayerCommand());
+        player.setVisible(false);
+        transitionTimer = CELEBRATION_SECONDS;
+        MarioContext.spawn(new FlagWinBanner((float) checkpoint.x, (float) checkpoint.y));
+        if (currentMusic != null) {
+            currentMusic.stop();
+        }
+        MarioResourceManager.sound("smb_stage_clear").play();
     }
 
     private void advanceToNextLevel() {
@@ -750,6 +835,7 @@ public class MarioGameScreen extends ScreenAdapter {
             // stay on this level instead of getting stuck mid-transition.
             levelState = LevelState.PLAYING;
             player.clearForcedCommand();
+            player.setVisible(true);
         }
     }
 }

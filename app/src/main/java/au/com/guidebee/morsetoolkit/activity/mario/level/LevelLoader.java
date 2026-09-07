@@ -38,6 +38,7 @@ import au.com.guidebee.morsetoolkit.activity.mario.actors.lifts.Lift;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.lifts.LiftCar;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.lifts.LiftFall;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.projectiles.BossFire;
+import au.com.guidebee.morsetoolkit.activity.mario.actors.scenery.FlagPole;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.scenery.Scenery;
 import au.com.guidebee.morsetoolkit.activity.mario.fx.LavaBall;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
@@ -457,23 +458,27 @@ public final class LevelLoader {
     }
 
     /**
-     * Spawns the level-end flagpole, castles, and lava - purely decorative,
-     * no collision of their own (see {@code Scenery}'s class doc; a lava pit
-     * kills Mario only because falling into one means falling out of the
-     * level's bottom, which {@code Player}'s own fall-out check already
-     * handles - the original's own "Lava" tile is likewise added to a
-     * non-collided background sprite group, see docs/MARIO_PORT_PLAN_PHASE2.md
-     * Step P2.0). A tree's own solid canopy + decorative trunk are handled
-     * separately by {@link #spawnTree} (called from {@link #spawnBricks} -
-     * the canopy row is a real, solid {@code InteractiveBrick}, not
-     * decoration). A level's own scrolling backdrop (mountain/clouds/...) is
-     * a whole separate, non-tile field ({@code backgroundImage}) - see
-     * {@code MarioGameScreen}'s own {@code BackgroundBand} wiring, not this
-     * method.
+     * Spawns the level-end flagpole, castles, and lava - all purely
+     * decorative and uncollided (see {@code Scenery}'s class doc) except the
+     * flagpole's own cloth, whose {@link FlagPole} this returns (or null, for
+     * levels with no "Flag" tile - the castle/boss-only ones) so {@code
+     * MarioGameScreen} can test for a touch and drive its slide-down
+     * animation; a lava pit kills Mario only because falling into one means
+     * falling out of the level's bottom, which {@code Player}'s own fall-out
+     * check already handles - the original's own "Lava" tile is likewise
+     * added to a non-collided background sprite group, see
+     * docs/MARIO_PORT_PLAN_PHASE2.md Step P2.0). A tree's own solid canopy +
+     * decorative trunk are handled separately by {@link #spawnTree} (called
+     * from {@link #spawnBricks} - the canopy row is a real, solid {@code
+     * InteractiveBrick}, not decoration). A level's own scrolling backdrop
+     * (mountain/clouds/...) is a whole separate, non-tile field ({@code
+     * backgroundImage}) - see {@code MarioGameScreen}'s own {@code
+     * BackgroundBand} wiring, not this method.
      */
-    public static void spawnScenery(LevelDefinition level) {
+    public static FlagPole spawnScenery(LevelDefinition level) {
         int tileSize = MarioConfiguration.TILE_SIZE;
         boolean blackAndWhite = "CloudsNight".equals(level.backgroundImage);
+        FlagPole flagPole = null;
         for (LevelDefinition.Tile tile : level.tiles) {
             if ("Lava".equals(tile.type)) {
                 forEachCell(tile, (x, y) -> MarioContext.spawn(new Scenery(x, y, MarioResourceManager.region("lava"))));
@@ -497,6 +502,21 @@ public final class LevelLoader {
                         MarioResourceManager.region("white_line"), tileSize, height)));
                 continue;
             }
+            if ("Flag".equals(tile.type)) {
+                // Ported from Mario.java's case 32: the rod ("flag", a thin
+                // 4x288 strip centered in its tile - the "+14" below) and the
+                // ball ornament above it ("flag_sphere") never move; FlagPole
+                // itself is the one part (the cloth) that slides once touched
+                // - see MarioGameScreen's level-completion state machine,
+                // which is what actually reacts to a touch this reports.
+                MarioContext.spawn(new Scenery(tile.x * tileSize + 14, tile.y * tileSize,
+                        MarioResourceManager.region("flag")));
+                MarioContext.spawn(new Scenery(tile.x * tileSize, tile.y * tileSize - tileSize,
+                        MarioResourceManager.region("flag_sphere")));
+                flagPole = new FlagPole(tile.x, tile.y);
+                MarioContext.spawn(flagPole);
+                continue;
+            }
             String regionName = sceneryRegion(tile.type, blackAndWhite);
             if (regionName == null) {
                 continue;
@@ -504,6 +524,7 @@ public final class LevelLoader {
             MarioContext.spawn(new Scenery(tile.x * tileSize, tile.y * tileSize,
                     MarioResourceManager.region(regionName)));
         }
+        return flagPole;
     }
 
     /** Ported from Mario.java's own literal {@code ImageUtil.resize(..., 32, 13*32)} - fixed regardless of the placing tile's own {@code lengthY}. */
@@ -529,8 +550,6 @@ public final class LevelLoader {
     /** @param blackAndWhite CloudsNight (see this class's own "Bouncer"/tree cases) also swaps SmallCastle/BigCastle for their "bw_"-prefixed variants. */
     private static String sceneryRegion(String type, boolean blackAndWhite) {
         switch (type) {
-            case "Flag":
-                return "flag";
             case "SmallCastle":
                 return blackAndWhite ? "bw_small_castle" : "small_castle";
             case "BigCastle":

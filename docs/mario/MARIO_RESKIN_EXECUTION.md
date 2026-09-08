@@ -390,22 +390,120 @@ a Step R.4 supplement for the Bolt/gear coin and Spare-chassis 1-Up specifically
 Per [MARIO_GAME_MECHANICS.md §16.4](MARIO_GAME_MECHANICS.md#164-reskin-priority-by-on-screen-frequency)'s
 tier 1: `Brick`, `stone`/`chocolate` (×5 themes), `EnemyMushroom`-equivalent.
 
-- [ ] Design and draw the new terrain tile look for all 5 themes (Ground/UnderGround/
+- [x] Design and draw the new terrain tile look for all 5 themes (Ground/UnderGround/
       Castle/Sea + the CloudsNight decision from §4.4 of the mechanics doc — tint shader
-      vs. hand-drawn `bw_*` set).
-- [ ] Design and draw the breakable-brick sprite + its break-fragment art
-      (`brick_peaces`, 2×4 grid).
-- [ ] Design the Bolt/gear coin sprite with the future Morse hook in mind (§7.5) — no new
+      vs. hand-drawn `bw_*` set). **Done 2026-09-08** via
+      `docs/assets/mario-sprites/ampere-staging/build_terrain_and_common.py` — a
+      procedurally-drawn sci-fi armor-panel motif (not extracted from either robot pack:
+      neither pack's tile art is meant as small repeating 32×32 floor tiles, per
+      [MARIO_GAME_MECHANICS.md §16.5](MARIO_GAME_MECHANICS.md#165-assets-that-might-not-need-original-art-at-all)'s
+      own note that a per-theme palette variation from one base design is a reasonable
+      scope reduction), recolored per theme (Surface=steel blue-grey, Substrate=dark
+      teal-green with a glowing teal accent, Fortress=maroon with warm amber accent,
+      Flooded Sector=blue-cyan with cyan accent). `bw_stone` (CloudsNight) got its own
+      plain-greyscale variant of the same tile rather than a shader — matches the
+      original's own convention of a literal separate asset, and `bw_chocolate` still
+      reuses `chocolate_Castle.png` unchanged, per `PackMarioAtlas`'s existing setup.
+
+      **Superseded 2026-09-08 for 3 of the 5 themes**, per the
+      [KENNEY_ALL_IN_ONE_INDEX.md](KENNEY_ALL_IN_ONE_INDEX.md) scan: Fortress, Substrate,
+      and Flooded Sector's `stone`/`chocolate`/`brick` are no longer the procedural
+      panel — they're real pixel art pulled from Pixel Platformer Industrial Expansion,
+      Tiny Dungeon, and Roguelike Dungeon Pack respectively (exact tile indices and the
+      extraction script are documented in that doc's §12.1). Ground (Surface) and
+      `bw_stone` (CloudsNight) are still the procedural tiles — lowest priority, already
+      read acceptably. Re-packed (still 106 regions / 2 pages, confirming dimensions
+      match) and recompiled clean. **Not yet re-verified on-device** — the next on-device
+      pass should specifically check these 3 themes' terrain alongside whatever else is
+      still pending from the earlier fix-verification.
+- [x] Design and draw the breakable-brick sprite + its break-fragment art
+      (`brick_peaces`, 2×4 grid). **Done 2026-09-08** — brick uses a visually distinct
+      2×2 segmented-hatch pattern (vs. stone/chocolate's single-panel look) specifically
+      so it reads as "breakable" at a glance; `brick_peaces`' fragments are small chunk
+      pairs in the matching per-theme palette (row1=Ground/Sea, row2=UnderGround,
+      row3=Castle, per `BrickFragment.java`'s own row convention).
+- [x] Design the Bolt/gear coin sprite with the future Morse hook in mind (§7.5) — no new
       art or code for the hook itself yet, just don't design the coin/HUD layout in a way
       that would need reworking once a `letterOfMorseCode`-style tag and a
-      `ChallengeLetter`-style top-left HUD dock are added.
-- [ ] Design and draw the most common enemy's replacement (walk cycle, matching
+      `ChallengeLetter`-style top-left HUD dock are added. **Done 2026-09-08** — extracted
+      and recomposed from Robot Platform Pack's `Tileset&Items.png` (a clean, isolated
+      5-frame coin-spin icon in that sheet, unlike the tile art above), scaled up into
+      `Coin.png`/`CoinAnim.png`'s existing 3-frame/4-frame layout. No coin/HUD layout
+      changes made, so the Morse-hook reservation from §7.5 still holds untouched.
+- [x] Design and draw the most common enemy's replacement (walk cycle, matching
       whatever frame count the new design needs — not required to match the original's
       2×4 grid exactly, since this is new character art, not a literal reskin of the same
-      pose timing).
+      pose timing). **Done 2026-09-08** — "Scuttler" sourced from Robot Master Series'
+      `enemy1` (a small round bot with tiny legs and a single red eye, already reads as
+      Goomba-like without copying Goomba's mushroom silhouette), recolored per theme into
+      the existing 2×4 grid (`EnemyMashroom.java`'s own Sea/Ground/UnderGround/Castle row
+      convention, kept as-is rather than redesigned, since the frame count itself isn't
+      Nintendo-specific).
 - [ ] Re-pack and playtest one full world (World 1, per the level atlas) before scaling
       up to the rest — this is the same "prove the pipeline on a vertical slice" discipline
-      the original port used.
+      the original port used. **Packed and compiled clean 2026-09-08** (same page/region
+      counts as before this step — 34/122 assets now sourced from the reskin overlay, up
+      from 15).
+
+      **Two real bugs found on the user's own on-device test, in the coin and Scuttler
+      art specifically (terrain/brick looked fine):**
+      1. **Coin rendered vertically garbled.** Root cause: `Coin.png`/`CoinAnim.png`'s
+         frames were extracted from Robot Platform Pack's `Tileset&Items.png`, cropped to
+         a fixed 32px-tall band, then scaled by a flat 1.8× and center-pasted — since the
+         source content already spanned ~94% of that band's height, the 1.8× scale
+         overflowed to ~58px and got center-clipped back down to 32px, chopping a
+         different ~7px sliver off each frame's top/bottom depending on that frame's own
+         shape (each rotation phase has a different silhouette) — this is what read as
+         "halves reversed" once the frames cycled. Compounding it: that tileset packs
+         icons edge-to-edge with zero padding, so a tight alpha-bbox crop (the first fix
+         attempted) bled in a sliver of the *adjacent* sprite, corrupting the shape
+         further. **Fixed by dropping the extraction entirely** and drawing the coin
+         procedurally instead (a filled ellipse whose width narrows/widens across frames
+         to simulate a spin) — same approach already used for the terrain tiles, and one
+         that has no extraction-fragility failure mode.
+      2. **Scuttler (the `enemy` region) rendered too small.** Root cause: robot1's
+         `enemy1` source frame's actual content bounding box is only 15×14px inside its
+         32×32 native canvas (confirmed via `getbbox()`) — it was copied through 1:1 with
+         only a recolor, no scale-up. Fixed with a new `place_content` helper (tight-bbox
+         crop, then scale to fill ~85% of the target cell, anchored to the bottom so the
+         creature stands on the tile floor) — confirmed the fixed frame's content now
+         fills 27×25px of its 32×32 cell.
+
+      Re-packed and recompiled clean after both fixes (same 34/122 overlay count, same
+      page/region layout). **Still needs the user's own on-device playtest of World 1**
+      before this step is fully closed - not yet re-verified as of this write-up.
+
+      **2026-09-08 addendum:** the procedural terrain/brick tiles work but read as
+      programmer art next to the sourced player/enemy sprites. A local
+      `Kenney_Game_Assets_All` mega-bundle was scanned and curated into
+      [KENNEY_ALL_IN_ONE_INDEX.md](KENNEY_ALL_IN_ONE_INDEX.md) — **best lead: "Pixel
+      Platformer Industrial Expansion,"** genuine pixel-art girders/panels/hazard-tape
+      already industrial-themed, a likely direct upgrade for Fortress's terrain
+      specifically. **That scan also closes both theme gaps §7.4 left open** (Substrate
+      and Flooded Sector, neither of which had a good match in the original sourcing
+      pass): "Tiny Dungeon"'s stone/door tiles for Substrate (+ "RTS Sci-fi"'s pipes/blobs
+      as decoration) and "Roguelike Dungeon Pack"'s existing blue palette for Flooded
+      Sector, reframed as flooded tunnels rather than literal underwater. **Extended
+      further to cover fonts/UI/audio too**: the bundle's shared `Other/Fonts/` folder
+      (15 `.ttf` files, not tied to any one pack) has a genuinely blocky "Kenney Blocks"
+      font for the HUD and sci-fi display faces for the title screen, closing
+      [MARIO_GAME_MECHANICS.md §16.5](MARIO_GAME_MECHANICS.md#165-assets-that-might-not-need-original-art-at-all)'s
+      font question with zero new art; "UI Pixel Pack" is a better HUD-chrome style match
+      than the previously-favored "UI Pack - Sci-fi" (confirmed pixel-art vs. vector by
+      opening both previews); "Mobile Controls" is a strong on-screen joystick/button
+      candidate; and "Sci-Fi Sounds" + "Music Jingles" (Retro style) + "Music Loops"
+      cover essentially all 23 SFX keys and all 5 music moods locally — see
+      [KENNEY_ALL_IN_ONE_INDEX.md](KENNEY_ALL_IN_ONE_INDEX.md)'s §8/§9 for the full
+      per-key mapping. **Further extended to items/mechanisms/scenery**: 3 of 4 power-ups
+      (Battery cell/Overclock chip/Charge coil) turned up direct matches inside Robot
+      Master Series' own `other/` folder (never fully explored until this pass), pipes
+      and a castle-replacement building came from RTS Sci-fi, and Sea/Substrate backdrop
+      textures came from Robot Master Series' own unused background art — see that doc's
+      §2-§4. **Residual scope needing AI-gen or quick custom art, per its §11**: the
+      odd-shaped enemies with no pack match (PiranhaPlant/OctoPussy/FishyWater etc.),
+      trees (a pylon/antenna reframe is recommended first), and two single small icons
+      (Spare chassis, Axe/lever) cheap enough to hand-pixel directly. Not yet actioned -
+      a follow-up pass, not blocking R.3's own closure.
 
 ### Step R.4 — Remaining enemies, bricks, items, hazards, lifts
 

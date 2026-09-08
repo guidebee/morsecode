@@ -6,4 +6,5 @@ package au.com.guidebee.morsetoolkit.platformer.core;
 public interface TileCollisionSource {
     boolean containsImpassableArea(float x, float y, int width, int height);
     boolean containsImpassableArea(float x, float y, int width, int height, float duckAboveY);
+    int tileSize();
 }

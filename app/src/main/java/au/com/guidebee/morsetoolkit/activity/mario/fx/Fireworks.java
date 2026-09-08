@@ -2,7 +2,6 @@ package au.com.guidebee.morsetoolkit.activity.mario.fx;
 
 import com.guidebee.game.microedition.Sprite;
 
-import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
 
@@ -20,7 +19,6 @@ import java.util.Random;
  */
 public class Fireworks extends Sprite {
 
-    private static final int FRAME_SIZE = 32;
     private static final int[] FRAME_SEQUENCE = {0, 0, 1, 1, 2, 2};
     private static final float FRAME_INTERVAL = 0.1f;
     private static final int MIN_BURSTS = 4;
@@ -32,23 +30,24 @@ public class Fireworks extends Sprite {
     private static final Random RANDOM = new Random();
 
     private final int baseX;
+    private final int tileSize;
     private int remainingBursts;
     private float frameTimer;
 
-    private Fireworks(int baseX) {
-        super(MarioResourceManager.region("explosion"), FRAME_SIZE, FRAME_SIZE);
+    private Fireworks(int baseX, int tileSize) {
+        super(MarioResourceManager.region("explosion"), tileSize, tileSize);
         setFrameSequence(FRAME_SEQUENCE);
         this.baseX = baseX;
+        this.tileSize = tileSize;
         remainingBursts = MIN_BURSTS + RANDOM.nextInt(MAX_BURSTS - MIN_BURSTS + 1);
         reposition();
     }
 
-    public static void spawnAt(float checkpointX) {
-        MarioContext.spawn(new Fireworks((int) checkpointX));
+    public static void spawnAt(float checkpointX, int tileSize) {
+        MarioContext.spawn(new Fireworks((int) checkpointX, tileSize));
     }
 
     private void reposition() {
-        int tileSize = MarioConfiguration.TILE_SIZE;
         float x = baseX - SPREAD_X + RANDOM.nextInt(2 * SPREAD_X + 1);
         float y = (MIN_TILE_Y + RANDOM.nextInt(MAX_TILE_Y - MIN_TILE_Y + 1)) * tileSize;
         setPosition(x, y);

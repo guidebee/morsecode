@@ -4,7 +4,6 @@ import com.guidebee.game.graphics.Batch;
 import com.guidebee.game.graphics.TextureRegion;
 import com.guidebee.game.microedition.Layer;
 
-import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
 
@@ -21,11 +20,13 @@ public class LiftFall extends Layer implements LiftSurface {
     private static final float FALL_OUT_MARGIN_PX = 200f;
 
     private final TextureRegion region;
+    private final float landingTolerance;
     private boolean falling;
 
-    public LiftFall(float x, float y, int widthTiles) {
-        super(x, y, Math.max(1, widthTiles) * MarioConfiguration.TILE_SIZE, MarioConfiguration.TILE_SIZE / 2f, true);
+    public LiftFall(float x, float y, int widthTiles, int tileSize) {
+        super(x, y, Math.max(1, widthTiles) * tileSize, tileSize / 2f, true);
         region = MarioResourceManager.region("lift");
+        landingTolerance = tileSize / 2f;
     }
 
     @Override
@@ -72,6 +73,6 @@ public class LiftFall extends Layer implements LiftSurface {
         }
         float top = getTopY();
         float bottom = y + height;
-        return bottom >= top - MarioConfiguration.TILE_SIZE / 2f && bottom <= top + MarioConfiguration.TILE_SIZE / 2f;
+        return bottom >= top - landingTolerance && bottom <= top + landingTolerance;
     }
 }

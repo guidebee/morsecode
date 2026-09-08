@@ -59,14 +59,14 @@ public class FireBall extends Sprite {
 
     /** Ported from {@code FireBallToEnemys.collided} - every enemy hit spawns an {@link Explosion}, but (unlike a wall hit) plays no sound of its own. */
     public void explodeAgainstEnemy() {
-        Explosion.spawn(getX(), getY());
+        Explosion.spawn(getX(), getY(), MarioContext.world().tileSize());
         explode();
     }
 
     /** Ported from {@code FireBallToBricks.collided}'s own left/right cases - a wall hit plays "smb_bump" in addition to the {@link Explosion}, unlike an enemy hit. */
     private void explodeAgainstWall() {
         MarioResourceManager.sound("smb_bump").play();
-        Explosion.spawn(getX(), getY());
+        Explosion.spawn(getX(), getY(), MarioContext.world().tileSize());
         explode();
     }
 

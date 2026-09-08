@@ -4,7 +4,6 @@ import com.guidebee.game.graphics.Batch;
 import com.guidebee.game.graphics.TextureRegion;
 import com.guidebee.game.microedition.Layer;
 
-import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 
 /**
@@ -35,8 +34,6 @@ import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 public class BalanceLiftPlatform extends Layer implements LiftSurface {
 
     private static final float PHYSICS_FPS = 60f;
-    private static final float MAX_Y = 3 * MarioConfiguration.TILE_SIZE;
-    private static final float MIN_Y = 11 * MarioConfiguration.TILE_SIZE;
     private static final float ACCEL = 0.2f;
     private static final float MAX_SPEED = 15f;
     private static final float SPEED_DIVISOR = 12f;
@@ -44,6 +41,9 @@ public class BalanceLiftPlatform extends Layer implements LiftSurface {
     private static final int WIDTH_TILES = 6;
 
     private final TextureRegion region;
+    private final float maxY;
+    private final float minY;
+    private final float landingTolerance;
 
     private BalanceLiftPlatform partner;
     private boolean primary;
@@ -53,9 +53,12 @@ public class BalanceLiftPlatform extends Layer implements LiftSurface {
     private int direction = 1;
     private boolean broken;
 
-    public BalanceLiftPlatform(float x, float y) {
-        super(x, y, WIDTH_TILES * MarioConfiguration.TILE_SIZE, MarioConfiguration.TILE_SIZE / 2f, true);
+    public BalanceLiftPlatform(float x, float y, int tileSize) {
+        super(x, y, WIDTH_TILES * tileSize, tileSize / 2f, true);
         region = MarioResourceManager.region("lift");
+        maxY = 3 * tileSize;
+        minY = 11 * tileSize;
+        landingTolerance = tileSize / 2f;
     }
 
     /** Links two platforms into a seesaw pair - call once, right after constructing both. */
@@ -102,7 +105,7 @@ public class BalanceLiftPlatform extends Layer implements LiftSurface {
         setY(getY() + move);
         partner.setY(partner.getY() - move);
 
-        if (getY() < MAX_Y || getY() > MIN_Y || partner.getY() < MAX_Y || partner.getY() > MIN_Y) {
+        if (getY() < maxY || getY() > minY || partner.getY() < maxY || partner.getY() > minY) {
             broken = true;
             remove();
             partner.remove();
@@ -137,6 +140,6 @@ public class BalanceLiftPlatform extends Layer implements LiftSurface {
         }
         float top = getTopY();
         float bottom = y + height;
-        return bottom >= top - MarioConfiguration.TILE_SIZE / 2f && bottom <= top + MarioConfiguration.TILE_SIZE / 2f;
+        return bottom >= top - landingTolerance && bottom <= top + landingTolerance;
     }
 }

@@ -23,7 +23,7 @@ public final class HazardCollisionResolver {
         // Ported from Hammer_Player's own `p.getY() + 48` threshold - see
         // EnemyCollisionResolver's identical check and Player#isDucking's doc.
         float duckClearanceY = player.isDucking()
-                ? player.getY() + Player.DUCK_OVERHEAD_CLEARANCE_PX : Float.NEGATIVE_INFINITY;
+                ? player.getY() + player.getDuckOverheadClearancePx() : Float.NEGATIVE_INFINITY;
 
         Iterator<Hazard> it = world.getHazards().iterator();
         while (it.hasNext()) {

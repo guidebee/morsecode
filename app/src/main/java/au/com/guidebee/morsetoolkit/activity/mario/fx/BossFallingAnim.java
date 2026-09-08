@@ -2,7 +2,6 @@ package au.com.guidebee.morsetoolkit.activity.mario.fx;
 
 import com.guidebee.game.microedition.Sprite;
 
-import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.Axe;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.Boss;
@@ -32,8 +31,6 @@ public class BossFallingAnim extends Sprite {
     private static final float DELAY_STEP_TICKS = 5f;
     private static final float DELAY_BASE_TICKS = 2 * BRIDGE_LENGTH_TILES;
 
-    private static final int FRAME_WIDTH = 64;
-    private static final int FRAME_HEIGHT = 64;
     private static final float PHYSICS_FPS = 60f;
     private static final float FRAME_INTERVAL = 0.1f;
     private static final float INITIAL_DELAY_TICKS = 180f;
@@ -65,21 +62,20 @@ public class BossFallingAnim extends Sprite {
     private boolean falling;
     private boolean roared;
 
-    private BossFallingAnim(float x, float y, MarioGhost ghost) {
-        super(MarioResourceManager.region("boss"), FRAME_WIDTH, FRAME_HEIGHT);
+    private BossFallingAnim(float x, float y, MarioGhost ghost, int tileSize) {
+        super(MarioResourceManager.region("boss"), tileSize * 2, tileSize * 2);
         setPosition(x, y);
         this.startY = y;
         this.ghost = ghost;
     }
 
     /** Ported from {@code Mario.RemoveBridge} - the axe's own touch handler is the only caller (see class doc). */
-    public static void spawnCollapse(Axe axe, Boss boss, Player player) {
+    public static void spawnCollapse(Axe axe, Boss boss, Player player, int tileSize) {
         boss.deactivate();
 
         MarioGhost ghost = new MarioGhost(player);
         MarioContext.spawn(ghost);
 
-        int tileSize = MarioConfiguration.TILE_SIZE;
         int startTileX = Math.round(axe.getX() / tileSize) - BRIDGE_LENGTH_TILES;
         // The bridge deck sits 2 tiles below the axe in every castle level
         // (confirmed by reading every converted level JSON) - the original's
@@ -87,10 +83,10 @@ public class BossFallingAnim extends Sprite {
         float bridgeY = axe.getY() + 2 * tileSize;
         for (int i = 0; i < BRIDGE_LENGTH_TILES; i++) {
             float delay = DELAY_BASE_TICKS - i * DELAY_STEP_TICKS;
-            MarioContext.spawn(new BridgeBlackout((startTileX + i) * tileSize, bridgeY, delay));
+            MarioContext.spawn(new BridgeBlackout((startTileX + i) * tileSize, bridgeY, delay, tileSize));
         }
 
-        MarioContext.spawn(new BossFallingAnim(boss.getX(), boss.getY(), ghost));
+        MarioContext.spawn(new BossFallingAnim(boss.getX(), boss.getY(), ghost, tileSize));
     }
 
     @Override

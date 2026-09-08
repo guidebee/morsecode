@@ -28,20 +28,19 @@ import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
  */
 public class EnemyTurtle extends Enemy {
 
-    private static final int FRAME_WIDTH = 32;
-    private static final int FRAME_HEIGHT = 48;
-
     private static final float GRAVITY = 6f;
     private static final float WALK_SPEED = 1f;
     private static final float ANIMATION_INTERVAL = 0.3f;
 
     private final String attribute;
+    private final int tileSize;
     private float animTimer;
     private boolean showingFirstFrame = true;
 
-    public EnemyTurtle(float x, float y, String attribute) {
-        super(regionFor(attribute), FRAME_WIDTH, FRAME_HEIGHT, x, y, false);
+    public EnemyTurtle(float x, float y, String attribute, int tileSize) {
+        super(regionFor(attribute), tileSize, (tileSize * 3) / 2, x, y, false);
         this.attribute = attribute;
+        this.tileSize = tileSize;
         setFrame(movingRight ? 2 : 0);
     }
 
@@ -67,7 +66,7 @@ public class EnemyTurtle extends Enemy {
 
     @Override
     public void onStomped(Player player) {
-        TurtleShell shell = new TurtleShell(getX(), getY(), attribute, movingRight);
+        TurtleShell shell = new TurtleShell(getX(), getY(), attribute, movingRight, tileSize);
         MarioContext.world().addEnemy(shell);
         MarioContext.spawn(shell);
         deactivate();
@@ -83,7 +82,7 @@ public class EnemyTurtle extends Enemy {
     @Override
     public void onDefeatedByProjectile() {
         MarioResourceManager.sound("smb_kick").play();
-        FallingDeadSprite.spawn(getX(), getY(), regionFor(attribute).split(FRAME_WIDTH, FRAME_HEIGHT)[0][0]);
+        FallingDeadSprite.spawn(getX(), getY(), regionFor(attribute).split(tileSize, (tileSize * 3) / 2)[0][0]);
         deactivate();
     }
 }

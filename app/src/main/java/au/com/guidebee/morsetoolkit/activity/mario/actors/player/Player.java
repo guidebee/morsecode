@@ -4,7 +4,6 @@ import com.guidebee.game.graphics.Batch;
 import com.guidebee.game.graphics.TextureRegion;
 import com.guidebee.game.microedition.Layer;
 
-import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.Bouncer;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.InteractiveBrick;
@@ -112,8 +111,8 @@ public class Player extends Layer {
     /** Every growth/shrink strip's per-frame delay - matches e.g. {@code SmallToBigMarioAnim}'s {@code setAnimationTimer(new Timer(120))}. */
     private static final float TRANSITION_FRAME_SECONDS = 120f / 1000f;
     /** All 4 growth/shrink strips share this cell size (the "Big"/"Fire" box - even the small-mario-posed early frames of a growth strip use it), confirmed against the source PNGs' pixel dimensions. */
-    private static final int TRANSITION_FRAME_WIDTH = 32;
-    private static final int TRANSITION_FRAME_HEIGHT = 64;
+    private final int transitionFrameWidth;
+    private final int transitionFrameHeight;
 
     /**
      * ~100 original 60fps ticks of standing still before falling starts, then
@@ -189,9 +188,9 @@ public class Player extends Layer {
      */
     private boolean ducking;
     /** Ported from {@code Player_Brick}'s own {@code p.getY() + 32} threshold. */
-    private static final float DUCK_HEAD_ROOM_PX = 32f;
+    private final float duckHeadRoomPx;
     /** Ported from {@code Player_EnemyGroup}/{@code Hammer_Player}'s own {@code p.getY() + 48} threshold. */
-    public static final float DUCK_OVERHEAD_CLEARANCE_PX = 48f;
+    private final float duckOverheadClearancePx;
 
     /** Ported from {@code Player}'s {@code invincible} field - post-hit/post-death, and the only one of the three that blinks (see {@link #paint}). */
     private float invincibleTimer;
@@ -258,7 +257,16 @@ public class Player extends Layer {
         this.input = input;
         this.checkpointX = x;
         this.checkpointY = y;
+        int tileSize = world.tileSize();
+        this.transitionFrameWidth = tileSize;
+        this.transitionFrameHeight = tileSize * 2;
+        this.duckHeadRoomPx = tileSize;
+        this.duckOverheadClearancePx = (tileSize * 3) / 2f;
         initFrames(powerState);
+    }
+
+    public float getDuckOverheadClearancePx() {
+        return duckOverheadClearancePx;
     }
 
     private void initFrames(PlayerPowerState state) {
@@ -277,7 +285,7 @@ public class Player extends Layer {
         }
         if (transitionFrames != null) {
             g.draw(transitionFrames[transitionFrameIndex], getX(), getY(),
-                    TRANSITION_FRAME_WIDTH, TRANSITION_FRAME_HEIGHT);
+                    transitionFrameWidth, transitionFrameHeight);
             return;
         }
         // Ported from Player.render(): a Star's color-cycle draw always wins
@@ -637,8 +645,8 @@ public class Player extends Layer {
         int width = (int) getWidth();
         int height = (int) getHeight();
         float newX = Math.max(0, getX() + dx);
-        int tileSize = MarioConfiguration.TILE_SIZE;
-        float duckAboveY = ducking ? getY() + DUCK_HEAD_ROOM_PX : Float.NEGATIVE_INFINITY;
+        int tileSize = world.tileSize();
+        float duckAboveY = ducking ? getY() + duckHeadRoomPx : Float.NEGATIVE_INFINITY;
 
         if (dx > 0 && world.containsImpassableArea(newX, getY(), width, height, duckAboveY)) {
             newX = (float) (((int) (newX + width) / tileSize) * tileSize - width);
@@ -654,8 +662,8 @@ public class Player extends Layer {
         int width = (int) getWidth();
         int height = (int) getHeight();
         float newY = getY() + dy;
-        int tileSize = MarioConfiguration.TILE_SIZE;
-        float duckAboveY = ducking ? getY() + DUCK_HEAD_ROOM_PX : Float.NEGATIVE_INFINITY;
+        int tileSize = world.tileSize();
+        float duckAboveY = ducking ? getY() + duckHeadRoomPx : Float.NEGATIVE_INFINITY;
 
         if (dy > 0) {
             if (world.containsImpassableArea(getX(), newY, width, height, duckAboveY)) {
@@ -859,7 +867,7 @@ public class Player extends Layer {
      */
     private void beginTransition(String regionName, PlayerPowerState target, boolean preShiftUp32) {
         TextureRegion[] rowFrames = MarioResourceManager.region(regionName)
-                .split(TRANSITION_FRAME_WIDTH, TRANSITION_FRAME_HEIGHT)[0];
+                .split(transitionFrameWidth, transitionFrameHeight)[0];
         transitionFrames = new TextureRegion[rowFrames.length];
         for (int i = 0; i < rowFrames.length; i++) {
             TextureRegion copy = new TextureRegion(rowFrames[i]);

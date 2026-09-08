@@ -2,8 +2,6 @@ package au.com.guidebee.morsetoolkit.platformer.core;
 
 import com.guidebee.game.scene.Actor;
 
-import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
-
 /**
  * Shared tile-snap collision resolution for simple mobile actors (Mushroom,
  * Life, Star - anything that walks/falls and bounces off walls without
@@ -21,7 +19,7 @@ public final class TileMovement {
     public static boolean moveX(Actor actor, float dx, TileCollisionSource world) {
         int width = (int) actor.getWidth();
         int height = (int) actor.getHeight();
-        int tileSize = MarioConfiguration.TILE_SIZE;
+        int tileSize = world.tileSize();
         float newX = actor.getX() + dx;
         boolean blocked = false;
 
@@ -40,7 +38,7 @@ public final class TileMovement {
     public static boolean moveY(Actor actor, float dy, TileCollisionSource world) {
         int width = (int) actor.getWidth();
         int height = (int) actor.getHeight();
-        int tileSize = MarioConfiguration.TILE_SIZE;
+        int tileSize = world.tileSize();
         float newY = actor.getY() + dy;
         boolean blocked = false;
 

@@ -6,6 +6,7 @@ import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.player.Player;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.player.PlayerPowerState;
 import au.com.guidebee.morsetoolkit.activity.mario.fx.BrickFragment;
+import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
 
 /**
  * A plain breakable brick, ported from {@code Bricks/Brick.java}. Big/fire
@@ -73,7 +74,7 @@ public class Brick extends InteractiveBrick {
             // solid stand-in left behind for ~10 ticks so anything standing
             // exactly on top the instant this brick breaks doesn't fall
             // through a frame early - see TemporaryInvisibleBrick's own doc.
-            TemporaryInvisibleBrick.spawnAt(getX(), getY());
+            TemporaryInvisibleBrick.spawnAt(getX(), getY(), MarioContext.world().tileSize());
             deactivate();
         } else {
             MarioResourceManager.sound("smb_bump").play();

@@ -31,14 +31,11 @@ import au.com.guidebee.morsetoolkit.platformer.core.TileMovement;
  */
 public class Boss extends Enemy {
 
-    private static final int FRAME_WIDTH = 64;
-    private static final int FRAME_HEIGHT = 64;
     private static final float FRAME_INTERVAL = 0.3f;
 
     private static final float GRAVITY_STEP = 0.5f;
     private static final float GRAVITY_CAP = 4f;
     private static final float JUMP_GRAVITY = -12f;
-    private static final float PATROL_RANGE_PX = 3 * 32f;
     private static final float PATROL_SPEED = 1f;
     private static final float CHASE_SPEED = 1f;
     private static final int START_LIFE = 5;
@@ -49,6 +46,7 @@ public class Boss extends Enemy {
     private final float rightBoundX;
     private final float maxXPx;
     private final boolean hammerMode;
+    private final int tileSize;
 
     private int life = START_LIFE;
     private float gravity;
@@ -64,12 +62,13 @@ public class Boss extends Enemy {
     private boolean showingFirstFrame = true;
 
     /** @param maxXPx the level's own bound past which the boss can't walk further right (the original's {@code MaxX*32}, i.e. {@code patrolLength*TILE_SIZE}). */
-    public Boss(float x, float y, float maxXPx, boolean hammerMode) {
-        super(MarioResourceManager.region("boss"), FRAME_WIDTH, FRAME_HEIGHT, x, y, true);
-        leftBoundX = x - PATROL_RANGE_PX;
-        rightBoundX = x + PATROL_RANGE_PX;
+    public Boss(float x, float y, float maxXPx, boolean hammerMode, int tileSize) {
+        super(MarioResourceManager.region("boss"), tileSize * 2, tileSize * 2, x, y, true);
+        leftBoundX = x - 3 * tileSize;
+        rightBoundX = x + 3 * tileSize;
         this.maxXPx = maxXPx;
         this.hammerMode = hammerMode;
+        this.tileSize = tileSize;
     }
 
     private static float randomTicks(int min, int maxInclusive, int multiplier) {
@@ -131,7 +130,7 @@ public class Boss extends Enemy {
         throwingFire = true;
         fireDelayTimer -= frames;
         if (fireDelayTimer < 0) {
-            BossFire fire = new BossFire(getX(), ((int) getY() / 32) * 32);
+            BossFire fire = new BossFire(getX(), ((int) getY() / tileSize) * tileSize, tileSize);
             MarioContext.world().addHazard(fire);
             MarioContext.spawn(fire);
             MarioResourceManager.sound("smb_bowserfire").play();

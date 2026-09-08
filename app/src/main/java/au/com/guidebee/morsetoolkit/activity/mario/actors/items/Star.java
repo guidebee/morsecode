@@ -26,8 +26,8 @@ public class Star extends CollectibleItem {
     private float gravity = -5f;
     private float animTimer;
 
-    public Star(float x, float y) {
-        super(MarioResourceManager.region("star"), 32, 32, x, y);
+    public Star(float x, float y, int tileSize) {
+        super(MarioResourceManager.region("star"), tileSize, tileSize, x, y);
     }
 
     @Override

@@ -6,8 +6,6 @@ import com.guidebee.game.graphics.Texture;
 import com.guidebee.game.graphics.TextureRegion;
 import com.guidebee.game.microedition.Layer;
 
-import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
-
 /**
  * One tile of the boss-bridge collapsing into blackness, ported from
  * {@code Animations/Black.java}: invisible until its own delay elapses, then
@@ -26,14 +24,13 @@ public class BridgeBlackout extends Layer {
 
     private float delayTicks;
 
-    public BridgeBlackout(float x, float y, float delayTicks) {
-        super(x, y, MarioConfiguration.TILE_SIZE, MarioConfiguration.TILE_SIZE, true);
+    public BridgeBlackout(float x, float y, float delayTicks, int tileSize) {
+        super(x, y, tileSize, tileSize, true);
         this.delayTicks = delayTicks;
     }
 
-    private static TextureRegion blackRegion() {
+    private static TextureRegion blackRegion(int tileSize) {
         if (blackRegion == null) {
-            int tileSize = MarioConfiguration.TILE_SIZE;
             Pixmap pixmap = new Pixmap(tileSize, tileSize, Pixmap.Format.RGBA8888);
             pixmap.setColor(0f, 0f, 0f, 1f);
             pixmap.fill();
@@ -55,7 +52,7 @@ public class BridgeBlackout extends Layer {
     @Override
     public void paint(Batch g) {
         if (delayTicks <= 0) {
-            g.draw(blackRegion(), getX(), getY(), getWidth(), getHeight());
+            g.draw(blackRegion((int) getWidth()), getX(), getY(), getWidth(), getHeight());
         }
     }
 }

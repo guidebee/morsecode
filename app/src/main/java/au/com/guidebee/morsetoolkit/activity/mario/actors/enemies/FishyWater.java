@@ -23,12 +23,10 @@ import au.com.guidebee.morsetoolkit.activity.mario.fx.FallingDeadSprite;
  */
 public class FishyWater extends Enemy {
 
-    private static final int FRAME_SIZE = 32;
     private static final float SPEED_GREY = 0.5f;
     private static final float SPEED_RED = 1f;
     private static final float ANIM_INTERVAL_GREY = 200f / 60f;
     private static final float ANIM_INTERVAL_RED = 100f / 60f;
-    private static final float BOB_RANGE_PX = 32f;
     private static final float BOB_SPEED = 0.5f;
 
     private final boolean red;
@@ -37,20 +35,22 @@ public class FishyWater extends Enemy {
     private final float upY;
     private final float downY;
     private final float animInterval;
+    private final int tileSize;
 
     private boolean goingUp = true;
     private float animTimer;
     private boolean showingFirstFrame = true;
 
-    public FishyWater(float x, float y, int type) {
+    public FishyWater(float x, float y, int type, int tileSize) {
         super(MarioResourceManager.region(type == 3 || type == 4 ? "fish_red" : "fish_grey"),
-                FRAME_SIZE, FRAME_SIZE, x, y, false);
+                tileSize, tileSize, x, y, false);
         this.red = type == 3 || type == 4;
         this.bobbing = type == 2 || type == 4;
         this.speedX = red ? -SPEED_RED : -SPEED_GREY;
         this.animInterval = red ? ANIM_INTERVAL_RED : ANIM_INTERVAL_GREY;
-        this.upY = y - BOB_RANGE_PX;
-        this.downY = y + BOB_RANGE_PX;
+        this.upY = y - tileSize;
+        this.downY = y + tileSize;
+        this.tileSize = tileSize;
         setFrame(0);
     }
 
@@ -90,7 +90,7 @@ public class FishyWater extends Enemy {
     public void onDefeatedByProjectile() {
         MarioResourceManager.sound("smb_kick").play();
         FallingDeadSprite.spawn(getX(), getY(),
-                MarioResourceManager.region(red ? "fish_red" : "fish_grey").split(FRAME_SIZE, FRAME_SIZE)[0][0]);
+                MarioResourceManager.region(red ? "fish_red" : "fish_grey").split(tileSize, tileSize)[0][0]);
         deactivate();
     }
 }

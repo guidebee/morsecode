@@ -42,7 +42,7 @@ public final class EnemyCollisionResolver {
         // while ducking (Big/Fire Mario only), an enemy sitting entirely
         // above that line passes over a crouching Mario harmlessly instead
         // of stomping/hurting him - see Player#isDucking's doc.
-        float duckClearanceY = player.isDucking() ? py + Player.DUCK_OVERHEAD_CLEARANCE_PX : Float.NEGATIVE_INFINITY;
+        float duckClearanceY = player.isDucking() ? py + player.getDuckOverheadClearancePx() : Float.NEGATIVE_INFINITY;
 
         for (Enemy enemy : new ArrayList<>(enemies)) {
             if (!enemy.isActive() || !enemy.overlaps(px, py, pw, ph)) {

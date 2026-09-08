@@ -2,7 +2,6 @@ package au.com.guidebee.morsetoolkit.activity.mario.actors.enemies;
 
 import com.guidebee.game.graphics.TextureRegion;
 
-import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.player.Player;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
@@ -29,21 +28,23 @@ import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
  */
 public class Rocket extends Enemy {
 
-    private static final int FRAME_SIZE = 32;
     private static final float SPEED = 3f;
     private static final float FALL_OUT_MARGIN_TILES = 20f;
 
-    public Rocket(float x, float y, boolean movingRight) {
-        this(x, y, movingRight, false);
+    private final int tileSize;
+
+    public Rocket(float x, float y, boolean movingRight, int tileSize) {
+        this(x, y, movingRight, false, tileSize);
     }
 
-    public Rocket(float x, float y, boolean movingRight, boolean blackAndWhite) {
-        super(regionFor(movingRight, blackAndWhite), FRAME_SIZE, FRAME_SIZE, x, y, movingRight);
+    public Rocket(float x, float y, boolean movingRight, boolean blackAndWhite, int tileSize) {
+        super(regionFor(movingRight, blackAndWhite, tileSize), tileSize, tileSize, x, y, movingRight);
+        this.tileSize = tileSize;
     }
 
-    private static TextureRegion regionFor(boolean movingRight, boolean blackAndWhite) {
+    private static TextureRegion regionFor(boolean movingRight, boolean blackAndWhite, int tileSize) {
         TextureRegion frame = MarioResourceManager.region(blackAndWhite ? "bw_rocket_launcher" : "rocket_launcher")
-                .split(FRAME_SIZE, FRAME_SIZE)[3][0];
+                .split(tileSize, tileSize)[3][0];
         if (movingRight) {
             TextureRegion flipped = new TextureRegion(frame);
             flipped.flip(true, false);
@@ -61,7 +62,7 @@ public class Rocket extends Enemy {
         float frames = delta * PHYSICS_FPS;
         setX(getX() + (movingRight ? SPEED : -SPEED) * frames);
 
-        float marginPx = FALL_OUT_MARGIN_TILES * MarioConfiguration.TILE_SIZE;
+        float marginPx = FALL_OUT_MARGIN_TILES * tileSize;
         if (getX() < -marginPx || getX() > MarioContext.world().getWidthPx() + marginPx) {
             deactivate();
         }

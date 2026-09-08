@@ -4,7 +4,6 @@ import com.guidebee.game.graphics.Batch;
 import com.guidebee.game.graphics.TextureRegion;
 import com.guidebee.game.microedition.Layer;
 
-import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 
 /**
@@ -47,14 +46,8 @@ public class Lift extends Layer implements LiftSurface {
 
     private static final float PHYSICS_FPS = 60f;
     private static final float VERTICAL_OSCILLATION_RATE = 0.015f;
-    private static final float VERTICAL_OSCILLATION_AMPLITUDE = 5 * MarioConfiguration.TILE_SIZE;
     private static final float HORIZONTAL_OSCILLATION_RATE = 0.02f;
-    private static final float HORIZONTAL_OSCILLATION_AMPLITUDE = 2 * MarioConfiguration.TILE_SIZE;
     private static final float TRAVEL_SPEED = 1.5f;
-    private static final float TRAVEL_RANGE = 8 * MarioConfiguration.TILE_SIZE;
-
-    /** A rider is considered "landing" while its feet are within this many pixels of the lift's top. */
-    private static final float LANDING_TOLERANCE = MarioConfiguration.TILE_SIZE / 2f;
 
     public enum Motion {UP_DOWN, LEFT_RIGHT, LEFT_RIGHT_INVERT, UP, DOWN}
 
@@ -62,16 +55,25 @@ public class Lift extends Layer implements LiftSurface {
     private final float originX;
     private final float originY;
     private final TextureRegion region;
+    private final float verticalOscillationAmplitude;
+    private final float horizontalOscillationAmplitude;
+    private final float travelRange;
+    /** A rider is considered "landing" while its feet are within this many pixels of the lift's top. */
+    private final float landingTolerance;
 
     private double phase;
     private float deltaX;
 
-    public Lift(float x, float y, Motion motion, int widthTiles) {
-        super(x, y, Math.max(1, widthTiles) * MarioConfiguration.TILE_SIZE, MarioConfiguration.TILE_SIZE / 2f, true);
+    public Lift(float x, float y, Motion motion, int widthTiles, int tileSize) {
+        super(x, y, Math.max(1, widthTiles) * tileSize, tileSize / 2f, true);
         this.motion = motion;
         this.originX = x;
         this.originY = y;
         this.region = MarioResourceManager.region("lift");
+        this.verticalOscillationAmplitude = 5 * tileSize;
+        this.horizontalOscillationAmplitude = 2 * tileSize;
+        this.travelRange = 8 * tileSize;
+        this.landingTolerance = tileSize / 2f;
     }
 
     @Override
@@ -83,15 +85,15 @@ public class Lift extends Layer implements LiftSurface {
         switch (motion) {
             case UP_DOWN:
                 phase += VERTICAL_OSCILLATION_RATE * frames;
-                setY((float) (originY + Math.cos(phase) * VERTICAL_OSCILLATION_AMPLITUDE));
+                setY((float) (originY + Math.cos(phase) * verticalOscillationAmplitude));
                 break;
             case LEFT_RIGHT:
                 phase += HORIZONTAL_OSCILLATION_RATE * frames;
-                setX((float) (originX + Math.cos(phase) * HORIZONTAL_OSCILLATION_AMPLITUDE));
+                setX((float) (originX + Math.cos(phase) * horizontalOscillationAmplitude));
                 break;
             case LEFT_RIGHT_INVERT:
                 phase -= HORIZONTAL_OSCILLATION_RATE * frames;
-                setX((float) (originX + Math.cos(phase) * HORIZONTAL_OSCILLATION_AMPLITUDE));
+                setX((float) (originX + Math.cos(phase) * horizontalOscillationAmplitude));
                 break;
             case UP:
                 setY(wrap(getY() - TRAVEL_SPEED * frames));
@@ -104,11 +106,11 @@ public class Lift extends Layer implements LiftSurface {
     }
 
     private float wrap(float y) {
-        if (y < originY - TRAVEL_RANGE) {
-            return originY + TRAVEL_RANGE;
+        if (y < originY - travelRange) {
+            return originY + travelRange;
         }
-        if (y > originY + TRAVEL_RANGE) {
-            return originY - TRAVEL_RANGE;
+        if (y > originY + travelRange) {
+            return originY - travelRange;
         }
         return y;
     }
@@ -146,6 +148,6 @@ public class Lift extends Layer implements LiftSurface {
         }
         float top = getTopY();
         float bottom = y + height;
-        return bottom >= top - LANDING_TOLERANCE && bottom <= top + LANDING_TOLERANCE;
+        return bottom >= top - landingTolerance && bottom <= top + landingTolerance;
     }
 }

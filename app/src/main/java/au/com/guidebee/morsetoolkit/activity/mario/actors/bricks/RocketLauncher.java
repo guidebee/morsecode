@@ -29,10 +29,12 @@ public class RocketLauncher extends InteractiveBrick {
 
     private static final Random RANDOM = new Random();
 
+    private final int tileSize;
     private float shootTimer;
 
-    public RocketLauncher(float x, float y, TextureRegion region) {
+    public RocketLauncher(float x, float y, TextureRegion region, int tileSize) {
         super(region, x, y);
+        this.tileSize = tileSize;
         shootTimer = randomTicks(1, 3, 50);
     }
 
@@ -56,7 +58,7 @@ public class RocketLauncher extends InteractiveBrick {
             return;
         }
         boolean towardLeft = player.getX() < getX();
-        Rocket rocket = new Rocket(getX(), getY(), !towardLeft);
+        Rocket rocket = new Rocket(getX(), getY(), !towardLeft, tileSize);
         MarioContext.world().addEnemy(rocket);
         MarioContext.spawn(rocket);
         shootTimer = randomTicks(2, 5, 200);

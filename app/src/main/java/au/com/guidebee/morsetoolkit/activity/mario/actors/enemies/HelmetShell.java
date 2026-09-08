@@ -32,11 +32,13 @@ public class HelmetShell extends Enemy {
     private static final float MOVING_SPEED = 5f;
 
     private final String color;
+    private final int tileSize;
     private boolean moving;
 
-    public HelmetShell(float x, float y, String color, boolean movingRight) {
-        super(regionFor(color), 32, 32, x, y, movingRight);
+    public HelmetShell(float x, float y, String color, boolean movingRight, int tileSize) {
+        super(regionFor(color), tileSize, tileSize, x, y, movingRight);
         this.color = color;
+        this.tileSize = tileSize;
     }
 
     private static TextureRegion regionFor(String color) {
@@ -115,7 +117,7 @@ public class HelmetShell extends Enemy {
     @Override
     public void onDefeatedByProjectile() {
         MarioResourceManager.sound("smb_kick").play();
-        FallingDeadSprite.spawn(getX(), getY(), regionFor(color).split(32, 32)[0][0]);
+        FallingDeadSprite.spawn(getX(), getY(), regionFor(color).split(tileSize, tileSize)[0][0]);
         deactivate();
     }
 }

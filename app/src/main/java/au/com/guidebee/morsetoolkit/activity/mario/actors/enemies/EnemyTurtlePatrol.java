@@ -23,21 +23,21 @@ import au.com.guidebee.morsetoolkit.platformer.core.TileMovement;
  */
 public class EnemyTurtlePatrol extends Enemy {
 
-    private static final int FRAME_WIDTH = 32;
-    private static final int FRAME_HEIGHT = 48;
     private static final float GRAVITY = 3f;
     private static final float WALK_SPEED = 1f;
     private static final float ANIMATION_INTERVAL = 0.3f;
 
     private final float leftBoundX;
     private final float rightBoundX;
+    private final int tileSize;
     private float animTimer;
     private boolean showingFirstFrame = true;
 
-    public EnemyTurtlePatrol(float x, float y, int patrolLengthTiles) {
-        super(MarioResourceManager.region("enemy_turtle_patrol"), FRAME_WIDTH, FRAME_HEIGHT, x, y, false);
+    public EnemyTurtlePatrol(float x, float y, int patrolLengthTiles, int tileSize) {
+        super(MarioResourceManager.region("enemy_turtle_patrol"), tileSize, (tileSize * 3) / 2, x, y, false);
         leftBoundX = x;
-        rightBoundX = x + 32 * patrolLengthTiles;
+        rightBoundX = x + tileSize * patrolLengthTiles;
+        this.tileSize = tileSize;
     }
 
     @Override
@@ -66,7 +66,7 @@ public class EnemyTurtlePatrol extends Enemy {
 
     @Override
     public void onStomped(Player player) {
-        TurtleShell shell = new TurtleShell(getX(), getY() + 16, "Ground", movingRight);
+        TurtleShell shell = new TurtleShell(getX(), getY() + tileSize / 2f, "Ground", movingRight, tileSize);
         MarioContext.world().addEnemy(shell);
         MarioContext.spawn(shell);
         deactivate();
@@ -85,7 +85,7 @@ public class EnemyTurtlePatrol extends Enemy {
     public void onDefeatedByProjectile() {
         MarioResourceManager.sound("smb_kick").play();
         FallingDeadSprite.spawn(getX(), getY(),
-                MarioResourceManager.region("enemy_turtle_patrol").split(FRAME_WIDTH, FRAME_HEIGHT)[0][0]);
+                MarioResourceManager.region("enemy_turtle_patrol").split(tileSize, (tileSize * 3) / 2)[0][0]);
         deactivate();
     }
 }

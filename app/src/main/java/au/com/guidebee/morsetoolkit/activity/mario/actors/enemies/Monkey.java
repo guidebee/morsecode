@@ -31,9 +31,6 @@ import au.com.guidebee.morsetoolkit.platformer.core.TileMovement;
  */
 public class Monkey extends Enemy {
 
-    private static final int FRAME_WIDTH = 32;
-    private static final int FRAME_HEIGHT = 48;
-    private static final float PATROL_RANGE_PX = 32f;
     private static final float PATROL_SPEED = 0.5f;
     private static final float GRAVITY_STEP = 0.3f;
     private static final float GRAVITY_CAP = 5f;
@@ -44,6 +41,7 @@ public class Monkey extends Enemy {
 
     private final float leftBoundX;
     private final float rightBoundX;
+    private final int tileSize;
 
     private float gravity;
     private float jumpTimer = randomTicks(3, 6, 20);
@@ -51,10 +49,11 @@ public class Monkey extends Enemy {
     private float frameTimer;
     private boolean showingFirstFrame = true;
 
-    public Monkey(float x, float y) {
-        super(MarioResourceManager.region("monkey"), FRAME_WIDTH, FRAME_HEIGHT, x, y, true);
-        leftBoundX = x - PATROL_RANGE_PX;
-        rightBoundX = x + PATROL_RANGE_PX;
+    public Monkey(float x, float y, int tileSize) {
+        super(MarioResourceManager.region("monkey"), tileSize, (tileSize * 3) / 2, x, y, true);
+        leftBoundX = x - tileSize;
+        rightBoundX = x + tileSize;
+        this.tileSize = tileSize;
     }
 
     private static float randomTicks(int min, int maxInclusive, int multiplier) {
@@ -119,7 +118,7 @@ public class Monkey extends Enemy {
     public void onDefeatedByProjectile() {
         MarioResourceManager.sound("smb_kick").play();
         FallingDeadSprite.spawn(getX(), getY(),
-                MarioResourceManager.region("monkey").split(FRAME_WIDTH, FRAME_HEIGHT)[0][0]);
+                MarioResourceManager.region("monkey").split(tileSize, (tileSize * 3) / 2)[0][0]);
         deactivate();
     }
 }

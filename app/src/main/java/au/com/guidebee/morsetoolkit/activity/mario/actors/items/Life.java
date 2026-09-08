@@ -25,8 +25,8 @@ public class Life extends CollectibleItem {
     private boolean movingRight = true;
     private float animTimer;
 
-    public Life(float x, float y) {
-        super(MarioResourceManager.region("one_up"), 32, 32, x, y);
+    public Life(float x, float y, int tileSize) {
+        super(MarioResourceManager.region("one_up"), tileSize, tileSize, x, y);
     }
 
     @Override

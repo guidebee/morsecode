@@ -4,7 +4,6 @@ import com.guidebee.game.graphics.TextureRegion;
 import com.guidebee.game.graphics.Texture;
 import com.guidebee.game.graphics.Pixmap;
 
-import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.items.Life;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.player.Player;
@@ -25,20 +24,22 @@ public class InvisibleBrck extends InteractiveBrick {
 
     private final String attribute;
     private final String insideItem;
+    private final int tileSize;
 
     private static TextureRegion blankRegion;
 
-    public InvisibleBrck(float x, float y, String attribute, String insideItem) {
-        super(blankRegion(), x, y);
+    public InvisibleBrck(float x, float y, String attribute, String insideItem, int tileSize) {
+        super(blankRegion(tileSize), x, y);
         this.attribute = attribute;
         this.insideItem = insideItem;
+        this.tileSize = tileSize;
         setVisible(false);
     }
 
     /** Lazily-cached shared blank texture - one GPU texture for every invisible brick, not one each. */
-    private static TextureRegion blankRegion() {
+    private static TextureRegion blankRegion(int tileSize) {
         if (blankRegion == null) {
-            Pixmap pixmap = new Pixmap(MarioConfiguration.TILE_SIZE, MarioConfiguration.TILE_SIZE, Pixmap.Format.RGBA8888);
+            Pixmap pixmap = new Pixmap(tileSize, tileSize, Pixmap.Format.RGBA8888);
             blankRegion = new TextureRegion(new Texture(pixmap));
         }
         return blankRegion;
@@ -46,17 +47,17 @@ public class InvisibleBrck extends InteractiveBrick {
 
     @Override
     public void hitFromBelow(Player player) {
-        Iron iron = new Iron(getX(), getY(), attribute);
+        Iron iron = new Iron(getX(), getY(), attribute, tileSize);
         deactivate();
 
         if ("1UP".equals(insideItem)) {
             TextureRegion preview = MarioResourceManager.region("one_up")
-                    .split(MarioConfiguration.TILE_SIZE, MarioConfiguration.TILE_SIZE)[0][0];
+                    .split(tileSize, tileSize)[0][0];
             ItemReveal reveal = new ItemReveal(preview, getX(), getY(), RISE_SPEED_PX_PER_SEC, (x, y) -> {
-                Life life = new Life(x, y);
+                Life life = new Life(x, y, tileSize);
                 MarioContext.world().addCollectible(life);
                 MarioContext.spawn(life);
-            });
+            }, tileSize);
             // Ported from the original's own draw order (VolitileGroup -
             // where LifeAnim lives - added before BrickGroup) - see
             // QuestionMark's own matching note.
@@ -69,7 +70,7 @@ public class InvisibleBrck extends InteractiveBrick {
             // first here instead - see QuestionMark's own note.
             MarioContext.world().addBrick(iron);
             MarioContext.spawn(iron);
-            MarioContext.spawn(new CoinPopEffect(getX(), getY()));
+            MarioContext.spawn(new CoinPopEffect(getX(), getY(), tileSize));
         }
     }
 }

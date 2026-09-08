@@ -23,8 +23,8 @@ public class Mushroom extends CollectibleItem {
     private float gravity;
     private float animTimer;
 
-    public Mushroom(float x, float y) {
-        super(MarioResourceManager.region("mashrooms"), 32, 32, x, y);
+    public Mushroom(float x, float y, int tileSize) {
+        super(MarioResourceManager.region("mashrooms"), tileSize, tileSize, x, y);
     }
 
     @Override

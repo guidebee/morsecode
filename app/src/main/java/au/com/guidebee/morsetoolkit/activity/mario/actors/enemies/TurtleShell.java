@@ -30,11 +30,13 @@ public class TurtleShell extends Enemy {
     private static final float MOVING_SPEED = 5f;
 
     private final String attribute;
+    private final int tileSize;
     private boolean moving;
 
-    public TurtleShell(float x, float y, String attribute, boolean movingRight) {
-        super(regionFor(attribute), 32, 32, x, y, movingRight);
+    public TurtleShell(float x, float y, String attribute, boolean movingRight, int tileSize) {
+        super(regionFor(attribute), tileSize, tileSize, x, y, movingRight);
         this.attribute = attribute;
+        this.tileSize = tileSize;
     }
 
     private static TextureRegion regionFor(String attribute) {
@@ -97,7 +99,7 @@ public class TurtleShell extends Enemy {
     @Override
     public void onDefeatedByProjectile() {
         MarioResourceManager.sound("smb_kick").play();
-        FallingDeadSprite.spawn(getX(), getY(), regionFor(attribute).split(32, 32)[0][0]);
+        FallingDeadSprite.spawn(getX(), getY(), regionFor(attribute).split(tileSize, tileSize)[0][0]);
         deactivate();
     }
 }

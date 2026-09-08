@@ -2,7 +2,6 @@ package au.com.guidebee.morsetoolkit.activity.mario.actors.bricks;
 
 import com.guidebee.game.microedition.Sprite;
 
-import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 
 /**
@@ -42,9 +41,9 @@ public class Iron extends InteractiveBrick {
     private final float restY;
     private float bumpTicks = 0;
 
-    public Iron(float x, float y, String attribute) {
+    public Iron(float x, float y, String attribute, int tileSize) {
         super(MarioResourceManager.region("iron"),
-                MarioConfiguration.TILE_SIZE, MarioConfiguration.TILE_SIZE, x, y);
+                tileSize, tileSize, x, y);
         setFrame(frameFor(attribute));
         this.restY = y;
     }

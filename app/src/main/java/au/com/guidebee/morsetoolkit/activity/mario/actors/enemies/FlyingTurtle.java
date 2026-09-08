@@ -35,8 +35,6 @@ import au.com.guidebee.morsetoolkit.platformer.core.TileMovement;
  */
 public class FlyingTurtle extends Enemy {
 
-    private static final int FRAME_WIDTH = 32;
-    private static final int FRAME_HEIGHT = 48;
     private static final float GRAVITY_STEP = 0.25f;
     private static final float GRAVITY_CAP = 5f;
     private static final float BOUNCE_GRAVITY = -8f;
@@ -44,13 +42,15 @@ public class FlyingTurtle extends Enemy {
     private static final float ANIMATION_INTERVAL = 0.3f;
 
     private final String color;
+    private final int tileSize;
     private float gravity = -6f;
     private float animTimer;
     private boolean showingFirstFrame = true;
 
-    public FlyingTurtle(float x, float y, String color) {
-        super(regionFor(color), FRAME_WIDTH, FRAME_HEIGHT, x, y, false);
+    public FlyingTurtle(float x, float y, String color, int tileSize) {
+        super(regionFor(color), tileSize, (tileSize * 3) / 2, x, y, false);
         this.color = color;
+        this.tileSize = tileSize;
     }
 
     private static TextureRegion regionFor(String color) {
@@ -84,7 +84,7 @@ public class FlyingTurtle extends Enemy {
 
     @Override
     public void onStomped(Player player) {
-        EnemyTurtle turtle = new EnemyTurtle(getX(), getY(), "normal".equals(color) ? "Ground" : "UnderGround");
+        EnemyTurtle turtle = new EnemyTurtle(getX(), getY(), "normal".equals(color) ? "Ground" : "UnderGround", tileSize);
         MarioContext.world().addEnemy(turtle);
         MarioContext.spawn(turtle);
         deactivate();

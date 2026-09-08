@@ -2,7 +2,6 @@ package au.com.guidebee.morsetoolkit.activity.mario.actors.bricks;
 
 import com.guidebee.game.graphics.TextureRegion;
 
-import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.items.Flower;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.items.Life;
@@ -33,35 +32,37 @@ public class BankWithItem extends InteractiveBrick {
 
     private final String attribute;
     private final String insideItem;
+    private final int tileSize;
 
-    public BankWithItem(float x, float y, String attribute, String insideItem) {
+    public BankWithItem(float x, float y, String attribute, String insideItem, int tileSize) {
         super(MarioResourceManager.themedRegion("brick", attribute), x, y);
         this.attribute = attribute;
         this.insideItem = insideItem;
+        this.tileSize = tileSize;
     }
 
     @Override
     public void hitFromBelow(Player player) {
-        Iron iron = new Iron(getX(), getY(), attribute);
+        Iron iron = new Iron(getX(), getY(), attribute, tileSize);
         deactivate();
 
         switch (insideItem) {
             case "Mashroom": {
                 boolean big = player.getPowerState() != PlayerPowerState.SMALL;
                 TextureRegion preview = big
-                        ? MarioResourceManager.region("flower").split(MarioConfiguration.TILE_SIZE, MarioConfiguration.TILE_SIZE)[0][0]
+                        ? MarioResourceManager.region("flower").split(tileSize, tileSize)[0][0]
                         : MarioResourceManager.region("mashroom");
                 ItemReveal reveal = new ItemReveal(preview, getX(), getY(), RISE_SPEED_PX_PER_SEC, (x, y) -> {
                     if (big) {
-                        Flower flower = new Flower(x, y);
+                        Flower flower = new Flower(x, y, tileSize);
                         MarioContext.world().addCollectible(flower);
                         MarioContext.spawn(flower);
                     } else {
-                        Mushroom mushroom = new Mushroom(x, y);
+                        Mushroom mushroom = new Mushroom(x, y, tileSize);
                         MarioContext.world().addCollectible(mushroom);
                         MarioContext.spawn(mushroom);
                     }
-                });
+                }, tileSize);
                 // Ported from the original's own draw order (VolitileGroup
                 // added before BrickGroup) - see QuestionMark's own matching note.
                 MarioContext.spawn(reveal);
@@ -71,12 +72,12 @@ public class BankWithItem extends InteractiveBrick {
             }
             case "1UP": {
                 TextureRegion preview = MarioResourceManager.region("one_up")
-                        .split(MarioConfiguration.TILE_SIZE, MarioConfiguration.TILE_SIZE)[0][0];
+                        .split(tileSize, tileSize)[0][0];
                 ItemReveal reveal = new ItemReveal(preview, getX(), getY(), RISE_SPEED_PX_PER_SEC, (x, y) -> {
-                    Life life = new Life(x, y);
+                    Life life = new Life(x, y, tileSize);
                     MarioContext.world().addCollectible(life);
                     MarioContext.spawn(life);
-                });
+                }, tileSize);
                 MarioContext.spawn(reveal);
                 MarioContext.world().addBrick(iron);
                 MarioContext.spawn(iron);
@@ -88,7 +89,7 @@ public class BankWithItem extends InteractiveBrick {
                 // spawns first here instead - see QuestionMark's own note.
                 MarioContext.world().addBrick(iron);
                 MarioContext.spawn(iron);
-                MarioContext.spawn(new CoinPopEffect(getX(), getY()));
+                MarioContext.spawn(new CoinPopEffect(getX(), getY(), tileSize));
                 break;
         }
     }

@@ -27,16 +27,14 @@ import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
  */
 public class Spring extends Sprite {
 
-    private static final int FRAME_WIDTH = 32;
-    private static final int FRAME_HEIGHT = 64;
     private static final float FRAME_INTERVAL = 60f / 1000f;
     private static final int[] SQUISH_FRAMES = {0, 1, 2, 2, 1, 0};
 
     private int sequenceIndex = -1;
     private float frameTimer;
 
-    public Spring(float x, float y) {
-        super(MarioResourceManager.region("spring"), FRAME_WIDTH, FRAME_HEIGHT);
+    public Spring(float x, float y, int tileSize) {
+        super(MarioResourceManager.region("spring"), tileSize, tileSize * 2);
         setPosition(x, y);
     }
 

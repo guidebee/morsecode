@@ -3,7 +3,6 @@ package au.com.guidebee.morsetoolkit.activity.mario.fx;
 import com.guidebee.game.graphics.TextureRegion;
 import com.guidebee.game.microedition.Sprite;
 
-import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 
 /**
@@ -34,10 +33,10 @@ public class ItemReveal extends Sprite {
     private float delayTimer;
     private boolean rising;
 
-    public ItemReveal(TextureRegion region, float x, float y, float riseSpeedPxPerSec, Spawner spawner) {
+    public ItemReveal(TextureRegion region, float x, float y, float riseSpeedPxPerSec, Spawner spawner, int tileSize) {
         super(region);
         setPosition(x, y);
-        this.targetY = y - MarioConfiguration.TILE_SIZE;
+        this.targetY = y - tileSize;
         this.riseSpeedPxPerSec = riseSpeedPxPerSec;
         this.spawner = spawner;
         setVisible(false);

@@ -28,15 +28,17 @@ public class Bank extends InteractiveBrick {
 
     private final String attribute;
     private final float restY;
+    private final int tileSize;
     private boolean active;
     private float ticksLeft = ACTIVE_TICKS;
     /** &gt;= 0 while the bump animation plays, in original-tick units; negative means "not bumping". */
     private float bumpTicks = -1;
 
-    public Bank(float x, float y, String attribute) {
+    public Bank(float x, float y, String attribute, int tileSize) {
         super(MarioResourceManager.themedRegion("brick", attribute), x, y);
         this.attribute = attribute;
         this.restY = y;
+        this.tileSize = tileSize;
     }
 
     @Override
@@ -61,14 +63,14 @@ public class Bank extends InteractiveBrick {
     @Override
     public void hitFromBelow(Player player) {
         if (active && ticksLeft < 0) {
-            Iron iron = new Iron(getX(), getY(), attribute);
+            Iron iron = new Iron(getX(), getY(), attribute, tileSize);
             MarioContext.world().addBrick(iron);
             MarioContext.spawn(iron);
             deactivate();
             return;
         }
         active = true;
-        MarioContext.spawn(new CoinPopEffect(getX(), getY()));
+        MarioContext.spawn(new CoinPopEffect(getX(), getY(), tileSize));
         bumpTicks = 0;
     }
 }

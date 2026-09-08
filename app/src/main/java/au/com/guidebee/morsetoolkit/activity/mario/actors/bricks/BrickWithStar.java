@@ -2,7 +2,6 @@ package au.com.guidebee.morsetoolkit.activity.mario.actors.bricks;
 
 import com.guidebee.game.graphics.TextureRegion;
 
-import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.items.Star;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.player.Player;
@@ -18,24 +17,26 @@ public class BrickWithStar extends InteractiveBrick {
     private static final float RISE_SPEED_PX_PER_SEC = 30f;
 
     private final String attribute;
+    private final int tileSize;
 
-    public BrickWithStar(float x, float y, String attribute) {
+    public BrickWithStar(float x, float y, String attribute, int tileSize) {
         super(MarioResourceManager.themedRegion("brick", attribute), x, y);
         this.attribute = attribute;
+        this.tileSize = tileSize;
     }
 
     @Override
     public void hitFromBelow(Player player) {
-        Iron iron = new Iron(getX(), getY(), attribute);
+        Iron iron = new Iron(getX(), getY(), attribute, tileSize);
         deactivate();
 
         TextureRegion preview = MarioResourceManager.region("star")
-                .split(MarioConfiguration.TILE_SIZE, MarioConfiguration.TILE_SIZE)[0][0];
+                .split(tileSize, tileSize)[0][0];
         ItemReveal reveal = new ItemReveal(preview, getX(), getY(), RISE_SPEED_PX_PER_SEC, (x, y) -> {
-            Star star = new Star(x, y);
+            Star star = new Star(x, y, tileSize);
             MarioContext.world().addCollectible(star);
             MarioContext.spawn(star);
-        });
+        }, tileSize);
         // Ported from the original's own draw order (VolitileGroup - where
         // StarAnim lives - added before BrickGroup) - see QuestionMark's own
         // matching note.

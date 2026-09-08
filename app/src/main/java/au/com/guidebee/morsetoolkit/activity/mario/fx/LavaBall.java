@@ -29,11 +29,9 @@ import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
  */
 public class LavaBall extends Sprite {
 
-    private static final int FRAME_SIZE = 32;
     private static final float PHYSICS_FPS = 60f;
     private static final float GRAVITY_STEP = 0.4f;
     private static final float GRAVITY_CAP = 10f;
-    private static final float REST_Y = 14 * 32f;
     private static final float SINK_Y = 500f;
 
     private static final Random RANDOM = new Random();
@@ -41,9 +39,9 @@ public class LavaBall extends Sprite {
     private float gravity = -10f;
     private float eruptTimer;
 
-    public LavaBall(float x) {
-        super(MarioResourceManager.region("lava_ball"), FRAME_SIZE, FRAME_SIZE);
-        setPosition(x, REST_Y);
+    public LavaBall(float x, int tileSize) {
+        super(MarioResourceManager.region("lava_ball"), tileSize, tileSize);
+        setPosition(x, 14 * tileSize);
         setFrame(0);
     }
 

@@ -1,6 +1,5 @@
 package au.com.guidebee.morsetoolkit.activity.mario.actors.bricks;
 
-import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 
 /**
@@ -29,13 +28,13 @@ public class Tree extends InteractiveBrick {
     private static final int FRAME_MIDDLE = 1;
     private static final int FRAME_RIGHT_CAP = 2;
 
-    public Tree(float x, float y, int columnIndex, int lastColumnIndex) {
-        this(x, y, columnIndex, lastColumnIndex, false);
+    public Tree(float x, float y, int columnIndex, int lastColumnIndex, int tileSize) {
+        this(x, y, columnIndex, lastColumnIndex, false, tileSize);
     }
 
-    public Tree(float x, float y, int columnIndex, int lastColumnIndex, boolean blackAndWhite) {
+    public Tree(float x, float y, int columnIndex, int lastColumnIndex, boolean blackAndWhite, int tileSize) {
         super(MarioResourceManager.region(blackAndWhite ? "bw_tree" : "tree"),
-                MarioConfiguration.TILE_SIZE, MarioConfiguration.TILE_SIZE, x, y);
+                tileSize, tileSize, x, y);
         int frame;
         if (columnIndex == 0) {
             frame = FRAME_LEFT_CAP;

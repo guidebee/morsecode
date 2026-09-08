@@ -28,18 +28,19 @@ import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
  */
 public class Helmet extends Enemy {
 
-    private static final int FRAME_SIZE = 32;
     private static final float GRAVITY = 5f;
     private static final float WALK_SPEED = 1f;
     private static final float ANIMATION_INTERVAL = 0.3f;
 
     private final String color;
+    private final int tileSize;
     private float animTimer;
     private boolean showingFirstFrame = true;
 
-    public Helmet(float x, float y, String color) {
-        super(regionFor(color), FRAME_SIZE, FRAME_SIZE, x, y, false);
+    public Helmet(float x, float y, String color, int tileSize) {
+        super(regionFor(color), tileSize, tileSize, x, y, false);
         this.color = color;
+        this.tileSize = tileSize;
     }
 
     private static TextureRegion regionFor(String color) {
@@ -76,7 +77,7 @@ public class Helmet extends Enemy {
 
     @Override
     public void onStomped(Player player) {
-        HelmetShell shell = new HelmetShell(getX(), getY(), color, movingRight);
+        HelmetShell shell = new HelmetShell(getX(), getY(), color, movingRight, tileSize);
         MarioContext.world().addEnemy(shell);
         MarioContext.spawn(shell);
         deactivate();

@@ -2,7 +2,6 @@ package au.com.guidebee.morsetoolkit.activity.mario.actors.bricks;
 
 import com.guidebee.game.graphics.TextureRegion;
 
-import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.items.Flower;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.items.Mushroom;
@@ -32,14 +31,16 @@ public class QuestionMark extends InteractiveBrick {
 
     private final String attribute;
     private final String insideItem;
+    private final int tileSize;
     private float animTimer;
 
-    public QuestionMark(float x, float y, String attribute, String insideItem) {
+    public QuestionMark(float x, float y, String attribute, String insideItem, int tileSize) {
         super(MarioResourceManager.region(regionFor(attribute)),
-                MarioConfiguration.TILE_SIZE, MarioConfiguration.TILE_SIZE, x, y);
+                tileSize, tileSize, x, y);
         setFrameSequence(IDLE_FRAMES);
         this.attribute = attribute;
         this.insideItem = insideItem;
+        this.tileSize = tileSize;
     }
 
     private static String regionFor(String attribute) {
@@ -62,7 +63,7 @@ public class QuestionMark extends InteractiveBrick {
 
     @Override
     public void hitFromBelow(Player player) {
-        Iron iron = new Iron(getX(), getY(), attribute);
+        Iron iron = new Iron(getX(), getY(), attribute, tileSize);
         deactivate();
 
         if ("Mashroom".equals(insideItem)) {
@@ -73,19 +74,19 @@ public class QuestionMark extends InteractiveBrick {
             // for the fire case (the original animates Flower's reveal too;
             // skipping that animation while rising is a cosmetic simplification).
             TextureRegion preview = big
-                    ? MarioResourceManager.region("flower").split(MarioConfiguration.TILE_SIZE, MarioConfiguration.TILE_SIZE)[0][0]
+                    ? MarioResourceManager.region("flower").split(tileSize, tileSize)[0][0]
                     : MarioResourceManager.region("mashroom");
             ItemReveal reveal = new ItemReveal(preview, getX(), getY(), RISE_SPEED_PX_PER_SEC, (x, y) -> {
                 if (big) {
-                    Flower flower = new Flower(x, y);
+                    Flower flower = new Flower(x, y, tileSize);
                     MarioContext.world().addCollectible(flower);
                     MarioContext.spawn(flower);
                 } else {
-                    Mushroom mushroom = new Mushroom(x, y);
+                    Mushroom mushroom = new Mushroom(x, y, tileSize);
                     MarioContext.world().addCollectible(mushroom);
                     MarioContext.spawn(mushroom);
                 }
-            });
+            }, tileSize);
             // Ported from the original's own draw order (VolitileGroup -
             // where MashroomAnim/FlowerAnim live - added to the playfield
             // *before* BrickGroup): the rising reveal renders behind the
@@ -100,7 +101,7 @@ public class QuestionMark extends InteractiveBrick {
             // growth-item reveal above, so iron spawns first here instead.
             MarioContext.world().addBrick(iron);
             MarioContext.spawn(iron);
-            MarioContext.spawn(new CoinPopEffect(getX(), getY()));
+            MarioContext.spawn(new CoinPopEffect(getX(), getY(), tileSize));
         }
     }
 }

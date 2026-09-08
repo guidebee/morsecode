@@ -4,7 +4,6 @@ import com.guidebee.game.graphics.Pixmap;
 import com.guidebee.game.graphics.Texture;
 import com.guidebee.game.graphics.TextureRegion;
 
-import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
 
 /**
@@ -28,20 +27,19 @@ public class TemporaryInvisibleBrick extends InteractiveBrick {
 
     private float ticksLeft = LIFETIME_TICKS;
 
-    private TemporaryInvisibleBrick(float x, float y) {
-        super(transparentRegion(), x, y);
+    private TemporaryInvisibleBrick(float x, float y, int tileSize) {
+        super(transparentRegion(tileSize), x, y);
         setVisible(false);
     }
 
-    public static void spawnAt(float x, float y) {
-        TemporaryInvisibleBrick brick = new TemporaryInvisibleBrick(x, y);
+    public static void spawnAt(float x, float y, int tileSize) {
+        TemporaryInvisibleBrick brick = new TemporaryInvisibleBrick(x, y, tileSize);
         MarioContext.world().addBrick(brick);
         MarioContext.spawn(brick);
     }
 
-    private static TextureRegion transparentRegion() {
+    private static TextureRegion transparentRegion(int tileSize) {
         if (transparentRegion == null) {
-            int tileSize = MarioConfiguration.TILE_SIZE;
             Pixmap pixmap = new Pixmap(tileSize, tileSize, Pixmap.Format.RGBA8888);
             pixmap.setColor(0f, 0f, 0f, 0f);
             pixmap.fill();

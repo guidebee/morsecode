@@ -21,11 +21,13 @@ public class EnemyMashroom extends Enemy {
 
     private final int frameA;
     private final int frameB;
+    private final int tileSize;
     private float animTimer;
     private boolean showingA = true;
 
-    public EnemyMashroom(float x, float y, String attribute) {
-        super(MarioResourceManager.region("enemy"), 32, 32, x, y, false);
+    public EnemyMashroom(float x, float y, String attribute, int tileSize) {
+        super(MarioResourceManager.region("enemy"), tileSize, tileSize, x, y, false);
+        this.tileSize = tileSize;
         int base = themedFrameBase(attribute);
         frameA = base;
         frameB = base + 1;
@@ -69,7 +71,7 @@ public class EnemyMashroom extends Enemy {
     public void onDefeatedByProjectile() {
         MarioResourceManager.sound("smb_kick").play();
         FallingDeadSprite.spawn(getX(), getY(),
-                MarioResourceManager.region("enemy").split(32, 32)[frameA / 2][frameA % 2]);
+                MarioResourceManager.region("enemy").split(tileSize, tileSize)[frameA / 2][frameA % 2]);
         deactivate();
     }
 }

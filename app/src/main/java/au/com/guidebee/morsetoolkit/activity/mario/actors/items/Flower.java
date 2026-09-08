@@ -21,8 +21,8 @@ public class Flower extends CollectibleItem {
 
     private float animTimer;
 
-    public Flower(float x, float y) {
-        super(MarioResourceManager.region("flower"), 32, 32, x, y);
+    public Flower(float x, float y, int tileSize) {
+        super(MarioResourceManager.region("flower"), tileSize, tileSize, x, y);
     }
 
     @Override

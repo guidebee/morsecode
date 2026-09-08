@@ -6,7 +6,6 @@ import com.guidebee.game.microedition.TiledLayer;
 import java.util.ArrayList;
 import java.util.List;
 
-import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.Axe;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.InteractiveBrick;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.Enemy;
@@ -15,6 +14,7 @@ import au.com.guidebee.morsetoolkit.activity.mario.actors.items.Collectible;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.lifts.LiftSurface;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.projectiles.FireBall;
 import au.com.guidebee.morsetoolkit.platformer.core.TileCollisionSource;
+import au.com.guidebee.morsetoolkit.platformer.core.TileMetrics;
 
 /**
  * The static-terrain grid for one level - a {@code TiledLayer} sized to that
@@ -38,6 +38,8 @@ public class MarioWorld extends TiledLayer implements TileCollisionSource {
     private final List<Hazard> hazards = new ArrayList<>();
     private final List<Axe> axes = new ArrayList<>();
 
+    private final int tileSize;
+
     /**
      * @param tilesRegion the composite "tiles"-shaped region to draw this
      *                     level's static terrain from - normally whichever
@@ -49,16 +51,22 @@ public class MarioWorld extends TiledLayer implements TileCollisionSource {
      *                     real {@code attribute} - see {@code
      *                     tools.mario-atlas-packer}'s own TERRAIN_TILES doc.
      */
-    public MarioWorld(int cols, int rows, TextureRegion tilesRegion) {
-        super(cols, rows, tilesRegion, MarioConfiguration.TILE_SIZE, MarioConfiguration.TILE_SIZE);
+    public MarioWorld(int cols, int rows, TextureRegion tilesRegion, TileMetrics metrics) {
+        super(cols, rows, tilesRegion, metrics.tileSize, metrics.tileSize);
+        this.tileSize = metrics.tileSize;
+    }
+
+    @Override
+    public int tileSize() {
+        return tileSize;
     }
 
     public int getWidthPx() {
-        return getColumns() * MarioConfiguration.TILE_SIZE;
+        return getColumns() * tileSize;
     }
 
     public int getHeightPx() {
-        return getRows() * MarioConfiguration.TILE_SIZE;
+        return getRows() * tileSize;
     }
 
     public void addBrick(InteractiveBrick brick) {
@@ -160,8 +168,6 @@ public class MarioWorld extends TiledLayer implements TileCollisionSource {
      *                   only {@code Player}'s own movement ducks.
      */
     public boolean containsImpassableArea(float x, float y, int width, int height, float duckAboveY) {
-        int tileSize = MarioConfiguration.TILE_SIZE;
-
         int columnMin = Math.max(0, (int) Math.floor(x / tileSize));
         int columnMax = Math.min(getColumns() - 1, (int) Math.floor((x + width - EPSILON) / tileSize));
         int rowMin = Math.max(0, (int) Math.floor(y / tileSize));

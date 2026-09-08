@@ -2,7 +2,6 @@ package au.com.guidebee.morsetoolkit.activity.mario.world;
 
 import java.util.Random;
 
-import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.Enemy;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.FishyGround;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.Rocket;
@@ -45,12 +44,7 @@ public class SpawnController {
     /** Roughly the original's own `680 - 640` window-width buffer. */
     private static final float SPAWN_MARGIN_PX = 40f;
 
-    /** Ported from the original's own `player.getX() > 20*32`. */
-    private static final float FLYING_FISH_MIN_X = 20 * MarioConfiguration.TILE_SIZE;
     private static final int FLYING_FISH_MAX_ACTIVE = 10;
-    /** Ported from the original's own `moveX(random(4*32, 8*32))` (in whichever direction sends it away from the launch heading). */
-    private static final float FLYING_FISH_OFFSET_MIN_PX = 4 * MarioConfiguration.TILE_SIZE;
-    private static final float FLYING_FISH_OFFSET_MAX_PX = 8 * MarioConfiguration.TILE_SIZE;
     private static final float FLYING_FISH_SPAWN_Y = 512f;
 
     private static final Random RANDOM = new Random();
@@ -58,13 +52,19 @@ public class SpawnController {
     private final boolean bombsEnabled;
     private final int bombsTurnOffTile;
     private final boolean blackAndWhite;
+    private final int tileSize;
     private float bombsDelay;
 
     private final boolean flyingFishesEnabled;
     private final int flyingFishesLength;
+    /** Ported from the original's own `player.getX() > 20*32`. */
+    private final float flyingFishMinX;
+    /** Ported from the original's own `moveX(random(4*32, 8*32))` (in whichever direction sends it away from the launch heading). */
+    private final float flyingFishOffsetMinPx;
+    private final float flyingFishOffsetMaxPx;
     private float flyingFishesDelay = -1;
 
-    public SpawnController(LevelDefinition level) {
+    public SpawnController(LevelDefinition level, int tileSize) {
         this.bombsEnabled = level.bombs;
         this.bombsTurnOffTile = level.bombsTurnOff;
         // Ported from Mario.java's own ambient-bomb block: on a CloudsNight
@@ -73,8 +73,12 @@ public class SpawnController {
         // itself swaps to the black-and-white asset too, matching Rocket's
         // own "bw_rocket_launcher" doc.
         this.blackAndWhite = "CloudsNight".equals(level.backgroundImage);
+        this.tileSize = tileSize;
         this.flyingFishesEnabled = level.flyingFishes;
         this.flyingFishesLength = level.flyingFishesLength;
+        this.flyingFishMinX = 20 * tileSize;
+        this.flyingFishOffsetMinPx = 4 * tileSize;
+        this.flyingFishOffsetMaxPx = 8 * tileSize;
     }
 
     public void update(float delta, CameraFollow camera, Player player) {
@@ -84,15 +88,15 @@ public class SpawnController {
     }
 
     private void updateBombs(float frames, CameraFollow camera, Player player) {
-        if (!bombsEnabled || player.getX() / MarioConfiguration.TILE_SIZE >= bombsTurnOffTile) {
+        if (!bombsEnabled || player.getX() / tileSize >= bombsTurnOffTile) {
             return;
         }
         bombsDelay -= frames;
         if (bombsDelay < 0) {
             bombsDelay = (1 + RANDOM.nextInt(5)) * 100f;
             float x = camera.getX() + camera.getEffectiveWidth() + SPAWN_MARGIN_PX;
-            float y = (1 + RANDOM.nextInt(10)) * MarioConfiguration.TILE_SIZE;
-            Rocket rocket = new Rocket(x, y, false, blackAndWhite);
+            float y = (1 + RANDOM.nextInt(10)) * tileSize;
+            Rocket rocket = new Rocket(x, y, false, blackAndWhite, tileSize);
             MarioContext.world().addEnemy(rocket);
             MarioContext.spawn(rocket);
         }
@@ -103,7 +107,7 @@ public class SpawnController {
             return;
         }
         float px = player.getX();
-        if (px >= flyingFishesLength || px <= FLYING_FISH_MIN_X) {
+        if (px >= flyingFishesLength || px <= flyingFishMinX) {
             return;
         }
         long active = 0;
@@ -119,11 +123,11 @@ public class SpawnController {
         if (flyingFishesDelay < 0) {
             flyingFishesDelay = RANDOM.nextInt(100) + 120;
             boolean movingRight = RANDOM.nextBoolean();
-            float offset = FLYING_FISH_OFFSET_MIN_PX
-                    + RANDOM.nextFloat() * (FLYING_FISH_OFFSET_MAX_PX - FLYING_FISH_OFFSET_MIN_PX);
+            float offset = flyingFishOffsetMinPx
+                    + RANDOM.nextFloat() * (flyingFishOffsetMaxPx - flyingFishOffsetMinPx);
             float x = movingRight ? px - offset : px + offset;
             float speedMagnitude = (1 + RANDOM.nextInt(3)) / 2f;
-            FishyGround fish = new FishyGround(x, FLYING_FISH_SPAWN_Y, movingRight, speedMagnitude);
+            FishyGround fish = new FishyGround(x, FLYING_FISH_SPAWN_Y, movingRight, speedMagnitude, tileSize);
             MarioContext.world().addEnemy(fish);
             MarioContext.spawn(fish);
         }

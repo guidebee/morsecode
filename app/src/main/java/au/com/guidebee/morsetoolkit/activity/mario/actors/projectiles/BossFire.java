@@ -30,8 +30,6 @@ import au.com.guidebee.morsetoolkit.activity.mario.actors.hazards.Hazard;
  */
 public class BossFire extends Sprite implements Hazard {
 
-    private static final int FRAME_WIDTH = 48;
-    private static final int FRAME_HEIGHT = 16;
     private static final float PHYSICS_FPS = 60f;
     private static final float DRIFT_SPEED = 2f;
     private static final float VERTICAL_SPEED = 2f;
@@ -43,12 +41,12 @@ public class BossFire extends Sprite implements Hazard {
     private boolean active = true;
     private float animTimer;
 
-    public BossFire(float x, float y) {
-        super(MarioResourceManager.region("boss_fire"), FRAME_WIDTH, FRAME_HEIGHT);
+    public BossFire(float x, float y, int tileSize) {
+        super(MarioResourceManager.region("boss_fire"), (tileSize * 3) / 2, tileSize / 2);
         setPosition(x, y);
         // Ported from `Utility.getRandom(6, 9) * 32` - a random height among
         // the boss room's own floor levels.
-        targetY = (6 + RANDOM.nextInt(4)) * 32;
+        targetY = (6 + RANDOM.nextInt(4)) * tileSize;
     }
 
     @Override

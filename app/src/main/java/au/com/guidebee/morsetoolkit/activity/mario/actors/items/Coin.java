@@ -26,15 +26,14 @@ import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
  */
 public class Coin extends CollectibleItem {
 
-    private static final int FRAME_SIZE = 32;
     private static final float FRAME_INTERVAL = 0.15f;
     private static final int[] FRAME_SEQUENCE = {0, 0, 0, 0, 1, 2, 1, 0};
 
     private float animTimer;
     private int sequenceIndex;
 
-    public Coin(float x, float y) {
-        super(MarioResourceManager.region("coin"), FRAME_SIZE, FRAME_SIZE, x, y);
+    public Coin(float x, float y, int tileSize) {
+        super(MarioResourceManager.region("coin"), tileSize, tileSize, x, y);
         setFrame(FRAME_SEQUENCE[0]);
     }
 

@@ -14,18 +14,17 @@ import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
  */
 public class Explosion extends Sprite {
 
-    private static final int FRAME_SIZE = 32;
     private static final float FRAME_INTERVAL = 0.1f;
 
     private float frameTimer;
 
-    private Explosion(float x, float y) {
-        super(MarioResourceManager.region("explosion"), FRAME_SIZE, FRAME_SIZE);
+    private Explosion(float x, float y, int tileSize) {
+        super(MarioResourceManager.region("explosion"), tileSize, tileSize);
         setPosition(x, y);
     }
 
-    public static void spawn(float x, float y) {
-        MarioContext.spawn(new Explosion(x, y));
+    public static void spawn(float x, float y, int tileSize) {
+        MarioContext.spawn(new Explosion(x, y, tileSize));
     }
 
     @Override

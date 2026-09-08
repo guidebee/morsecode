@@ -24,15 +24,13 @@ import au.com.guidebee.morsetoolkit.activity.mario.actors.player.Player;
  */
 public class Axe extends Sprite {
 
-    private static final int FRAME_WIDTH = 32;
-    private static final int FRAME_HEIGHT = 32;
     private static final float FRAME_INTERVAL = 0.2f;
 
     private float animTimer;
     private boolean triggered;
 
-    public Axe(float x, float y) {
-        super(MarioResourceManager.region("axe"), FRAME_WIDTH, FRAME_HEIGHT);
+    public Axe(float x, float y, int tileSize) {
+        super(MarioResourceManager.region("axe"), tileSize, tileSize);
         setFrameSequence(new int[]{0, 1, 2, 3, 2, 1});
         setPosition(x, y);
     }

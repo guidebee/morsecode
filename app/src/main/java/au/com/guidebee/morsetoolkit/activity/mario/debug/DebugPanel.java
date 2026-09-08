@@ -18,7 +18,6 @@ import com.guidebee.game.ui.Table;
 import com.guidebee.game.ui.TextButton;
 import com.guidebee.game.ui.TextField;
 
-import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.player.Player;
 import au.com.guidebee.morsetoolkit.activity.mario.level.LevelDefinition;
 
@@ -64,12 +63,14 @@ public class DebugPanel {
     private final Player player;
     private final Label coordinateLabel;
     private final TextButton timeScaleButton;
+    private final int tileSize;
 
     private int timeScale = 1;
 
     public DebugPanel(LayerManager layerManager, Skin skin, LevelDefinition level, Player player,
-                       Consumer<Boolean> onInfiniteLivesToggle, IntConsumer onTimeScaleChange) {
+                       Consumer<Boolean> onInfiniteLivesToggle, IntConsumer onTimeScaleChange, int tileSize) {
         this.player = player;
+        this.tileSize = tileSize;
         // Both built up front, before any of the row-building lambdas below
         // that reference them (a blank final field/local can't be read - even
         // from inside a lambda - anywhere in the constructor before it's
@@ -145,7 +146,7 @@ public class DebugPanel {
                 continue;
             }
             warpButtons.add(warpButton(skin, tile.type,
-                    tile.x * MarioConfiguration.TILE_SIZE, tile.y * MarioConfiguration.TILE_SIZE));
+                    tile.x * tileSize, tile.y * tileSize));
         }
         // Two per row, in the SAME left-to-right/top-to-bottom reading order
         // regardless of the reversal above - only whole *rows* flip, not the
@@ -209,8 +210,8 @@ public class DebugPanel {
     }
 
     private TextButton warpButton(Skin skin, String label, float worldX, float worldY) {
-        int tileX = (int) (worldX / MarioConfiguration.TILE_SIZE);
-        int tileY = (int) (worldY / MarioConfiguration.TILE_SIZE);
+        int tileX = (int) (worldX / tileSize);
+        int tileY = (int) (worldY / tileSize);
         TextButton button = new TextButton(label + " (" + tileX + "," + tileY + ")", skin);
         button.addListener(new ClickListener() {
             @Override
@@ -225,7 +226,7 @@ public class DebugPanel {
         try {
             int tileX = Integer.parseInt(tileXText.trim());
             int tileY = Integer.parseInt(tileYText.trim());
-            warpTo(tileX * MarioConfiguration.TILE_SIZE, tileY * MarioConfiguration.TILE_SIZE);
+            warpTo(tileX * tileSize, tileY * tileSize);
         } catch (NumberFormatException ignored) {
             // Empty/partially-typed field - no-op rather than a crash.
         }
@@ -253,8 +254,8 @@ public class DebugPanel {
         if (!table.isVisible()) {
             return;
         }
-        int tileX = (int) (player.getX() / MarioConfiguration.TILE_SIZE);
-        int tileY = (int) (player.getY() / MarioConfiguration.TILE_SIZE);
+        int tileX = (int) (player.getX() / tileSize);
+        int tileY = (int) (player.getY() / tileSize);
         coordinateLabel.setText("Mario tile: (" + tileX + "," + tileY + ")");
     }
 

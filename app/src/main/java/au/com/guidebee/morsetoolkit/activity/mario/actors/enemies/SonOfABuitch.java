@@ -28,8 +28,6 @@ import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
  */
 public class SonOfABuitch extends Enemy {
 
-    private static final int FRAME_WIDTH = 32;
-    private static final int FRAME_HEIGHT = 48;
     private static final float FIXED_Y = 80f;
     private static final float SWAY_LIMIT = 100f;
     private static final float SWAY_SPEED = 1f;
@@ -39,12 +37,14 @@ public class SonOfABuitch extends Enemy {
 
     private static final Random RANDOM = new Random();
 
+    private final int tileSize;
     private float sway = 100f;
     private boolean swayingLeft = true;
     private float throwTimer = 100f;
 
-    public SonOfABuitch(float x) {
-        super(MarioResourceManager.region("son_of_a_buitch"), FRAME_WIDTH, FRAME_HEIGHT, x, FIXED_Y, true);
+    public SonOfABuitch(float x, int tileSize) {
+        super(MarioResourceManager.region("son_of_a_buitch"), tileSize, (tileSize * 3) / 2, x, FIXED_Y, true);
+        this.tileSize = tileSize;
     }
 
     @Override
@@ -75,7 +75,7 @@ public class SonOfABuitch extends Enemy {
 
     private void throwSpikeyEgg() {
         throwTimer = (1 + RANDOM.nextInt(5)) * 100f;
-        SpikeyEgg egg = new SpikeyEgg(getX(), getY(), true);
+        SpikeyEgg egg = new SpikeyEgg(getX(), getY(), true, tileSize);
         MarioContext.world().addEnemy(egg);
         MarioContext.spawn(egg);
     }

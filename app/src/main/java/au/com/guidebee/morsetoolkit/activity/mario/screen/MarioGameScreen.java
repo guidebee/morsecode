@@ -317,7 +317,7 @@ public class MarioGameScreen extends ScreenAdapter {
         // every 32px across the level's own length, not a fixed 10 repeats -
         // see BackgroundBand's own second-constructor doc.
         if ("Sea".equals(level.attribute)) {
-            int seaTileCount = Math.max(1, level.levelLength / MarioConfiguration.TILE_SIZE);
+            int seaTileCount = Math.max(1, level.levelLength / world.tileSize());
             layerManager.append(new BackgroundBand(MarioResourceManager.region("sea_background"), 0f, seaTileCount));
         }
         layerManager.append(world);
@@ -377,8 +377,8 @@ public class MarioGameScreen extends ScreenAdapter {
         // original.
         int startTileX = spawnTileX >= 0 ? spawnTileX : level.posX;
         int startTileY = spawnTileY >= 0 ? spawnTileY : level.posY;
-        player = new Player(startTileX * MarioConfiguration.TILE_SIZE,
-                startTileY * MarioConfiguration.TILE_SIZE, world, input);
+        player = new Player(startTileX * world.tileSize(),
+                startTileY * world.tileSize(), world, input);
         // Ported from Mario.java's own `if ("Sea".equals(attribute)) player.Water = true`
         // set once at level load, never toggled mid-level - see Player#setWater's doc.
         player.setWater("Sea".equals(level.attribute));
@@ -388,7 +388,7 @@ public class MarioGameScreen extends ScreenAdapter {
         camera = new CameraFollow(viewportWidth, viewportHeight,
                 world.getWidthPx(), world.getHeightPx());
         camera.centerOn(player.getX(), player.getY());
-        spawnController = new SpawnController(level);
+        spawnController = new SpawnController(level, world.tileSize());
 
         // Debug-only warp/cheat tooling (docs/MARIO_PORT_PLAN_PHASE2.md §8) -
         // compiled out of release builds via BuildConfig.DEBUG (§8.4), not
@@ -398,7 +398,7 @@ public class MarioGameScreen extends ScreenAdapter {
             debugButton = createDebugButton();
             debugPanel = new DebugPanel(layerManager, MarioResourceManager.uiSkinYDown(), level, player,
                     infiniteLives -> debugInfiniteLives = infiniteLives,
-                    timeScale -> debugTimeScale = timeScale);
+                    timeScale -> debugTimeScale = timeScale, world.tileSize());
         } else {
             debugButton = null;
             debugPanel = null;
@@ -938,7 +938,7 @@ public class MarioGameScreen extends ScreenAdapter {
         axe.trigger();
         Boss boss = findActiveBoss();
         if (boss != null) {
-            BossFallingAnim.spawnCollapse(axe, boss, player);
+            BossFallingAnim.spawnCollapse(axe, boss, player, world.tileSize());
         }
         for (Enemy enemy : new ArrayList<>(world.getEnemies())) {
             if (enemy.isActive()) {
@@ -1001,9 +1001,9 @@ public class MarioGameScreen extends ScreenAdapter {
         player.setForcedCommand(new PlayerCommand());
         player.setVisible(false);
         transitionTimer = CELEBRATION_SECONDS;
-        MarioContext.spawn(new FlagWinBanner((float) checkpoint.x, (float) checkpoint.y));
+        MarioContext.spawn(new FlagWinBanner((float) checkpoint.x, (float) checkpoint.y, world.tileSize()));
         if (RANDOM.nextBoolean()) {
-            Fireworks.spawnAt((float) checkpoint.x);
+            Fireworks.spawnAt((float) checkpoint.x, world.tileSize());
         }
         if (currentMusic != null) {
             currentMusic.stop();

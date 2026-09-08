@@ -32,7 +32,6 @@ import au.com.guidebee.morsetoolkit.activity.mario.fx.FallingDeadSprite;
  */
 public class FishyGround extends Enemy {
 
-    private static final int FRAME_SIZE = 32;
     private static final float ANIM_INTERVAL = 300f / 60f;
     private static final float GRAVITY_START = -7.65f;
     private static final float GRAVITY_STEP = 0.06f;
@@ -41,13 +40,15 @@ public class FishyGround extends Enemy {
     private static final float DESPAWN_Y = 576f;
 
     private final float speedX;
+    private final int tileSize;
     private float gravity = GRAVITY_START;
     private float animTimer;
     private boolean showingFirstFrame = true;
 
-    public FishyGround(float x, float y, boolean movingRight, float speedMagnitude) {
-        super(regionFor(movingRight), FRAME_SIZE, FRAME_SIZE, x, y, movingRight);
+    public FishyGround(float x, float y, boolean movingRight, float speedMagnitude, int tileSize) {
+        super(regionFor(movingRight), tileSize, tileSize, x, y, movingRight);
         this.speedX = movingRight ? speedMagnitude : -speedMagnitude;
+        this.tileSize = tileSize;
         setFrame(0);
     }
 
@@ -96,7 +97,7 @@ public class FishyGround extends Enemy {
     @Override
     public void onDefeatedByProjectile() {
         MarioResourceManager.sound("smb_kick").play();
-        FallingDeadSprite.spawn(getX(), getY(), regionFor(movingRight).split(FRAME_SIZE, FRAME_SIZE)[0][0]);
+        FallingDeadSprite.spawn(getX(), getY(), regionFor(movingRight).split(tileSize, tileSize)[0][0]);
         deactivate();
     }
 }

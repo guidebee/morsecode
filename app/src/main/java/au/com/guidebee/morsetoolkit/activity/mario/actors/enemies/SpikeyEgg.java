@@ -24,17 +24,18 @@ import au.com.guidebee.morsetoolkit.platformer.core.TileMovement;
  */
 public class SpikeyEgg extends Enemy {
 
-    private static final int FRAME_SIZE = 32;
     private static final float GRAVITY_STEP = 0.25f;
     private static final float GRAVITY_CAP = 5f;
     private static final float ANIMATION_INTERVAL = 0.2f;
 
+    private final int tileSize;
     private float gravity = -6f;
     private float animTimer;
     private boolean showingFirstFrame = true;
 
-    public SpikeyEgg(float x, float y, boolean movingRight) {
-        super(MarioResourceManager.region("spikey_egg"), FRAME_SIZE, FRAME_SIZE, x, y, movingRight);
+    public SpikeyEgg(float x, float y, boolean movingRight, int tileSize) {
+        super(MarioResourceManager.region("spikey_egg"), tileSize, tileSize, x, y, movingRight);
+        this.tileSize = tileSize;
     }
 
     @Override
@@ -62,7 +63,7 @@ public class SpikeyEgg extends Enemy {
     }
 
     private void hatch() {
-        Spikey spikey = new Spikey(getX(), getY(), movingRight);
+        Spikey spikey = new Spikey(getX(), getY(), movingRight, tileSize);
         MarioContext.world().addEnemy(spikey);
         MarioContext.spawn(spikey);
         deactivate();
@@ -76,7 +77,7 @@ public class SpikeyEgg extends Enemy {
     @Override
     public void onDefeatedByProjectile() {
         MarioResourceManager.sound("smb_kick").play();
-        FallingDeadSprite.spawn(getX(), getY(), MarioResourceManager.region("spikey_egg").split(FRAME_SIZE, FRAME_SIZE)[0][0]);
+        FallingDeadSprite.spawn(getX(), getY(), MarioResourceManager.region("spikey_egg").split(tileSize, tileSize)[0][0]);
         deactivate();
     }
 }

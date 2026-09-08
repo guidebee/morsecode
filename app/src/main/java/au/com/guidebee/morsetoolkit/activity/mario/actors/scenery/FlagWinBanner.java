@@ -18,17 +18,15 @@ import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
  */
 public class FlagWinBanner extends Layer {
 
-    private static final float START_OFFSET_Y = -96f;
-    private static final float RISE_DISTANCE = 64f;
     private static final float RISE_SPEED = 1f;
     private static final float PHYSICS_FPS = 60f;
 
     private final TextureRegion region = MarioResourceManager.region("flag_win");
     private final float stopY;
 
-    public FlagWinBanner(float checkpointX, float checkpointY) {
-        super(checkpointX - 24f, checkpointY + START_OFFSET_Y, 32, 32, true);
-        stopY = checkpointY + START_OFFSET_Y - RISE_DISTANCE;
+    public FlagWinBanner(float checkpointX, float checkpointY, int tileSize) {
+        super(checkpointX - 0.75f * tileSize, checkpointY - 3f * tileSize, tileSize, tileSize, true);
+        stopY = checkpointY - 3f * tileSize - 2f * tileSize;
     }
 
     @Override

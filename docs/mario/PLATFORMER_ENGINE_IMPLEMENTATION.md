@@ -140,7 +140,7 @@ a second pass.
 
 ### B1.1 — Create `TileMetrics`
 
-- [ ] New file `platformer/core/TileMetrics.java`:
+- [x] New file `platformer/core/TileMetrics.java`:
 
   ```java
   package au.com.guidebee.morsetoolkit.platformer.core;
@@ -156,24 +156,24 @@ a second pass.
 
 ### B1.2 — Thread it through `TileCollisionSource` and `MarioWorld`
 
-- [ ] Add `int tileSize();` to `TileCollisionSource` (§A.2) — every implementor must now
+- [x] Add `int tileSize();` to `TileCollisionSource` (§A.2) — every implementor must now
   expose its own grid unit, which is exactly what lets `TileMovement` (and everything
   else touched below) stop importing a static constant.
-- [ ] `MarioWorld`: replace the constructor's `super(cols, rows, tilesRegion,
+- [x] `MarioWorld`: replace the constructor's `super(cols, rows, tilesRegion,
   MarioConfiguration.TILE_SIZE, MarioConfiguration.TILE_SIZE)` with a `TileMetrics`
   parameter: `public MarioWorld(int cols, int rows, TextureRegion tilesRegion, TileMetrics
   metrics)`, storing `metrics.tileSize` in a new `private final int tileSize` field, and
   still passing `tileSize, tileSize` to `super(...)` (square tiles, unchanged). Add
   `public int tileSize() { return tileSize; }` to satisfy the interface.
-- [ ] `MarioWorld.getWidthPx()`/`getHeightPx()`: change
+- [x] `MarioWorld.getWidthPx()`/`getHeightPx()`: change
   `getColumns() * MarioConfiguration.TILE_SIZE` → `getColumns() * tileSize` (and rows
   likewise) — the instance field, not the static import.
-- [ ] `MarioWorld.containsImpassableArea(..., duckAboveY)` (the real implementation, not
+- [x] `MarioWorld.containsImpassableArea(..., duckAboveY)` (the real implementation, not
   the 4-arg overload that delegates to it): change its own local
   `int tileSize = MarioConfiguration.TILE_SIZE;` to just read the instance field (drop the
   local variable, or rename it to avoid shadowing — either is fine, just don't leave two
   things named `tileSize` meaning different scopes in the same method).
-- [ ] Every construction site of `MarioWorld` (there is exactly one —
+- [x] Every construction site of `MarioWorld` (there is exactly one —
   `level/LevelLoader.java`'s `createWorld`) now passes a `TileMetrics`:
   `new MarioWorld(cols, rows, staticTilesRegion(level), new TileMetrics(MarioConfiguration.TILE_SIZE))`.
   `MarioConfiguration.TILE_SIZE` still exists and still equals `32` — this step doesn't
@@ -182,7 +182,7 @@ a second pass.
 
 ### B1.3 — Fix `TileMovement` itself
 
-- [ ] `TileMovement.moveX`/`moveY`: change each method's own
+- [x] `TileMovement.moveX`/`moveY`: change each method's own
   `int tileSize = MarioConfiguration.TILE_SIZE;` to `int tileSize = world.tileSize();` —
   now reading it off the `TileCollisionSource` parameter already in scope, not a static
   import. (`TileCollisionSource` needs `tileSize()` per B1.2 — done above.)
@@ -197,30 +197,30 @@ by what the right answer is:
 
 **Already-local-variable pattern — change the RHS to an instance/parameter read:**
 
-- [ ] `level/LevelLoader.java` (11 occurrences, lines 164/296/374/389/434/484/512/578/607/625/645
+- [x] `level/LevelLoader.java` (11 occurrences, lines 164/296/374/389/434/484/512/578/607/625/645
   — one `int tileSize = MarioConfiguration.TILE_SIZE;` near the top of each `spawn*`
   method) — change each to `int tileSize = MarioContext.world().tileSize();` (the world is
   always initialized by the time any `spawn*` method runs — confirmed by
   `LevelLoader`'s own class doc: `spawnBricks`/`spawnEnemies`/etc. all require
   `MarioContext.init(...)` to have already run).
-- [ ] `world/TileMovement.java` — done in B1.3 above.
-- [ ] `actors/player/Player.java` lines 640/657 (`moveXWithCollision`/`moveYWithCollision`'s
+- [x] `world/TileMovement.java` — done in B1.3 above.
+- [x] `actors/player/Player.java` lines 640/657 (`moveXWithCollision`/`moveYWithCollision`'s
   own local `int tileSize = MarioConfiguration.TILE_SIZE;`) — change to
   `world.tileSize()` (`Player` already holds a `private final MarioWorld world` field).
-- [ ] `actors/bricks/TemporaryInvisibleBrick.java` line 44 — same pattern; this class is
+- [x] `actors/bricks/TemporaryInvisibleBrick.java` line 44 — same pattern; this class is
   constructed by `Brick#hitFromBelow` (per
   [MARIO_GAME_MECHANICS.md §9.2](MARIO_GAME_MECHANICS.md#92-bricks-extends-interactivebrick)),
   so thread `tileSize` in via its constructor from whichever caller already has a
   `MarioWorld` reference (`Brick` does, via `MarioContext.world()`).
-- [ ] `actors/scenery/FlagPole.java` lines 56/67 (two separate methods, each with their own
+- [x] `actors/scenery/FlagPole.java` lines 56/67 (two separate methods, each with their own
   local `int tileSize = MarioConfiguration.TILE_SIZE;`) — both need `tileSize` threaded
   in via the constructor (see B1.6 below — `FlagPole`'s constructor also has raw-literal
   work to do, do both in the same pass).
-- [ ] `fx/Fireworks.java` line 51, `fx/BridgeBlackout.java` line 36,
+- [x] `fx/Fireworks.java` line 51, `fx/BridgeBlackout.java` line 36,
   `fx/BossFallingAnim.java` line 82 — same local-variable pattern; each is an `fx/` class
   constructed from a `MarioWorld`-aware caller (`MarioGameScreen` or another actor already
   holding a world reference) — thread `tileSize` through their constructors the same way.
-- [ ] `world/SpawnController.java` — lines 48/51/52 are `static final float` constants
+- [x] `world/SpawnController.java` — lines 48/51/52 are `static final float` constants
   computed *once* from `MarioConfiguration.TILE_SIZE` at class-load time
   (`FLYING_FISH_MIN_X`, `FLYING_FISH_OFFSET_MIN_PX`, `FLYING_FISH_OFFSET_MAX_PX`) — these
   **cannot** stay `static final` if they're to depend on an instance `tileSize`; convert
@@ -229,14 +229,14 @@ by what the right answer is:
   parameter alongside it, sourced from `MarioGameScreen` (the only caller). Lines 86/93
   (`updateBombs`'s own two remaining direct `MarioConfiguration.TILE_SIZE` reads) fold
   into the same constructor-parameter fix.
-- [ ] `debug/DebugPanel.java` — 6 occurrences (lines 148/212/213/228/256/257), all in
+- [x] `debug/DebugPanel.java` — 6 occurrences (lines 148/212/213/228/256/257), all in
   debug-only tile↔pixel conversions for the warp panel — thread `tileSize` from the
   `MarioWorld`/`LevelDefinition` this panel already receives in its own constructor (per
   [MARIO_GAME_MECHANICS.md §12](MARIO_GAME_MECHANICS.md#12-debugqa-tooling)).
-- [ ] `fx/ItemReveal.java` line 40 (`targetY = y - MarioConfiguration.TILE_SIZE`) — thread
+- [x] `fx/ItemReveal.java` line 40 (`targetY = y - MarioConfiguration.TILE_SIZE`) — thread
   `tileSize` via the constructor; caller is `QuestionMark`/`BankWithItem` (see B1.5 —
   same classes need the parameter for their own reasons, add it once).
-- [ ] `screen/MarioGameScreen.java` lines 320/380/381 — this class already constructs
+- [x] `screen/MarioGameScreen.java` lines 320/380/381 — this class already constructs
   `MarioWorld` and `Player` directly; change `level.levelLength / MarioConfiguration.TILE_SIZE`
   and the `startTileX/Y * MarioConfiguration.TILE_SIZE` player-spawn math to read
   `world.tileSize()` off the `MarioWorld` this same method just built.
@@ -270,22 +270,22 @@ division is safe here since `tileSize` will always be a multiple of 2 in practic
 `(tileSize * 3) / 2` explicitly to make the intent clear rather than relying on operator
 precedence).
 
-- [ ] `actors/player/Player.java` — `TRANSITION_FRAME_WIDTH`/`HEIGHT` (32/64): thread
+- [x] `actors/player/Player.java` — `TRANSITION_FRAME_WIDTH`/`HEIGHT` (32/64): thread
   `tileSize` through (Player already takes a `MarioWorld world` constructor parameter —
   read `world.tileSize()` once in the constructor and store it).
-- [ ] `actors/enemies/Helmet.java`, `FishyGround.java`, `Rocket.java`, `Spikey.java`,
+- [x] `actors/enemies/Helmet.java`, `FishyGround.java`, `Rocket.java`, `Spikey.java`,
   `SpikeyEgg.java` — `FRAME_SIZE = 32` (1×1-tile enemies) — add a `tileSize` constructor
   parameter, replace `FRAME_SIZE` with it.
-- [ ] `actors/enemies/EnemyTurtle.java`, `FlyingTurtle.java`, `SonOfABuitch.java`,
+- [x] `actors/enemies/EnemyTurtle.java`, `FlyingTurtle.java`, `SonOfABuitch.java`,
   `Monkey.java`, `FlyingTurtlePatrol.java`, `OctoPussy.java`, `PiranhaPlant.java`,
   `EnemyTurtlePatrol.java` — `FRAME_WIDTH = 32`/`FRAME_HEIGHT = 48` (1×1.5-tile enemies) —
   same fix, `FRAME_HEIGHT` becomes `(tileSize * 3) / 2`.
-- [ ] `actors/bricks/Axe.java` — `FRAME_WIDTH`/`HEIGHT = 32`/`32`.
-- [ ] `actors/scenery/Spring.java` — `FRAME_WIDTH = 32`/`FRAME_HEIGHT = 64` (2 tiles tall
+- [x] `actors/bricks/Axe.java` — `FRAME_WIDTH`/`HEIGHT = 32`/`32`.
+- [x] `actors/scenery/Spring.java` — `FRAME_WIDTH = 32`/`FRAME_HEIGHT = 64` (2 tiles tall
   — becomes `tileSize * 2`).
-- [ ] `fx/Fireworks.java`, `fx/Explosion.java`, `fx/LavaBall.java` — `FRAME_SIZE = 32`.
-- [ ] `actors/items/Coin.java` — `FRAME_SIZE = 32`.
-- [ ] `actors/enemies/FishyWater.java` — `FRAME_SIZE = 32` (declared but verify at
+- [x] `fx/Fireworks.java`, `fx/Explosion.java`, `fx/LavaBall.java` — `FRAME_SIZE = 32`.
+- [x] `actors/items/Coin.java` — `FRAME_SIZE = 32`.
+- [x] `actors/enemies/FishyWater.java` — `FRAME_SIZE = 32` (declared but verify at
   implementation time whether it's actually read anywhere beyond the field itself — this
   class's constructor signature wasn't fully re-confirmed during this audit pass, check
   it directly before assuming the same fix pattern applies verbatim).
@@ -300,33 +300,33 @@ These don't import anything today — they just have `32` (or a tile-multiple li
 `64`, `96`) typed directly into an expression. Each needs `tileSize` threaded through its
 constructor the same way as B1.5, then the literal replaced:
 
-- [ ] `actors/enemies/Boss.java` line 134: `((int) getY() / 32) * 32` →
+- [x] `actors/enemies/Boss.java` line 134: `((int) getY() / 32) * 32` →
   `((int) getY() / tileSize) * tileSize`. `Boss` needs a new constructor parameter (its
   constructor is called from `LevelLoader.spawnEnemies`, which has `tileSize` in scope).
-- [ ] `actors/projectiles/BossFire.java` line 51: `targetY = (6 + RANDOM.nextInt(4)) * 32;`
+- [x] `actors/projectiles/BossFire.java` line 51: `targetY = (6 + RANDOM.nextInt(4)) * 32;`
   → `* tileSize`. `BossFire` is constructed both by `LevelLoader.spawnHazards` (placed
   instances) and by `Boss` itself (thrown instances) — both call sites need the extra
   argument; simplest is for `Boss` to hold its own `tileSize` (from B1.6's own fix above)
   and pass it along when it constructs a `BossFire`.
-- [ ] `actors/enemies/EnemyTurtlePatrol.java` line 40: `rightBoundX = x + 32 *
+- [x] `actors/enemies/EnemyTurtlePatrol.java` line 40: `rightBoundX = x + 32 *
   patrolLengthTiles;` → `x + tileSize * patrolLengthTiles`.
-- [ ] `actors/enemies/FlyingTurtlePatrol.java` lines 35/46: `AMPLITUDE_PX = 4 * 32f`
+- [x] `actors/enemies/FlyingTurtlePatrol.java` lines 35/46: `AMPLITUDE_PX = 4 * 32f`
   (→ non-static, `4 * tileSize`) and `centerY = y + 32 * patrolLengthTiles` (→
   `tileSize * patrolLengthTiles`).
-- [ ] `actors/scenery/FlagWinBanner.java` lines 21/22/30: `START_OFFSET_Y = -96f` (3
+- [x] `actors/scenery/FlagWinBanner.java` lines 21/22/30: `START_OFFSET_Y = -96f` (3
   tiles, → `-3f * tileSize`), `RISE_DISTANCE = 64f` (2 tiles, → `2f * tileSize`), and the
   constructor's own hardcoded `super(checkpointX - 24f, ..., 32, 32, true)` — the `-24f`
   is itself a tile-relative offset (0.75 tile) that needs `-0.75f * tileSize`, and the
   trailing `32, 32` (this actor's own hitbox size) needs `tileSize, tileSize`.
-- [ ] `actors/scenery/FlagPole.java` line 53's own `- 16f` (half-tile centering offset,
+- [x] `actors/scenery/FlagPole.java` line 53's own `- 16f` (half-tile centering offset,
   alongside the `MarioConfiguration.TILE_SIZE` reference on the same lines already being
   fixed in B1.4) → `- tileSize / 2f`.
-- [ ] `actors/player/Player.java` lines 192/194: `DUCK_HEAD_ROOM_PX = 32f` →
+- [x] `actors/player/Player.java` lines 192/194: `DUCK_HEAD_ROOM_PX = 32f` →
   non-static, `tileSize`; `DUCK_OVERHEAD_CLEARANCE_PX = 48f` → `(tileSize * 3) / 2f`
   (this one is `public static final` today — check every external reader, currently just
   `EnemyCollisionResolver`, and change it to read `player.getDuckOverheadClearancePx()`
   or similar instance accessor instead once it's no longer static).
-- [ ] `actors/enemies/PiranhaPlant.java` — `TRAVEL_PX = 96f` (3 tiles) → non-static,
+- [x] `actors/enemies/PiranhaPlant.java` — `TRAVEL_PX = 96f` (3 tiles) → non-static,
   `3f * tileSize`; also re-check this class's other offset literals (`+48` mentioned in
   its own doc comment per [MARIO_GAME_MECHANICS.md §8](MARIO_GAME_MECHANICS.md#8-tile-type-dispatch-registry))
   while already inside the file for this fix.
@@ -340,18 +340,68 @@ enemy classes' own internal movement-offset constants weren't individually re-ve
 line-by-line here (the audit prioritized breadth — finding every *class* with the pattern
 — over confirming every single literal inside each one).
 
+**Gaps this plan's own audit missed, found and fixed during implementation** (the re-grep
+above, done for real): `actors/enemies/HelmetShell.java` and `TurtleShell.java` (bare
+inline `32, 32` in `super(...)`/`.split(...)`, not a named `FRAME_*` constant, so missed by
+a search for `static final`) — both are constructed by classes already in the B1.5 list
+(`Helmet`/`EnemyTurtle`), so both now take a `tileSize` constructor parameter too, threaded
+from their spawning parent. `actors/enemies/Boss.java`'s own `FRAME_WIDTH`/`HEIGHT = 64`
+and `PATROL_RANGE_PX = 3 * 32f` (same pattern as the named B1.5/B1.4 classes, just not
+listed — `Boss` was already getting a `tileSize` parameter for B1.6's line-134 fix, so this
+folded in for free). `actors/enemies/Rocket.java`'s own two constructors and
+`RocketLauncher.java` (the turret that fires it, holding its own `tileSize` field so it can
+still fire correctly during `act()`, long after construction). `actors/enemies/OctoPussy.java`'s
+`RISE_TRIGGER_Y`/`DART_OFFSET_PX`/`RISE_OFFSET_PX`/`WAIT_RISE_OFFSET_PX` and
+`PiranhaPlant.java`'s `RETRACTED_ZONE_PX` (both named in this doc only for their headline
+`FRAME_WIDTH/HEIGHT`/`TRAVEL_PX` fields — their other same-class tile-relative constants
+weren't). `actors/enemies/FishyWater.java`'s `BOB_RANGE_PX` and `Monkey.java`'s
+`PATROL_RANGE_PX` (both exactly one tile, folded into their constructors' own math once the
+`tileSize` parameter existed for the frame-size fix anyway). `actors/items/Life.java`,
+`Mushroom.java`, `Flower.java`, `Star.java` (bare inline `32, 32`, the same pattern as
+`HelmetShell`/`TurtleShell` — these are what `BankWithItem`/`QuestionMark`/`InvisibleBrck`/
+`BrickWithStar`'s item-reveal callbacks construct, so needed the parameter regardless).
+`actors/enemies/EnemyMashroom.java` and `fx/CoinPopEffect.java` (bare inline `32, 32`,
+found only by re-running B1.7's own grep after everything else was done).
+`world/SpawnController.java`'s `Rocket`/`FishyGround` construction calls needed the same
+`tileSize` this class's own constants fix already required. `level/LevelLoader.java`'s own
+"pump" case (`tile.x * tileSize + 16, tile.y * tileSize + 48` feeding `PiranhaPlant`) and
+its "HoriImage" case (`.split(64, 64)`, `x + 64`) were raw arithmetic in `LevelLoader`
+itself, not named in B1.4–B1.6's file lists — fixed since `tileSize` was already a local in
+both methods, at zero extra threading cost.
+
+**Found and deliberately left out of scope** (not named anywhere in this plan, and fixing
+them needs a judgment call about intent this pass didn't make): `collision/CheckpointResolver.java`'s
+`TRIGGER_WIDTH`/`HEIGHT`/`CLOWD_TRIGGER_WIDTH` and `collision/TeleportResolver.java`'s
+`TRIGGER_X_OFFSET`/`WIDTH`/`HEIGHT` (plausibly tile-multiples, but touch-trigger geometry
+that was never audited here); `screen/MarioGameScreen.java`'s `DEBUG_BUTTON_SIZE = 32` (a
+UI button's on-screen pixel size, unrelated to the level's tile grid — coincidentally equal
+to 32, not a tile count); `actors/player/PlayerPowerState.java`'s `SMALL(32, 32, ...)`/
+`BIG(32, 64, ...)`/`FIRE(32, 64, ...)` enum constants (Player's own hitbox/frame sizes —
+enum constants are built at class-load time, before any `MarioWorld`/`TileMetrics` exists,
+so making these tile-size-aware needs an actual redesign, not a constructor parameter; likely
+belongs with Phase E's `PowerStateActor` extraction instead, since that phase already
+restructures `Player`'s own state shape). None of these affect this phase's own exit
+criterion (`MarioConfiguration.TILE_SIZE`'s *other* users are what mattered) but are noted
+here so a future pass doesn't have to rediscover them.
+
 ### B1.7 — Verify nothing still imports the static constant except its one legitimate use
 
-- [ ] Grep `activity/mario` for `MarioConfiguration.TILE_SIZE` — the only remaining hit
+- [x] Grep `activity/mario` for `MarioConfiguration.TILE_SIZE` — the only remaining hit
   should be `LevelLoader.createWorld`'s `new TileMetrics(MarioConfiguration.TILE_SIZE)`
   call (B1.2) and `MarioConfiguration.java`'s own declaration. Anything else means a call
-  site from B1.4–B1.6 was missed.
-- [ ] Grep for `= 32;`/`= 48;`/`= 64;`/`= 96;` as a `static final` field initializer
-  across the same tree — any survivor is a candidate this pass missed.
+  site from B1.4–B1.6 was missed. **Confirmed clean** (only that one hit remains).
+- [x] Grep for `= 32;`/`= 48;`/`= 64;`/`= 96;` as a `static final` field initializer
+  across the same tree — any survivor is a candidate this pass missed. **Ran, found the
+  gaps documented above, fixed the in-scope ones, documented the deferred ones.**
 
 **Exit criteria:** full regression pass, zero gameplay/visual change — identical bar to
 Phase A. This is the phase [MARIO_RESKIN_EXECUTION.md §R.0](MARIO_RESKIN_EXECUTION.md)
-waits on.
+waits on. **Compiled successfully** via `gradlew :app:compileDebugJavaWithJavac` after every
+edit in this phase — every constructor-signature change and call-site update above was
+verified against the real compiler, not just by re-reading call sites by hand. Still run the
+on-device `MARIO_LEVEL_ATLAS.md` regression pass before starting Phase B2, per this plan's
+own ground rules — a clean compile proves every call site was updated, not that the
+gameplay feel is unchanged.
 
 ---
 

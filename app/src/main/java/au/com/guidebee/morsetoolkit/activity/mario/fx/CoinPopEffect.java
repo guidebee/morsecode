@@ -23,8 +23,8 @@ public class CoinPopEffect extends Sprite {
     private float gravity = -15f;
     private float animTimer;
 
-    public CoinPopEffect(float x, float y) {
-        super(MarioResourceManager.region("coin_anim"), 32, 32);
+    public CoinPopEffect(float x, float y, int tileSize) {
+        super(MarioResourceManager.region("coin_anim"), tileSize, tileSize);
         setPosition(x, y);
         MarioResourceManager.sound("smb_coin").play();
         MarioContext.gameState().addCoin();

@@ -27,13 +27,6 @@ import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
  */
 public class OctoPussy extends Enemy {
 
-    private static final int FRAME_WIDTH = 32;
-    private static final int FRAME_HEIGHT = 48;
-    /** Ported from the original's own {@code this.getY() > 9*32}. */
-    private static final float RISE_TRIGGER_Y = 9 * 32f;
-    private static final float DART_OFFSET_PX = 64f;
-    private static final float RISE_OFFSET_PX = 64f;
-    private static final float WAIT_RISE_OFFSET_PX = 32f;
     private static final float MOVE_SPEED = 0.1f;
     private static final float REACHED_EPSILON = 0.5f;
     /** Ticks to rest once a target is reached - matches {@code Wait = 40}. */
@@ -42,14 +35,23 @@ public class OctoPussy extends Enemy {
     private static final int WAIT_TICKS_STUCK = 4000;
     private static final float DRIFT_SPEED = 1f;
 
+    /** Ported from the original's own {@code this.getY() > 9*32}. */
+    private final float riseTriggerY;
+    private final float riseOffsetPx;
+    private final float waitRiseOffsetPx;
+
     private float targetX;
     private float targetY;
     private float waitTicks;
     private float downFrame;
 
-    public OctoPussy(float x, float y) {
-        super(MarioResourceManager.region("octopussy"), FRAME_WIDTH, FRAME_HEIGHT, x, y, false);
-        targetX = x - DART_OFFSET_PX;
+    public OctoPussy(float x, float y, int tileSize) {
+        super(MarioResourceManager.region("octopussy"), tileSize, (tileSize * 3) / 2, x, y, false);
+        riseTriggerY = 9 * tileSize;
+        float dartOffsetPx = 2f * tileSize;
+        riseOffsetPx = 2f * tileSize;
+        waitRiseOffsetPx = tileSize;
+        targetX = x - dartOffsetPx;
         targetY = y;
         setFrame(0);
     }
@@ -63,19 +65,19 @@ public class OctoPussy extends Enemy {
         float frames = delta * PHYSICS_FPS;
         Player player = MarioContext.player();
 
-        if (getY() > RISE_TRIGGER_Y) {
+        if (getY() > riseTriggerY) {
             waitTicks = 0;
-            targetX = getX() + (player.getX() < getX() ? -RISE_OFFSET_PX : RISE_OFFSET_PX);
-            targetY = getY() - RISE_OFFSET_PX;
+            targetX = getX() + (player.getX() < getX() ? -riseOffsetPx : riseOffsetPx);
+            targetY = getY() - riseOffsetPx;
             downFrame = 0;
         }
         boolean reachedTarget = Math.abs(getX() - targetX) < REACHED_EPSILON
                 && Math.abs(getY() - targetY) < REACHED_EPSILON;
         if (reachedTarget) {
             waitTicks = WAIT_TICKS;
-            targetX = getX() + (player.getX() < getX() ? -RISE_OFFSET_PX : RISE_OFFSET_PX);
+            targetX = getX() + (player.getX() < getX() ? -riseOffsetPx : riseOffsetPx);
             if (player.getY() < getY()) {
-                targetY = getY() - WAIT_RISE_OFFSET_PX;
+                targetY = getY() - waitRiseOffsetPx;
             } else {
                 waitTicks = WAIT_TICKS_STUCK;
             }

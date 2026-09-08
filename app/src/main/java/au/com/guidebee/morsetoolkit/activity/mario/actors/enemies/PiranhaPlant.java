@@ -45,29 +45,27 @@ import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
  */
 public class PiranhaPlant extends Enemy {
 
-    private static final int FRAME_WIDTH = 32;
-    private static final int FRAME_HEIGHT = 48;
     private static final float ANIMATION_INTERVAL = 0.3f;
 
-    /** Ported from {@code plant}'s own {@code Upheight = y - 96}. */
-    private static final float TRAVEL_PX = 96f;
     /** Ported from the original's own literal {@code moveY(+-0.5)}. */
     private static final float MOVE_SPEED = 0.5f;
     /** Ported from {@code MarioIsNear}'s own {@code +-100} window. */
     private static final float NEAR_RANGE_PX = 100f;
-    /** Ported from {@code CanStopMovingUp}'s own {@code DownHeight - 32} threshold. */
-    private static final float RETRACTED_ZONE_PX = 32f;
 
     private final float upY;
     private final float downY;
+    /** Ported from {@code CanStopMovingUp}'s own {@code DownHeight - 32} threshold. */
+    private final float retractedZonePx;
     private boolean movingUp = true;
     private float animTimer;
     private boolean showingFirstFrame = true;
 
-    public PiranhaPlant(float x, float y, String regionName) {
-        super(MarioResourceManager.region(regionName), FRAME_WIDTH, FRAME_HEIGHT, x, y, true);
+    public PiranhaPlant(float x, float y, String regionName, int tileSize) {
+        super(MarioResourceManager.region(regionName), tileSize, (tileSize * 3) / 2, x, y, true);
         downY = y;
-        upY = y - TRAVEL_PX;
+        // Ported from plant's own Upheight = y - 96 (3 tiles).
+        upY = y - 3f * tileSize;
+        retractedZonePx = tileSize;
     }
 
     @Override
@@ -87,7 +85,7 @@ public class PiranhaPlant extends Enemy {
 
         if (movingUp) {
             boolean marioNear = Math.abs(MarioContext.player().getX() - getX()) < NEAR_RANGE_PX;
-            boolean retracted = getY() > downY - RETRACTED_ZONE_PX;
+            boolean retracted = getY() > downY - retractedZonePx;
             if (!(marioNear && retracted)) {
                 setY(getY() - MOVE_SPEED * frames);
             }

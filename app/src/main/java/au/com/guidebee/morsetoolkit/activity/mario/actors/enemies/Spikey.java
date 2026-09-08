@@ -22,16 +22,17 @@ import au.com.guidebee.morsetoolkit.activity.mario.fx.FallingDeadSprite;
  */
 public class Spikey extends Enemy {
 
-    private static final int FRAME_SIZE = 32;
     private static final float GRAVITY = 5f;
     private static final float WALK_SPEED = 1f;
     private static final float ANIMATION_INTERVAL = 0.3f;
 
+    private final int tileSize;
     private float animTimer;
     private boolean showingFirstFrame = true;
 
-    public Spikey(float x, float y, boolean movingRight) {
-        super(MarioResourceManager.region("spikey"), FRAME_SIZE, FRAME_SIZE, x, y, movingRight);
+    public Spikey(float x, float y, boolean movingRight, int tileSize) {
+        super(MarioResourceManager.region("spikey"), tileSize, tileSize, x, y, movingRight);
+        this.tileSize = tileSize;
         setFrame(movingRight ? 2 : 0);
     }
 
@@ -65,7 +66,7 @@ public class Spikey extends Enemy {
     @Override
     public void onDefeatedByProjectile() {
         MarioResourceManager.sound("smb_kick").play();
-        FallingDeadSprite.spawn(getX(), getY(), MarioResourceManager.region("spikey").split(FRAME_SIZE, FRAME_SIZE)[0][0]);
+        FallingDeadSprite.spawn(getX(), getY(), MarioResourceManager.region("spikey").split(tileSize, tileSize)[0][0]);
         deactivate();
     }
 }

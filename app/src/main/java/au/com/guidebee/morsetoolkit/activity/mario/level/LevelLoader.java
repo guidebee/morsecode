@@ -45,6 +45,7 @@ import au.com.guidebee.morsetoolkit.activity.mario.actors.scenery.Spring;
 import au.com.guidebee.morsetoolkit.activity.mario.fx.LavaBall;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioWorld;
+import au.com.guidebee.morsetoolkit.platformer.core.TileMetrics;
 
 /**
  * Turns a {@link LevelDefinition}'s tile list into a level's world content.
@@ -84,7 +85,8 @@ public final class LevelLoader {
             cols = Math.max(cols, tile.x + tile.lengthX);
             rows = Math.max(rows, tile.y + tile.lengthY);
         }
-        MarioWorld world = new MarioWorld(cols, rows, staticTilesRegion(level));
+        MarioWorld world = new MarioWorld(cols, rows, staticTilesRegion(level),
+                new TileMetrics(MarioConfiguration.TILE_SIZE));
         populateStaticGeometry(world, level);
         return world;
     }
@@ -161,44 +163,44 @@ public final class LevelLoader {
      * {@code MarioContext.init(layerManager, world)}, not before.
      */
     public static void spawnBricks(LevelDefinition level) {
-        int tileSize = MarioConfiguration.TILE_SIZE;
+        int tileSize = MarioContext.world().tileSize();
         for (LevelDefinition.Tile tile : level.tiles) {
             switch (tile.type) {
                 case "Brick":
                     forEachCell(tile, (x, y) -> add(new Brick(x, y, level.attribute)));
                     break;
                 case "Bank":
-                    forEachCell(tile, (x, y) -> add(new Bank(x, y, level.attribute)));
+                    forEachCell(tile, (x, y) -> add(new Bank(x, y, level.attribute, tileSize)));
                     break;
                 case "QuestionMark":
-                    forEachCell(tile, (x, y) -> add(new QuestionMark(x, y, level.attribute, "CoinInside")));
+                    forEachCell(tile, (x, y) -> add(new QuestionMark(x, y, level.attribute, "CoinInside", tileSize)));
                     break;
                 case "QuestionMarkWithMushroom":
-                    forEachCell(tile, (x, y) -> add(new QuestionMark(x, y, level.attribute, "Mashroom")));
+                    forEachCell(tile, (x, y) -> add(new QuestionMark(x, y, level.attribute, "Mashroom", tileSize)));
                     break;
                 case "BrickWithStar":
-                    forEachCell(tile, (x, y) -> add(new BrickWithStar(x, y, level.attribute)));
+                    forEachCell(tile, (x, y) -> add(new BrickWithStar(x, y, level.attribute, tileSize)));
                     break;
                 case "InvisibleBrckWith1Up":
-                    forEachCell(tile, (x, y) -> add(new InvisibleBrck(x, y, level.attribute, "1UP")));
+                    forEachCell(tile, (x, y) -> add(new InvisibleBrck(x, y, level.attribute, "1UP", tileSize)));
                     break;
                 case "InvisibleBrckWithCoin":
-                    forEachCell(tile, (x, y) -> add(new InvisibleBrck(x, y, level.attribute, "CoinInside")));
+                    forEachCell(tile, (x, y) -> add(new InvisibleBrck(x, y, level.attribute, "CoinInside", tileSize)));
                     break;
                 case "BrickWithMushroom":
-                    forEachCell(tile, (x, y) -> add(new BankWithItem(x, y, level.attribute, "Mashroom")));
+                    forEachCell(tile, (x, y) -> add(new BankWithItem(x, y, level.attribute, "Mashroom", tileSize)));
                     break;
                 case "BrickWith1UP":
-                    forEachCell(tile, (x, y) -> add(new BankWithItem(x, y, level.attribute, "1UP")));
+                    forEachCell(tile, (x, y) -> add(new BankWithItem(x, y, level.attribute, "1UP", tileSize)));
                     break;
                 case "BrickWithCoin":
-                    forEachCell(tile, (x, y) -> add(new BankWithItem(x, y, level.attribute, "CoinInside")));
+                    forEachCell(tile, (x, y) -> add(new BankWithItem(x, y, level.attribute, "CoinInside", tileSize)));
                     break;
                 case "WoodenBridge":
                     forEachCell(tile, (x, y) -> add(new WoodenBridge(x, y)));
                     break;
                 case "Iron":
-                    forEachCell(tile, (x, y) -> add(new Iron(x, y, level.attribute)));
+                    forEachCell(tile, (x, y) -> add(new Iron(x, y, level.attribute, tileSize)));
                     break;
                 case "BridgeBloks":
                     forEachCell(tile, (x, y) -> add(new Brick(x, y,
@@ -235,7 +237,8 @@ public final class LevelLoader {
                     // only its taller pipes further in have one).
                     if (!"OrangePump".equals(level.levelName) && tile.lengthY >= 3) {
                         String plantRegion = "Ground".equals(level.attribute) ? "plant" : "plant_dark";
-                        addEnemy(new PiranhaPlant(tile.x * tileSize + 16, tile.y * tileSize + 48, plantRegion));
+                        addEnemy(new PiranhaPlant(tile.x * tileSize + tileSize / 2f,
+                                tile.y * tileSize + (tileSize * 3) / 2f, plantRegion, tileSize));
                     }
                     // Falls through - "PumpWarp" (case 66) renders identically
                     // to a plain "pump" tile (confirmed by reading the source:
@@ -250,12 +253,13 @@ public final class LevelLoader {
                     }
                     break;
                 case "HoriImage": {
-                    // Ported from Mario.java's case 44 - two 64x64 pieces side by side, 64px apart.
-                    TextureRegion[][] frames = MarioResourceManager.region("hori_image").split(64, 64);
+                    // Ported from Mario.java's case 44 - two 2-tile pieces side by side, one tile-pair apart.
+                    int pieceSize = tileSize * 2;
+                    TextureRegion[][] frames = MarioResourceManager.region("hori_image").split(pieceSize, pieceSize);
                     float x = tile.x * tileSize;
                     float y = tile.y * tileSize;
                     add(new Pump(x, y, frames[0][0]));
-                    add(new Pump(x + 64, y, frames[0][1]));
+                    add(new Pump(x + pieceSize, y, frames[0][1]));
                     break;
                 }
                 case "PumpImage":
@@ -270,7 +274,7 @@ public final class LevelLoader {
                     // The decorative Spring sits one tile above - see
                     // Bouncer's own class doc for how the two are linked so
                     // it squishes on every launch.
-                    Spring spring = new Spring(tile.x * tileSize, tile.y * tileSize - tileSize);
+                    Spring spring = new Spring(tile.x * tileSize, tile.y * tileSize - tileSize, tileSize);
                     MarioContext.spawn(spring);
                     bouncer.setSpring(spring);
                     break;
@@ -293,34 +297,34 @@ public final class LevelLoader {
      * Step 6.1 and docs/MARIO_PORT_PLAN_PHASE2.md Step P2.0.
      */
     public static void spawnEnemies(LevelDefinition level) {
-        int tileSize = MarioConfiguration.TILE_SIZE;
+        int tileSize = MarioContext.world().tileSize();
         for (LevelDefinition.Tile tile : level.tiles) {
             switch (tile.type) {
                 case "EnemyMushroom":
-                    forEachCell(tile, (x, y) -> addEnemy(new EnemyMashroom(x, y, level.attribute)));
+                    forEachCell(tile, (x, y) -> addEnemy(new EnemyMashroom(x, y, level.attribute, tileSize)));
                     break;
                 case "EnemyTurtle":
-                    forEachCell(tile, (x, y) -> addEnemy(new EnemyTurtle(x, y, level.attribute)));
+                    forEachCell(tile, (x, y) -> addEnemy(new EnemyTurtle(x, y, level.attribute, tileSize)));
                     break;
                 case "Helmet":
-                    forEachCell(tile, (x, y) -> addEnemy(new Helmet(x, y, helmetColor(level.attribute))));
+                    forEachCell(tile, (x, y) -> addEnemy(new Helmet(x, y, helmetColor(level.attribute), tileSize)));
                     break;
                 case "Monkey":
-                    forEachCell(tile, (x, y) -> addEnemy(new Monkey(x, y)));
+                    forEachCell(tile, (x, y) -> addEnemy(new Monkey(x, y, tileSize)));
                     break;
                 case "FlyingTurtle":
                     // Ported from Mario.java's case 20: "normal" only for Ground, "dark" for everything else.
                     forEachCell(tile, (x, y) -> addEnemy(new FlyingTurtle(x, y,
-                            "Ground".equals(level.attribute) ? "normal" : "dark")));
+                            "Ground".equals(level.attribute) ? "normal" : "dark", tileSize)));
                     break;
                 case "SonOfABuitch":
-                    forEachCell(tile, (x, y) -> addEnemy(new SonOfABuitch(x)));
+                    forEachCell(tile, (x, y) -> addEnemy(new SonOfABuitch(x, tileSize)));
                     break;
                 case "EnemyTurtlePatrol":
-                    addEnemy(new EnemyTurtlePatrol(tile.x * tileSize, tile.y * tileSize, tile.patrolLength));
+                    addEnemy(new EnemyTurtlePatrol(tile.x * tileSize, tile.y * tileSize, tile.patrolLength, tileSize));
                     break;
                 case "FlyingTurtlePatrol":
-                    addEnemy(new FlyingTurtlePatrol(tile.x * tileSize, tile.y * tileSize, tile.patrolLength));
+                    addEnemy(new FlyingTurtlePatrol(tile.x * tileSize, tile.y * tileSize, tile.patrolLength, tileSize));
                     break;
                 case "FireBar":
                     spawnFireBar(tile, FIRE_BAR_COUNT);
@@ -329,28 +333,28 @@ public final class LevelLoader {
                     spawnFireBar(tile, BIG_FIRE_BAR_COUNT);
                     break;
                 case "Boss":
-                    addEnemy(new Boss(tile.x * tileSize, tile.y * tileSize, tile.patrolLength * tileSize, false));
+                    addEnemy(new Boss(tile.x * tileSize, tile.y * tileSize, tile.patrolLength * tileSize, false, tileSize));
                     break;
                 case "BossHammer":
-                    addEnemy(new Boss(tile.x * tileSize, tile.y * tileSize, tile.patrolLength * tileSize, true));
+                    addEnemy(new Boss(tile.x * tileSize, tile.y * tileSize, tile.patrolLength * tileSize, true, tileSize));
                     break;
                 // Sea-level water enemies (step P2.6) - ported from Mario.java's
                 // cases 54-57/58, FishyWater's own Type argument (1=grey
                 // straight, 2=grey up-down, 3=red straight, 4=red up-down).
                 case "FishGrey":
-                    addEnemy(new FishyWater(tile.x * tileSize, tile.y * tileSize, 1));
+                    addEnemy(new FishyWater(tile.x * tileSize, tile.y * tileSize, 1, tileSize));
                     break;
                 case "FishGreyUpDown":
-                    addEnemy(new FishyWater(tile.x * tileSize, tile.y * tileSize, 2));
+                    addEnemy(new FishyWater(tile.x * tileSize, tile.y * tileSize, 2, tileSize));
                     break;
                 case "FishRed":
-                    addEnemy(new FishyWater(tile.x * tileSize, tile.y * tileSize, 3));
+                    addEnemy(new FishyWater(tile.x * tileSize, tile.y * tileSize, 3, tileSize));
                     break;
                 case "FishRedUpDown":
-                    addEnemy(new FishyWater(tile.x * tileSize, tile.y * tileSize, 4));
+                    addEnemy(new FishyWater(tile.x * tileSize, tile.y * tileSize, 4, tileSize));
                     break;
                 case "OctoPussy":
-                    addEnemy(new OctoPussy(tile.x * tileSize, tile.y * tileSize));
+                    addEnemy(new OctoPussy(tile.x * tileSize, tile.y * tileSize, tileSize));
                     break;
                 default:
                     break;
@@ -371,7 +375,7 @@ public final class LevelLoader {
 
     /** Ported from {@code Mario.java}'s case 28/29 - {@code count} {@code OrbitingFireball}s around one pivot, spaced {@code FIRE_BAR_RADIUS_STEP}px apart. */
     private static void spawnFireBar(LevelDefinition.Tile tile, int count) {
-        int tileSize = MarioConfiguration.TILE_SIZE;
+        int tileSize = MarioContext.world().tileSize();
         float centerX = tile.x * tileSize + 8;
         float centerY = tile.y * tileSize + 8;
         boolean clockwise = "CW".equals(tile.extraInfo);
@@ -386,16 +390,16 @@ public final class LevelLoader {
      * Step P2.0. Same {@link MarioContext} requirement as {@link #spawnBricks}.
      */
     public static void spawnHazards(LevelDefinition level) {
-        int tileSize = MarioConfiguration.TILE_SIZE;
+        int tileSize = MarioContext.world().tileSize();
         for (LevelDefinition.Tile tile : level.tiles) {
             switch (tile.type) {
                 case "Axe":
-                    Axe axe = new Axe(tile.x * tileSize, tile.y * tileSize);
+                    Axe axe = new Axe(tile.x * tileSize, tile.y * tileSize, tileSize);
                     MarioContext.world().addAxe(axe);
                     MarioContext.spawn(axe);
                     break;
                 case "BossFire":
-                    BossFire fire = new BossFire(tile.x * tileSize, tile.y * tileSize);
+                    BossFire fire = new BossFire(tile.x * tileSize, tile.y * tileSize, tileSize);
                     MarioContext.world().addHazard(fire);
                     MarioContext.spawn(fire);
                     break;
@@ -415,7 +419,7 @@ public final class LevelLoader {
         for (LevelDefinition.Tile tile : level.tiles) {
             if ("Coin".equals(tile.type)) {
                 forEachCell(tile, (x, y) -> {
-                    Coin coin = new Coin(x, y);
+                    Coin coin = new Coin(x, y, MarioContext.world().tileSize());
                     MarioContext.world().addCollectible(coin);
                     MarioContext.spawn(coin);
                 });
@@ -431,20 +435,20 @@ public final class LevelLoader {
      * (see {@code Lift}'s class doc) - see docs/MARIO_PORT_PLAN.md Step 7.1.
      */
     public static void spawnLifts(LevelDefinition level) {
-        int tileSize = MarioConfiguration.TILE_SIZE;
+        int tileSize = MarioContext.world().tileSize();
         for (LevelDefinition.Tile tile : level.tiles) {
             if ("BalenceLift".equals(tile.type)) {
                 spawnBalanceLift(tile);
                 continue;
             }
             if ("LiftFall".equals(tile.type)) {
-                LiftFall fall = new LiftFall(tile.x * tileSize, tile.y * tileSize, tile.patrolLength);
+                LiftFall fall = new LiftFall(tile.x * tileSize, tile.y * tileSize, tile.patrolLength, tileSize);
                 MarioContext.world().addLift(fall);
                 MarioContext.spawn(fall);
                 continue;
             }
             if ("LiftCar".equals(tile.type)) {
-                LiftCar car = new LiftCar(tile.x * tileSize, tile.y * tileSize, tile.patrolLength);
+                LiftCar car = new LiftCar(tile.x * tileSize, tile.y * tileSize, tile.patrolLength, tileSize);
                 MarioContext.world().addLift(car);
                 MarioContext.spawn(car);
                 continue;
@@ -453,7 +457,7 @@ public final class LevelLoader {
             if (motion == null) {
                 continue;
             }
-            addLift(new Lift(tile.x * tileSize, tile.y * tileSize, motion, tile.patrolLength));
+            addLift(new Lift(tile.x * tileSize, tile.y * tileSize, motion, tile.patrolLength, tileSize));
         }
     }
 
@@ -481,10 +485,10 @@ public final class LevelLoader {
      * pair's shared physics live on one linked object instead of two).
      */
     private static void spawnBalanceLift(LevelDefinition.Tile tile) {
-        int tileSize = MarioConfiguration.TILE_SIZE;
-        BalanceLiftPlatform parent = new BalanceLiftPlatform(tile.x * tileSize, tile.y * tileSize);
+        int tileSize = MarioContext.world().tileSize();
+        BalanceLiftPlatform parent = new BalanceLiftPlatform(tile.x * tileSize, tile.y * tileSize, tileSize);
         BalanceLiftPlatform child = new BalanceLiftPlatform(
-                (tile.x + tile.bridgeLength) * tileSize, tile.y * tileSize + 2 * tileSize);
+                (tile.x + tile.bridgeLength) * tileSize, tile.y * tileSize + 2 * tileSize, tileSize);
         BalanceLiftPlatform.link(parent, child);
         addBalanceLiftPlatform(parent);
         addBalanceLiftPlatform(child);
@@ -509,7 +513,7 @@ public final class LevelLoader {
      * BackgroundBand} wiring, not this method.
      */
     public static FlagPole spawnScenery(LevelDefinition level) {
-        int tileSize = MarioConfiguration.TILE_SIZE;
+        int tileSize = MarioContext.world().tileSize();
         boolean blackAndWhite = "CloudsNight".equals(level.backgroundImage);
         FlagPole flagPole = null;
         for (LevelDefinition.Tile tile : level.tiles) {
@@ -518,7 +522,7 @@ public final class LevelLoader {
                 continue;
             }
             if ("LavaBall".equals(tile.type)) {
-                MarioContext.spawn(new LavaBall(tile.x * tileSize));
+                MarioContext.spawn(new LavaBall(tile.x * tileSize, tileSize));
                 continue;
             }
             if ("Water".equals(tile.type)) {
@@ -551,7 +555,7 @@ public final class LevelLoader {
                         MarioResourceManager.region(fenceFlag ? "flag_fence" : "flag")));
                 MarioContext.spawn(new Scenery(tile.x * tileSize, tile.y * tileSize - tileSize,
                         MarioResourceManager.region(fenceFlag ? "flag_sphere_fence" : "flag_sphere")));
-                flagPole = new FlagPole(tile.x, tile.y);
+                flagPole = new FlagPole(tile.x, tile.y, tileSize);
                 MarioContext.spawn(flagPole);
                 continue;
             }
@@ -575,7 +579,7 @@ public final class LevelLoader {
      * own trunk decoration).
      */
     private static void spawnWall(LevelDefinition.Tile tile) {
-        int tileSize = MarioConfiguration.TILE_SIZE;
+        int tileSize = MarioContext.world().tileSize();
         TextureRegion[][] frames = MarioResourceManager.region("wall").split(tileSize, tileSize);
         for (int dx = 0; dx < tile.lengthX; dx++) {
             for (int dy = 0; dy < tile.lengthY; dy++) {
@@ -604,13 +608,13 @@ public final class LevelLoader {
      * the original's own {@code y==1}/{@code else} split).
      */
     private static void spawnRocketLauncher(LevelDefinition.Tile tile) {
-        int tileSize = MarioConfiguration.TILE_SIZE;
+        int tileSize = MarioContext.world().tileSize();
         TextureRegion[][] frames = MarioResourceManager.region("rocket_launcher").split(tileSize, tileSize);
         for (int dy = 0; dy < tile.lengthY; dy++) {
             float x = tile.x * tileSize;
             float y = (tile.y + dy) * tileSize;
             if (dy == 0) {
-                add(new RocketLauncher(x, y, frames[0][0]));
+                add(new RocketLauncher(x, y, frames[0][0], tileSize));
             } else {
                 add(new RocketLauncherBody(x, y, frames[dy == 1 ? 1 : 2][0]));
             }
@@ -622,7 +626,7 @@ public final class LevelLoader {
     }
 
     private static void forEachCell(LevelDefinition.Tile tile, CellSpawner spawner) {
-        int tileSize = MarioConfiguration.TILE_SIZE;
+        int tileSize = MarioContext.world().tileSize();
         for (int dx = 0; dx < tile.lengthX; dx++) {
             for (int dy = 0; dy < tile.lengthY; dy++) {
                 spawner.spawn((tile.x + dx) * tileSize, (tile.y + dy) * tileSize);
@@ -642,13 +646,13 @@ public final class LevelLoader {
      * that class for one caller.
      */
     private static void spawnTree(LevelDefinition.Tile tile, boolean blackAndWhite) {
-        int tileSize = MarioConfiguration.TILE_SIZE;
+        int tileSize = MarioContext.world().tileSize();
         int lastColumn = tile.lengthX - 1;
         TextureRegion trunkFrame = MarioResourceManager.region(blackAndWhite ? "bw_tree" : "tree")
                 .split(tileSize, tileSize)[0][3];
         for (int dx = 0; dx < tile.lengthX; dx++) {
             float x = (tile.x + dx) * tileSize;
-            add(new Tree(x, tile.y * tileSize, dx, lastColumn, blackAndWhite));
+            add(new Tree(x, tile.y * tileSize, dx, lastColumn, blackAndWhite, tileSize));
             if (dx == 0 || dx == lastColumn) {
                 continue;
             }

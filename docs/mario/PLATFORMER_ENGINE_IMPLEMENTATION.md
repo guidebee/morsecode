@@ -608,17 +608,32 @@ reasoned about.
 
 ## Phase D — `CollisionPipeline`
 
-- [ ] New files `platformer/collision/FrameResolver.java` (interface) and
+- [x] New files `platformer/collision/FrameResolver.java` (interface) and
   `platformer/collision/CollisionPipeline.java`, per
   [PLATFORMER_ENGINE_ARCHITECTURE.md §3.4](PLATFORMER_ENGINE_ARCHITECTURE.md#34-collisionpipeline-formalizing-the-existing-convention).
-- [ ] `screen/MarioGameScreen.java`: build one `CollisionPipeline` in the constructor from
-  the existing 8 resolver method references (`PlayerCollisionResolver::resolvePickups`,
-  `EnemyCollisionResolver::resolve`, ... — the exact list and order is documented in
-  [MARIO_GAME_MECHANICS.md §3](MARIO_GAME_MECHANICS.md#3-the-frame-loop)), replace the 8
+- [x] `screen/MarioGameScreen.java`: build one `CollisionPipeline` in the constructor (right
+  after `MarioContext.setPlayer(player)`, the earliest point every resolver's own captured
+  field exists) from the existing 8 resolver calls — the exact list and order is documented
+  in [MARIO_GAME_MECHANICS.md §3](MARIO_GAME_MECHANICS.md#3-the-frame-loop) — replace the 8
   call lines in `render(delta)` with one `pipeline.resolveAll(world)`.
 
+  **Technical note found while implementing (not a correction, just a detail the
+  architecture doc's own sketch leaves implicit):** the doc's illustrative
+  `new CollisionPipeline(this::resolvePickups, EnemyCollisionResolver::resolve, ...)`
+  reads as if bare method references satisfy `FrameResolver`, but they can't here — every
+  one of Mario's 8 resolvers takes `(Player, MarioWorld)`, `(MarioWorld)` alone, or (for
+  `TeleportResolver`) `(List<TeleportLink>, Player)`, never the interface's own single
+  `TileWorld world` parameter. Used lambdas instead (`w -> EnemyCollisionResolver.resolve(player,
+  world)`), each closing over the screen's own `player`/`world`/`level` fields and ignoring
+  the lambda's own parameter entirely — `world` (the field, already a `MarioWorld`) is what
+  every resolver actually wants, not `w` (the interface's generic `TileWorld` parameter),
+  so there's nothing to gain from casting `w` instead of reading the closed-over field.
+  `AxeResolver.findTriggered`/`CheckpointResolver.findTouched` (called after `draw()`, not
+  part of this per-frame resolver list per §3's own notes) are untouched.
+
 **Exit criteria:** full regression pass — purely mechanical, the resolver order is
-unchanged, just relocated into one list instead of 8 lines.
+unchanged, just relocated into one list instead of 8 lines. **Compiled successfully** via
+`gradlew :app:compileDebugJavaWithJavac --rerun-tasks` (a full clean rebuild).
 
 ---
 

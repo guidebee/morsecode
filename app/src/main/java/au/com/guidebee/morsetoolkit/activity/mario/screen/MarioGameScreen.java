@@ -40,6 +40,7 @@ import au.com.guidebee.morsetoolkit.activity.mario.collision.LiftCollisionResolv
 import au.com.guidebee.morsetoolkit.activity.mario.collision.PlayerCollisionResolver;
 import au.com.guidebee.morsetoolkit.activity.mario.collision.ProjectileCollisionResolver;
 import au.com.guidebee.morsetoolkit.activity.mario.collision.TeleportResolver;
+import au.com.guidebee.morsetoolkit.platformer.collision.CollisionPipeline;
 import au.com.guidebee.morsetoolkit.activity.mario.debug.DebugPanel;
 import au.com.guidebee.morsetoolkit.activity.mario.fx.BackgroundBand;
 import au.com.guidebee.morsetoolkit.activity.mario.fx.BossFallingAnim;
@@ -232,6 +233,7 @@ public class MarioGameScreen extends ScreenAdapter {
     private final Player player;
     private final CameraFollow camera;
     private final SpawnController spawnController;
+    private final CollisionPipeline pipeline;
     private final String levelAttribute;
     /** Null for levels with no "Flag" tile (the castle/boss-only ones) - see {@link #updateLevelCompletion}'s PLAYING case. */
     private final FlagPole flagPole;
@@ -385,6 +387,25 @@ public class MarioGameScreen extends ScreenAdapter {
         player.setWater("Sea".equals(level.attribute));
         layerManager.append(player);
         MarioContext.setPlayer(player);
+
+        // One-per-frame interaction-pair resolvers, in the fixed order
+        // docs/MARIO_GAME_MECHANICS.md §3 documents - see PlatformerEngine's
+        // own CollisionPipeline doc for why this is a list, not 8 named
+        // calls. Every resolver here closes over this screen's own `player`/
+        // `world`/`level` fields rather than reading FrameResolver#resolve's
+        // own TileWorld parameter - Mario's resolvers all want a MarioWorld
+        // (or, for TeleportResolver, no world at all), and those fields are
+        // already exactly that, so there's nothing to gain from threading
+        // the passed-in world through a cast.
+        pipeline = new CollisionPipeline(
+                w -> PlayerCollisionResolver.resolvePickups(player, world),
+                w -> EnemyCollisionResolver.resolve(player, world),
+                w -> EnemyToEnemyResolver.resolve(world),
+                w -> ProjectileCollisionResolver.resolve(world),
+                w -> LiftCollisionResolver.resolve(player, world),
+                w -> HazardCollisionResolver.resolve(player, world),
+                w -> AxeResolver.resolve(player, world),
+                w -> TeleportResolver.resolve(level.teleports, player));
 
         camera = new CameraFollow(viewportWidth, viewportHeight,
                 world.getWidthPx(), world.getHeightPx());
@@ -682,14 +703,7 @@ public class MarioGameScreen extends ScreenAdapter {
 
             if (!paused) {
                 OscillatorClock.advance(delta);
-                PlayerCollisionResolver.resolvePickups(player, world);
-                EnemyCollisionResolver.resolve(player, world);
-                EnemyToEnemyResolver.resolve(world);
-                ProjectileCollisionResolver.resolve(world);
-                LiftCollisionResolver.resolve(player, world);
-                HazardCollisionResolver.resolve(player, world);
-                AxeResolver.resolve(player, world);
-                TeleportResolver.resolve(level.teleports, player);
+                pipeline.resolveAll(world);
                 spawnController.update(delta, camera, player);
                 updateLevelCompletion(delta);
 

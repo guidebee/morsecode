@@ -1,36 +1,52 @@
-# Platformer Engine Re-Architecture: Implementation Plan
+# Platformer Engine Re-Architecture: Implementation Record
 
-**Status: planning only — the runbook to follow when implementation starts, nothing
-executed yet.** This is the actionable companion to
+**Status: implemented — Phases A–G are all complete.** This document started as the
+actionable companion to
 [PLATFORMER_ENGINE_ARCHITECTURE.md](PLATFORMER_ENGINE_ARCHITECTURE.md) (the design and
 rationale) — the same relationship [MARIO_RESKIN_PLAN.md](MARIO_RESKIN_PLAN.md) has to
-[MARIO_RESKIN_EXECUTION.md](MARIO_RESKIN_EXECUTION.md). Read the architecture doc first;
-this document turns its §3 designs and §7 phase list into literal, file-by-file steps,
-grounded in a real grep-and-read audit of the current code (every file/line cited below
-was actually checked, not estimated).
+[MARIO_RESKIN_EXECUTION.md](MARIO_RESKIN_EXECUTION.md) — turning its §3 designs and §7
+phase list into literal, file-by-file steps. Every step below is now checked off and has
+actually been done; the numbered checklists read as instructions because that's how they
+were written going in, but each one is a completed action, not a to-do. Every phase section
+also documents, inline, the real technical corrections/deviations found once the actual
+code was read and the actual compiler run — several of the architecture doc's own
+illustrative sketches didn't hold up literally (a Mario-agnostic `TileWorld` needing a new
+`SolidTile` marker interface, `GameContext`'s "thin subclass" wording running into a real
+Java static-hides-instance rule, a `CollisionPipeline` sketch whose method-reference example
+doesn't actually type-check, and others) — this is the record of what was actually built,
+not just what was originally sketched.
 
 Per [MARIO_RESKIN_PLAN.md §5](MARIO_RESKIN_PLAN.md#5-ordering-phase-2--platformer-re-architecture--reskin-as-sequential-passes),
-this whole plan (Phases A–G) runs **before** [MARIO_RESKIN_EXECUTION.md](MARIO_RESKIN_EXECUTION.md)
-starts.
+this whole plan (Phases A–G) was required to run **before**
+[MARIO_RESKIN_EXECUTION.md](MARIO_RESKIN_EXECUTION.md) starts — that precondition is now
+satisfied.
 
-## 0. Ground rules for every phase
+## 0. Ground rules this implementation followed
 
-- **No compilation is available in the environment this plan was written in** (no Android
-  SDK/NDK, `gradle.properties` targets a Windows-only JDK path) — every step below was
-  verified by reading the actual source and cross-checking every call site by hand, not by
-  building. **Build and run the full [MARIO_LEVEL_ATLAS.md](MARIO_LEVEL_ATLAS.md)
-  regression pass on your own machine after each phase**, and don't start the next phase
-  until that pass is clean — the same discipline every other plan in this doc set uses.
+- **Every phase was verified by an actual `gradlew :app:compileDebugJavaWithJavac` build**
+  (several phases with a full `--rerun-tasks` clean rebuild), not just by reading the
+  source and cross-checking call sites by hand — contrary to this document's own original
+  assumption below it, the environment turned out to have a working JDK 21 install and
+  Android SDK after all. **The on-device
+  [MARIO_LEVEL_ATLAS.md](MARIO_LEVEL_ATLAS.md) regression pass this ground rule also calls
+  for is still the user's own responsibility** — a clean compile proves every call site was
+  updated, not that gameplay feel/visual output is unchanged; each phase's own exit-criteria
+  note says explicitly what still needs real playtesting attention.
+  <br>Original wording, kept for context: *no compilation was expected to be available in
+  the environment this plan was written in (no Android SDK/NDK, `gradle.properties` targets
+  a Windows-only JDK path) — build and run the full MARIO_LEVEL_ATLAS.md regression pass on
+  your own machine after each phase, and don't start the next phase until that pass is
+  clean, the same discipline every other plan in this doc set uses.*
 - One phase per commit/PR. Never combine a pure move/rename with a logic change in the
   same commit — if something breaks, you want to know instantly which kind of change did
-  it.
+  it. (Followed throughout — see the git history for one commit per phase.)
 - Where a phase says "zero logic change," that's a literal correctness bar, not a goal —
   if achieving it requires an extra small step (see Phase A's `TileCollisionSource`
   interface below, added specifically to keep the move truly logic-free), take the extra
   step rather than relaxing the bar.
 - Mark each numbered step `[ ]`/`[x]` as you go, the same convention
-  [MARIO_PORT_PLAN_PHASE2.md](MARIO_PORT_PLAN_PHASE2.md) uses — this doc is meant to be
-  edited in place as a tracker, not just read once.
+  [MARIO_PORT_PLAN_PHASE2.md](MARIO_PORT_PLAN_PHASE2.md) uses — this doc was edited in
+  place as a tracker while work was in progress; every step below is now `[x]`.
 
 ---
 

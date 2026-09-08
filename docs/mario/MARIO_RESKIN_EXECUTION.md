@@ -413,9 +413,8 @@ tier 1: `Brick`, `stone`/`chocolate` (×5 themes), `EnemyMushroom`-equivalent.
       extraction script are documented in that doc's §12.1). Ground (Surface) and
       `bw_stone` (CloudsNight) are still the procedural tiles — lowest priority, already
       read acceptably. Re-packed (still 106 regions / 2 pages, confirming dimensions
-      match) and recompiled clean. **Not yet re-verified on-device** — the next on-device
-      pass should specifically check these 3 themes' terrain alongside whatever else is
-      still pending from the earlier fix-verification.
+      match) and recompiled clean. **Confirmed 2026-09-08 on-device: looks fine** —
+      Fortress/Substrate/Flooded Sector's sourced terrain verified in-game.
 - [x] Design and draw the breakable-brick sprite + its break-fragment art
       (`brick_peaces`, 2×4 grid). **Done 2026-09-08** — brick uses a visually distinct
       2×2 segmented-hatch pattern (vs. stone/chocolate's single-panel look) specifically

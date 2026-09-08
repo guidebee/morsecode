@@ -5,6 +5,7 @@ import com.guidebee.game.microedition.LayerManager;
 
 import au.com.guidebee.morsetoolkit.activity.mario.actors.player.Player;
 import au.com.guidebee.morsetoolkit.activity.mario.state.GameStateController;
+import au.com.guidebee.morsetoolkit.platformer.core.GameContext;
 
 /**
  * Static holder for the current level's {@link LayerManager}, {@link MarioWorld}
@@ -19,26 +20,26 @@ import au.com.guidebee.morsetoolkit.activity.mario.state.GameStateController;
  * reason - just consolidated into one holder instead of duplicated per class.
  * Safe because exactly one level/screen is active at a time and
  * {@link #init} is called fresh by every new {@code MarioGameScreen}.
+ *
+ * <p>A thin wrapper (not a subclass - see {@link GameContext}'s own doc for
+ * why) around one private {@link GameContext} instance parameterized for
+ * Mario's own {@link Player}/{@link MarioWorld}/{@link GameStateController}
+ * types - every method here just forwards to it, so every existing call site
+ * keeps its exact static-call shape.
  */
 public final class MarioContext {
 
-    private static LayerManager layerManager;
-    private static MarioWorld world;
-    private static GameStateController gameState;
-    private static Player player;
+    private static final GameContext<Player, MarioWorld, GameStateController> CONTEXT = new GameContext<>();
 
     private MarioContext() {
     }
 
     public static void init(LayerManager layerManager, MarioWorld world, GameStateController gameState) {
-        MarioContext.layerManager = layerManager;
-        MarioContext.world = world;
-        MarioContext.gameState = gameState;
-        MarioContext.player = null;
+        CONTEXT.init(layerManager, world, gameState);
     }
 
     public static MarioWorld world() {
-        return world;
+        return CONTEXT.world();
     }
 
     /**
@@ -49,19 +50,19 @@ public final class MarioContext {
      * engine's own {@code Mario game} reference each enemy class held.
      */
     public static void setPlayer(Player player) {
-        MarioContext.player = player;
+        CONTEXT.setPlayer(player);
     }
 
     public static Player player() {
-        return player;
+        return CONTEXT.player();
     }
 
     /** Score/coins/lives - see {@code MarioGamePlay#gameState()} for who owns the instance this returns. */
     public static GameStateController gameState() {
-        return gameState;
+        return CONTEXT.gameState();
     }
 
     public static void spawn(Layer actor) {
-        layerManager.append(actor);
+        CONTEXT.spawn(actor);
     }
 }

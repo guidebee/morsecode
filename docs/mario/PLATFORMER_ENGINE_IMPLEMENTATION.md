@@ -576,14 +576,33 @@ an incremental one) after every edit in this phase.
 
 ## Phase C — `GameContext`
 
-- [ ] New file `platformer/core/GameContext.java`, per
+- [x] New file `platformer/core/GameContext.java`, per
   [PLATFORMER_ENGINE_ARCHITECTURE.md §3.5](PLATFORMER_ENGINE_ARCHITECTURE.md#35-gamecontexttplayer-tworld-tgamestate).
-- [ ] `world/MarioContext.java` becomes a thin subclass/wrapper parameterized as
+  Bounded `TWorld extends TileWorld` per the architecture doc's own sketch — satisfied
+  since `MarioWorld extends TileWorld` as of Phase B2.
+- [x] `world/MarioContext.java` becomes a thin wrapper parameterized as
   `GameContext<Player, MarioWorld, GameStateController>` — every existing call site
   (`MarioContext.world()`, `.player()`, `.gameState()`, `.spawn(...)`, `.init(...)`) keeps
   its exact signature; only the class's own internals change.
 
-**Exit criteria:** full regression pass — purely mechanical, low risk.
+  **Technical correction found while implementing — "subclass" (this doc's first-listed
+  option) doesn't compile:** `GameContext`'s instance methods and `MarioContext`'s target
+  static methods must have the *exact same names* (`init`/`world`/`player`/`setPlayer`/
+  `gameState`/`spawn`, per this doc's own call-site list) for every existing call site to
+  keep working unchanged. If `MarioContext extends GameContext<...>`, Java refuses to
+  compile a static method that has the same signature as an inherited instance method
+  ("static methods cannot hide instance methods") — so `public static MarioWorld world()`
+  in a subclass of a `GameContext` that already declares instance `world()` is a hard
+  compile error, not a style choice. Used this doc's second-listed option instead:
+  `MarioContext` holds one `private static final GameContext<Player, MarioWorld,
+  GameStateController>` field (composition, not inheritance) and every static method is a
+  one-line forward to it. Documented in both classes' own doc comments, not just here.
+
+**Exit criteria:** full regression pass — purely mechanical, low risk. **Compiled
+successfully** via `gradlew :app:compileDebugJavaWithJavac --rerun-tasks` (a full clean
+rebuild) — `MarioContext` is used pervasively across `activity/mario`, so this phase's own
+"purely mechanical" claim is now compiler-verified across every call site, not just
+reasoned about.
 
 ---
 

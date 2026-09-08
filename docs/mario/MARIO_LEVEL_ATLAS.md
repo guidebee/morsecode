@@ -4,9 +4,19 @@ This document catalogs **every one of the 55 shipped Mario levels** — all 8 wo
 14 bonus areas, and all 5 beanstalk ("Clowd") levels — with a schematic minimap and a
 full data breakdown for each, generated directly from the actual level data under
 `app/src/main/assets/mario/levels/*.json` (not hand-transcribed, so it can't drift from
-the shipped content). It answers "how are the scenes/levels designed" at both a
-game-design level (what mechanic each level introduces, how difficulty ramps world to
-world) and a data level (exact tile/enemy/checkpoint counts).
+the shipped content). It answers "how are the scenes/levels designed" at three levels:
+game-design (what mechanic each level introduces, how difficulty ramps world to world),
+data (exact tile/enemy/checkpoint counts, §1–§12), and file-format (§13 is a complete,
+worked-example guide to the level JSON format itself, for anyone authoring a brand-new
+level).
+
+Each level's own entry (§1–§11) also includes a **"Ground structure"/"Pacing" design
+note** — pit locations, what bridges them, and where enemy density concentrates — derived
+by directly analyzing that level's own tile positions (an automated pass over the real
+data, not hand-authored commentary), with the same "don't overclaim" discipline as the
+rest of this document: gaps too wide to represent honestly as one jump (a sign of a
+multi-tier floor, not a real single chasm) are flagged as such rather than reported with
+false precision.
 
 Companion documents:
 - [MARIO_GAME_MECHANICS.md](MARIO_GAME_MECHANICS.md) — how the actors and systems shown
@@ -79,6 +89,7 @@ blocks and bricks, pipes, the Goomba/Koopa-analog enemies, and the castle-boss t
 - **Bricks/mechanisms:** Brick ×15, QuestionMark ×8, pump ×6, QuestionMarkWithMushroom ×4, InvisibleBrckWith1Up ×1, Bank ×1, BrickWithStar ×1
 - **Scenery:** Flag ×1, SmallCastle ×1
 - **Checkpoints:** level-end flag → level 12; vertical pipe (hold down) → level 97
+- **Ground structure:** a gap at tile ~159 (22 wide) crossed via a brick span, a "?" block; a floor-height change around tile ~190-198 (staircase-style, not a fall risk); a floor-height change around tile ~144-148 (staircase-style, not a fall risk); floor height also varies across large stretches elsewhere in this level (multi-tier platforming/bridges rather than one continuous strip — see its minimap for the actual layout). **Pacing:** enemy encounters concentrate in the level's opening third (6/4/0 opening/middle/closing).
 
 ### 1-2 — Level 12
 
@@ -91,6 +102,7 @@ blocks and bricks, pipes, the Goomba/Koopa-analog enemies, and the castle-boss t
 - **Placed items:** Coin ×6
 - **Lifts:** LiftDown ×3, LiftUP ×3
 - **Checkpoints:** horizontal pipe (walk right + on ground) → level 13; vertical pipe (hold down) → level 98; vertical pipe (hold down) → level 41; vertical pipe (hold down) → level 31; vertical pipe (hold down) → level 21 — **this is the World-1 secret warp room; see §6**
+- **Ground structure:** a gap at tile ~138 (7 wide) crossed via a falling lift; a gap at tile ~153 (7 wide) crossed via a rising lift; a gap at tile ~80 (3 wide) crossed via a brick span. **Pacing:** enemy encounters concentrate in the level's opening third (14/4/0 opening/middle/closing); a 3-strong EnemyMushroom cluster around tile 73-79.
 
 ### 1-3 — Level 13
 
@@ -104,6 +116,7 @@ blocks and bricks, pipes, the Goomba/Koopa-analog enemies, and the castle-boss t
 - **Lifts:** Lift_LeftRight ×2, Lift_UpDown ×1, Lift_LeftRightInvert ×1
 - **Scenery:** SmallCastle ×1, BigCastle ×1, Flag ×1
 - **Checkpoints:** level-end flag → level 14
+- **Ground structure:** this level's floor height varies across large stretches (multi-tier platforming/bridges rather than one continuous strip) — see its minimap for the actual layout rather than a single tile range. **Pacing:** enemy encounters concentrate in the level's opening third (5/3/0 opening/middle/closing).
 
 ### 1-4 — Level 14 (castle / boss)
 
@@ -126,6 +139,7 @@ princess is in another castle" beat — see
 [MARIO_GAME_MECHANICS.md §9.1.1](MARIO_GAME_MECHANICS.md#911-boss--the-reference-complex-enemy-pattern).
 
 ---
+- **Ground structure:** this level's floor height varies across large stretches (multi-tier platforming/bridges rather than one continuous strip) — see its minimap for the actual layout rather than a single tile range. **Pacing:** enemy encounters concentrate in the level's opening third (8/0/0 opening/middle/closing).
 
 ## 2. World 2 — the water arc
 
@@ -141,6 +155,7 @@ princess is in another castle" beat — see
 - **Scenery:** BigCastle ×1, Flag ×1, SmallCastle ×1
 - **Checkpoints:** beanstalk entrance (hold up) → level 92; level-end flag → level 22; vertical pipe (hold down) → level 99
 - **Note:** also contains an unrecognized/legacy tile type `CoinInside` at one spot (not spawned by `LevelLoader` — confirmed dead data left over from the original conversion, harmless)
+- **Ground structure:** a gap at tile ~92 (4 wide) crossed via a brick span; open pit at tile ~106 (3 wide, no crossing structure in the data — a straight jump or fall); open pit at tile ~139 (3 wide, no crossing structure in the data — a straight jump or fall). **Pacing:** enemy encounters concentrate in the level's opening third (14/9/1 opening/middle/closing); a 5-strong EnemyMushroom cluster around tile 59-68.
 
 ### 2-2 — Level 22 (Sea)
 
@@ -158,6 +173,7 @@ gentler gravity/paddle-jump/speed-cap physics described in
 [MARIO_GAME_MECHANICS.md §4.2](MARIO_GAME_MECHANICS.md#42-movement-constants). Its dense
 enemy mix (`OctoPussy` bob-and-dart chasers plus 4 `FishyWater` color/behavior variants)
 makes it the highest single-level enemy density in the game outside the castles.
+- **Ground structure:** a floor-height change around tile ~131-140 (staircase-style, not a fall risk); a floor-height change around tile ~157-164 (staircase-style, not a fall risk); open pit at tile ~66 (5 wide, no crossing structure in the data — a straight jump or fall). **Pacing:** enemy encounters concentrate in the level's middle third (3/13/7 opening/middle/closing).
 
 ### 2-3 — Level 23
 
@@ -171,6 +187,7 @@ makes it the highest single-level enemy density in the game outside the castles.
 
 The only level with **zero placed enemies** — a pure platforming breather built almost
 entirely from `WoodenBridge` spans.
+- **Ground structure:** a floor-height change around tile ~226-250 (staircase-style, not a fall risk); a gap at tile ~106 (21 wide) crossed via a wooden bridge span, tree-canopy platforms; a gap at tile ~15 (16 wide) crossed via a wooden bridge span, tree-canopy platforms.
 
 ### 2-4 — Level 24 (castle / boss)
 
@@ -187,6 +204,7 @@ entirely from `WoodenBridge` spans.
 - **Checkpoints:** castle fake-out ("our princess is in another castle") → level 31
 
 ---
+- **Ground structure:** a gap at tile ~16 (16 wide) crossed via iron blocks, a "?" block; a gap at tile ~128 (13 wide) crossed via a brick span, bridge blocks; a gap at tile ~84 (8 wide) crossed via a falling lift, a rising lift. **Pacing:** enemy encounters concentrate in the level's middle third (2/4/1 opening/middle/closing); a 3-strong FireBar cluster around tile 49-61.
 
 ## 3. World 3 — patrols, seesaws, and Lakitu's cousin
 
@@ -205,6 +223,7 @@ entirely from `WoodenBridge` spans.
 First appearance of `Monkey` — a hammer-throwing, tight-patrol enemy (Lakitu's
 ground-based cousin in this port's design, distinct from `SonOfABuitch`, which is the
 actual floating Lakitu-analog introduced in World 4).
+- **Ground structure:** a gap at tile ~77 (8 wide) crossed via InvisibleBrckWith1Up, a wooden bridge span; a gap at tile ~128 (4 wide) crossed via a brick span, a "?" block; open pit at tile ~45 (3 wide, no crossing structure in the data — a straight jump or fall). **Pacing:** enemy encounters concentrate in the level's middle third (7/14/7 opening/middle/closing); a 3-strong FlyingTurtle cluster around tile 162-170.
 
 ### 3-2 — Level 32
 
@@ -221,6 +240,7 @@ actual floating Lakitu-analog introduced in World 4).
 The highest ground-enemy *density* level in the game (30 EnemyTurtle+EnemyMushroom in one
 level) despite very few bricks — almost entirely an enemy gauntlet over open, mostly
 undecorated terrain.
+- **Ground structure:** open pit at tile ~80 (2 wide, no crossing structure in the data — a straight jump or fall); open pit at tile ~123 (2 wide, no crossing structure in the data — a straight jump or fall); open pit at tile ~128 (2 wide, no crossing structure in the data — a straight jump or fall). **Pacing:** enemy encounters concentrate in the level's opening third (13/13/5 opening/middle/closing); a 5-strong EnemyMushroom cluster around tile 177-187.
 
 ### 3-3 — Level 33
 
@@ -238,6 +258,7 @@ undecorated terrain.
 First appearance of `BalenceLift` (the seesaw platform pair) and `LiftFall` (a one-shot
 collapsing platform) — this level's 26-tile height (the tallest non-castle level in the
 game) is built specifically to give a vertical lift-climbing sequence room to breathe.
+- **Ground structure:** this level's floor height varies across large stretches (multi-tier platforming/bridges rather than one continuous strip) — see its minimap for the actual layout rather than a single tile range. **Pacing:** enemy encounters concentrate in the level's opening third (3/1/3 opening/middle/closing).
 
 ### 3-4 — Level 34 (castle / boss)
 
@@ -254,6 +275,7 @@ game) is built specifically to give a vertical lift-climbing sequence room to br
 - **Checkpoints:** castle fake-out ("our princess is in another castle") → level 41
 
 ---
+- **Ground structure:** a gap at tile ~128 (13 wide) crossed via a brick span, bridge blocks; a floor-height change around tile ~96-99 (staircase-style, not a fall risk); a floor-height change around tile ~102-105 (staircase-style, not a fall risk). **Pacing:** enemy encounters concentrate in the level's opening third (5/4/1 opening/middle/closing); a 4-strong FireBar cluster around tile 54-64.
 
 ## 4. World 4 — the first warp-heavy castle
 
@@ -273,6 +295,7 @@ game) is built specifically to give a vertical lift-climbing sequence room to br
 First appearance of `SonOfABuitch` — the floating, screen-sway "Lakitu" analog that
 hovers at a fixed height and throws `SpikeyEgg`s (which hatch into unstompable `Spikey`
 enemies on landing).
+- **Ground structure:** open pit at tile ~78 (4 wide, no crossing structure in the data — a straight jump or fall); open pit at tile ~174 (3 wide, no crossing structure in the data — a straight jump or fall); open pit at tile ~32 (2 wide, no crossing structure in the data — a straight jump or fall). **Pacing:** enemy encounters concentrate in the level's opening third (1/0/0 opening/middle/closing).
 
 ### 4-2 — Level 42
 
@@ -287,6 +310,7 @@ enemies on landing).
 - **Checkpoints:** beanstalk entrance (hold up) → level 94; horizontal pipe (walk right + on ground) → level 43; vertical pipe (hold down) → level 51; vertical pipe (hold down) → level 102
 
 First appearance of `Helmet` (the Buzzy-Beetle analog, immune to fireballs).
+- **Ground structure:** a gap at tile ~57 (6 wide) crossed via a falling lift; a gap at tile ~113 (6 wide) crossed via a falling lift; a gap at tile ~123 (6 wide) crossed via a brick span, a rising lift. **Pacing:** enemy encounters concentrate in the level's opening third (5/5/3 opening/middle/closing); a 3-strong EnemyMushroom cluster around tile 42-44.
 
 ### 4-3 — Level 43
 
@@ -305,6 +329,7 @@ The **tallest level in the entire game** (33 tiles / 1056px) — a vertical lift
 tower using 4 `BalenceLift` seesaw pairs stacked up the level's height. Also the only
 main level with the `"OrangeAndMushroom"` visual `type` outside its own Clowd hub (Level
 94 shares it).
+- **Ground structure:** this level's floor height varies across large stretches (multi-tier platforming/bridges rather than one continuous strip) — see its minimap for the actual layout rather than a single tile range. **Pacing:** enemy encounters concentrate in the level's opening third (4/1/0 opening/middle/closing).
 
 ### 4-4 — Level 44 (castle / boss)
 
@@ -324,6 +349,7 @@ mechanics doc) rather than a single straight bridge — 5 warp pairs turn this i
 maze before the boss/bridge finale.
 
 ---
+- **Ground structure:** a gap at tile ~285 (13 wide) crossed via bridge blocks; a floor-height change around tile ~155-159 (staircase-style, not a fall risk); a floor-height change around tile ~216-220 (staircase-style, not a fall risk). **Pacing:** enemy encounters concentrate in the level's middle third (2/4/4 opening/middle/closing).
 
 ## 5. World 5 — turret gauntlets
 
@@ -341,6 +367,7 @@ maze before the boss/bridge finale.
 
 First appearance of `RocketLauncher`/`Rocket` — a turret that only fires once the player
 leaves its 100px "safe zone" either side.
+- **Ground structure:** a gap at tile ~92 (4 wide) crossed via a brick span; open pit at tile ~152 (3 wide, no crossing structure in the data — a straight jump or fall); open pit at tile ~49 (2 wide, no crossing structure in the data — a straight jump or fall). **Pacing:** enemy encounters concentrate in the level's opening third (15/11/2 opening/middle/closing); a 6-strong EnemyMushroom cluster around tile 63-74.
 
 ### 5-2 — Level 52
 
@@ -353,6 +380,7 @@ leaves its 100px "safe zone" either side.
 - **Placed items:** Coin ×5
 - **Scenery:** SmallCastle ×2, Flag ×1
 - **Checkpoints:** beanstalk entrance (hold up) → level 95; level-end flag → level 53; vertical pipe (hold down) → level 104
+- **Ground structure:** a gap at tile ~144 (7 wide) crossed via a brick span; open pit at tile ~92 (4 wide, no crossing structure in the data — a straight jump or fall); open pit at tile ~26 (3 wide, no crossing structure in the data — a straight jump or fall). **Pacing:** enemy encounters concentrate in the level's middle third (6/11/0 opening/middle/closing); a 3-strong Helmet cluster around tile 134-136.
 
 ### 5-3 — Level 53
 
@@ -371,6 +399,7 @@ Tile-for-tile the same sky-level template as 1-3/5-3 (identical tree/lift/enemy 
 World 1's and World 5's third levels are the clearest "reused template, different
 world-number" pair in the game, useful to know when scoping reskin work (§ of the
 mechanics doc's reskin appendix): geometry work done once pays for both.
+- **Ground structure:** this level's floor height varies across large stretches (multi-tier platforming/bridges rather than one continuous strip) — see its minimap for the actual layout rather than a single tile range. **Pacing:** enemy encounters concentrate in the level's opening third (5/3/0 opening/middle/closing).
 
 ### 5-4 — Level 54 (castle / boss)
 
@@ -390,6 +419,7 @@ The only level in the game with a **`BigFireBar`** (12-fireball ring instead of 
 6) — a one-off difficulty spike.
 
 ---
+- **Ground structure:** a gap at tile ~16 (16 wide) crossed via iron blocks, a "?" block; a gap at tile ~128 (13 wide) crossed via a brick span, bridge blocks; a gap at tile ~84 (8 wide) crossed via a falling lift, a rising lift. **Pacing:** enemy encounters concentrate in the level's middle third (5/6/1 opening/middle/closing); a 4-strong FireBar cluster around tile 43-55.
 
 ## 6. World 6 — the night level
 
@@ -405,6 +435,7 @@ The only level in the game with a **`BigFireBar`** (12-fireball ring instead of 
 - **Placed items:** Coin ×3
 - **Scenery:** BigCastle ×1, Flag ×1, SmallCastle ×1
 - **Checkpoints:** level-end flag → level 62
+- **Ground structure:** a gap at tile ~127 (7 wide) crossed via a brick span, BrickWithMushroom; a gap at tile ~31 (6 wide) crossed via BrickWithMushroom; a gap at tile ~149 (6 wide) crossed via a coin brick, a brick span. **Pacing:** enemy encounters concentrate in the level's opening third (1/0/0 opening/middle/closing).
 
 ### 6-2 — Level 62
 
@@ -420,6 +451,7 @@ The only level in the game with a **`BigFireBar`** (12-fireball ring instead of 
 **The pipe-densest level in the game** — 28 `pump` placements (a pipe-organ / pipe-maze
 visual theme) feeding 3 separate bonus areas plus a beanstalk entrance, all from one
 level.
+- **Ground structure:** a gap at tile ~123 (6 wide) crossed via a brick span. **Pacing:** enemy encounters concentrate in the level's middle third (2/4/1 opening/middle/closing).
 
 ### 6-3 — Level 63 (CloudsNight)
 
@@ -441,6 +473,7 @@ composite plus `bw_tree`/`bw_bouncer`/etc. region substitutions, see
 triggered by `backgroundImage=="CloudsNight"` rather than a distinct game mode. It also
 has **zero placed enemies** and the highest total lift count of any level (13 across 4
 lift types) — a pure platforming set-piece.
+- **Ground structure:** this level's floor height varies across large stretches (multi-tier platforming/bridges rather than one continuous strip) — see its minimap for the actual layout rather than a single tile range.
 
 ### 6-4 — Level 64 (castle / boss)
 
@@ -459,6 +492,7 @@ First appearance of **`BossHammer`** — the same `Boss` class in hammer-throwin
 (`Boss(hammerMode=true)`, a "Hammer Bro"-style boss) instead of breathing `BossFire`.
 
 ---
+- **Ground structure:** this level's floor height varies across large stretches (multi-tier platforming/bridges rather than one continuous strip) — see its minimap for the actual layout rather than a single tile range. **Pacing:** enemy encounters concentrate in the level's opening third (12/0/0 opening/middle/closing); a 4-strong FireBar cluster around tile 76-88.
 
 ## 7. World 7 — the 12-warp castle
 
@@ -475,6 +509,7 @@ First appearance of **`BossHammer`** — the same `Boss` class in hammer-throwin
 - **Checkpoints:** level-end flag → level 72; vertical pipe (hold down) → level 108
 
 The single heaviest use of `RocketLauncher` in the game (13 turrets in one level).
+- **Ground structure:** open pit at tile ~73 (2 wide, no crossing structure in the data — a straight jump or fall). **Pacing:** enemy encounters are spread evenly across the level.
 
 ### 7-2 — Level 72 (Sea)
 
@@ -490,6 +525,7 @@ The single heaviest use of `RocketLauncher` in the game (13 turrets in one level
 Tile-identical brick/coin layout to Level 22 (same 34 `Brick`/28 `Coin`/1 `HoriImage`) —
 another confirmed template reuse, this one swapping only its enemy mix (more `OctoPussy`,
 fewer straight-swimming fish) for a harder second pass at the same geometry.
+- **Ground structure:** a floor-height change around tile ~131-140 (staircase-style, not a fall risk); a floor-height change around tile ~157-164 (staircase-style, not a fall risk); open pit at tile ~66 (5 wide, no crossing structure in the data — a straight jump or fall). **Pacing:** enemy encounters concentrate in the level's middle third (5/14/10 opening/middle/closing).
 
 ### 7-3 — Level 73
 
@@ -503,6 +539,7 @@ fewer straight-swimming fish) for a harder second pass at the same geometry.
 - **Checkpoints:** level-end flag → level 74
 
 Same `WoodenBridge`-based template as Level 23, this time with enemies added on top.
+- **Ground structure:** a floor-height change around tile ~226-250 (staircase-style, not a fall risk); a gap at tile ~106 (21 wide) crossed via a wooden bridge span, tree-canopy platforms; a gap at tile ~15 (16 wide) crossed via a wooden bridge span, tree-canopy platforms. **Pacing:** enemy encounters concentrate in the level's middle third (3/4/0 opening/middle/closing).
 
 ### 7-4 — Level 74 (castle / boss)
 
@@ -525,6 +562,7 @@ boss) — the challenge here is entirely navigational (finding the right pipe se
 not combat.
 
 ---
+- **Ground structure:** a gap at tile ~317 (13 wide) crossed via bridge blocks; a gap at tile ~16 (11 wide) crossed via a collapsing platform; a floor-height change around tile ~164-167 (staircase-style, not a fall risk). **Pacing:** enemy encounters concentrate in the level's middle third (0/2/1 opening/middle/closing).
 
 ## 8. World 8 — the finale gauntlet
 
@@ -549,6 +587,7 @@ approach level (844) and the true finale (845).
 **The longest ordinary (non-castle) level in the game** (12700px, 400 tiles) and the
 single highest total enemy count of any level (42 across 4 types) — a deliberate
 last-grassland-level endurance test before the finale gauntlet.
+- **Ground structure:** open pit at tile ~220 (7 wide, no crossing structure in the data — a straight jump or fall); open pit at tile ~314 (5 wide, no crossing structure in the data — a straight jump or fall); open pit at tile ~320 (4 wide, no crossing structure in the data — a straight jump or fall). **Pacing:** enemy encounters concentrate in the level's opening third (19/16/7 opening/middle/closing); a 4-strong EnemyMushroom cluster around tile 21-31.
 
 ### 8-2 — Level 82
 
@@ -560,6 +599,7 @@ last-grassland-level endurance test before the finale gauntlet.
 - **Bricks/mechanisms:** RocketLauncher ×10, Brick ×5, pump ×4, QuestionMark ×1, Bouncer ×1, BrickWith1UP ×1, Bank ×1, BrickWithMushroom ×1, BrickWithCoin ×1
 - **Scenery:** SmallCastle ×2, Flag ×1
 - **Checkpoints:** vertical pipe (hold down) → level 110; level-end flag → level 83
+- **Ground structure:** open pit at tile ~148 (6 wide, no crossing structure in the data — a straight jump or fall); open pit at tile ~176 (3 wide, no crossing structure in the data — a straight jump or fall); a gap at tile ~78 (2 wide) crossed via a brick span. **Pacing:** enemy encounters concentrate in the level's closing third (6/5/7 opening/middle/closing); a 3-strong FlyingTurtle cluster around tile 170-175.
 
 ### 8-3 — Level 83
 
@@ -575,6 +615,7 @@ last-grassland-level endurance test before the finale gauntlet.
 The only level with the `"Guns"` visual `type` — thematically a militarized final
 approach (heaviest `Monkey`/turret combination outside 7-1) — and the only level using
 the decorative `Wall` scenery type extensively (7 placements).
+- **Ground structure:** a floor-height change around tile ~197-208 (staircase-style, not a fall risk); open pit at tile ~69 (2 wide, no crossing structure in the data — a straight jump or fall); open pit at tile ~75 (2 wide, no crossing structure in the data — a straight jump or fall). **Pacing:** enemy encounters concentrate in the level's middle third (3/6/2 opening/middle/closing).
 
 ### 8-4 — Level 841 (castle gauntlet, room 1)
 
@@ -594,6 +635,7 @@ tile extent (3840px) — the original engine reused this field as a scroll-bound
 never actually fills, not a discrepancy worth "fixing." See §9 for the full 841–845 warp
 graph — this room is the gauntlet's hub, with a pipe that loops back to itself (a
 false/return path exactly like the classic games' own castle warp-mazes).
+- **Ground structure:** a gap at tile ~66 (9 wide) crossed via a side-to-side lift; a gap at tile ~90 (2 wide) crossed via a pipe; floor height also varies across large stretches elsewhere in this level (multi-tier platforming/bridges rather than one continuous strip — see its minimap for the actual layout). **Pacing:** enemy encounters concentrate in the level's middle third (0/3/0 opening/middle/closing); a 3-strong EnemyMushroom cluster around tile 56-58.
 
 ### 8-5 — Level 842 (castle gauntlet, room 2)
 
@@ -606,6 +648,7 @@ false/return path exactly like the classic games' own castle warp-mazes).
 - **Scenery:** Lava ×1
 - **Checkpoints:** vertical pipe (hold down) → level 841 (back); vertical pipe (hold down) → level 843 (forward)
 - **Same-level pipe warps:** 3
+- **Ground structure:** a gap at tile ~55 (5 wide) crossed via a pipe; a gap at tile ~28 (2 wide) crossed via a pipe; a gap at tile ~35 (2 wide) crossed via a pipe. **Pacing:** enemy encounters concentrate in the level's middle third (0/3/2 opening/middle/closing).
 
 ### 8-6 — Level 843 (castle gauntlet, room 3)
 
@@ -619,6 +662,7 @@ false/return path exactly like the classic games' own castle warp-mazes).
 - **Same-level pipe warps:** 3
 
 The only room in the gauntlet with **no enemies at all** — pure pipe-navigation.
+- **Ground structure:** a floor-height change around tile ~51-55 (staircase-style, not a fall risk); a gap at tile ~26 (2 wide) crossed via a pipe; a gap at tile ~35 (2 wide) crossed via a pipe.
 
 ### 8-7 — Level 844 (Sea)
 
@@ -635,6 +679,7 @@ game combining swim physics with rotating fireball rings. It's also the level th
 the special `"stone_castle_sea"` terrain composite (`LevelLoader.staticTilesRegion`'s
 own `levelNumber==844` special case) rather than the generic Sea look, since it's meant
 to read as an underwater approach to the castle, not open water.
+- **Ground structure:** a gap at tile ~3 (2 wide) crossed via a pipe. **Pacing:** enemy encounters concentrate in the level's middle third (3/4/1 opening/middle/closing).
 
 ### 8-8 — Level 845 (finale)
 
@@ -653,6 +698,7 @@ The shortest boss level in the game, and the only one whose end checkpoint `kind
 to Level 11 rather than advancing to a level number that doesn't exist.
 
 ---
+- **Ground structure:** a gap at tile ~32 (13 wide) crossed via bridge blocks; a floor-height change around tile ~21-26 (staircase-style, not a fall risk); a gap at tile ~3 (2 wide) crossed via a pipe. **Pacing:** enemy encounters concentrate in the level's opening third (1/1/0 opening/middle/closing).
 
 ## 9. The level-flow graph
 
@@ -825,6 +871,7 @@ checkpoint) — pure bonus-coin detours.
 ![Level 104 minimap](assets/mario-levels/level_104.png)
 
 - 70×15 tiles · Brick ×6, HoriImage ×1 · Coin ×4 · Enemies: OctoPussy ×3, FishGrey ×2, FishRedUpDown ×2, FishGreyUpDown ×1 · Lifts: LiftDown ×2
+- **Ground structure:** a gap at tile ~22 (4 wide) crossed via a falling lift; a gap at tile ~28 (4 wide) crossed via a falling lift; a gap at tile ~38 (2 wide) crossed via a brick span. **Pacing:** enemy encounters concentrate in the level's middle third (1/4/3 opening/middle/closing).
 
 The Sea bonus template is far more elaborate than the UnderGround one — the only bonus
 rooms with enemies or lifts at all.
@@ -846,6 +893,7 @@ rooms with enemies or lifts at all.
 ![Level 107 minimap](assets/mario-levels/level_107.png)
 
 - 70×15 tiles · Brick ×6, HoriImage ×1 · Coin ×4 · Enemies: OctoPussy ×3, FishGreyUpDown ×2, FishGrey ×1, FishRed ×1, FishRedUpDown ×1 · Lifts: LiftDown ×2
+- **Ground structure:** a gap at tile ~22 (4 wide) crossed via a falling lift; a gap at tile ~28 (4 wide) crossed via a falling lift; a gap at tile ~38 (2 wide) crossed via a brick span. **Pacing:** enemy encounters concentrate in the level's middle third (1/4/3 opening/middle/closing).
 
 Level 62 is the only level in the game that branches into **3** separate bonus areas
 (105, 106, and this one) — matching its own "pipe-densest level" note in §7.
@@ -901,3 +949,235 @@ that a reskin artist drawing just those two well covers a large fraction of what
 actually sees moment-to-moment — see
 [MARIO_GAME_MECHANICS.md's reskin-scope appendix](MARIO_GAME_MECHANICS.md#16-reskin-scope--priority)
 for the full sprite-sheet-level version of this argument.)
+
+---
+
+## 13. Level file format — a guide for level designers
+
+Every level is one JSON file, `app/src/main/assets/mario/levels/level_<N>.json`, loaded
+by `LevelCatalog.load(levelNumber)` and parsed by `LevelDefinition.parse(...)` (see
+[MARIO_GAME_MECHANICS.md §7](MARIO_GAME_MECHANICS.md#7-level-data-schema-and-pipeline)
+for the loading pipeline). This section documents every field in that JSON — not by
+inference, but by reading the actual field set across all 55 shipped files and the parser
+that reads them — so a new level can be hand-authored from scratch, no converter tool
+required. `tools/mario-level-converter` (the tool that originally produced these 55 files
+from the original desktop game's own level classes) is a one-time historical artifact —
+**it is not part of this format's authoring path going forward.**
+
+### 13.1 Top-level fields
+
+```json
+{
+  "levelNumber": 11,
+  "sourceClass": "Levels.One.Level_11",
+  "backgroundColor": "Blue",
+  "time": "400",
+  "type": "GreenAndTrees",
+  "pos": {"x": 10, "y": 12},
+  "backgroundImage": "Mountain",
+  "attribute": "Ground",
+  "levelLength": 6768,
+  "bombs": false,
+  "bombsTurnOff": -1,
+  "flyingFishes": false,
+  "flyingFishesLength": -1,
+  "levelName": "normal",
+  "tiles": [],
+  "checkpoints": [],
+  "teleports": []
+}
+```
+
+(`tiles`/`checkpoints`/`teleports` shown empty here for brevity — their real element
+shape is §13.2/§13.3/§13.4 below; §13.5 gives one complete, populated file.)
+
+| Field | Type | Meaning | For a new level |
+|---|---|---|---|
+| `levelNumber` | int | This level's unique id — also its filename (`level_<N>.json`) and what every checkpoint's `nextLevel`/every menu entry refers to it as | Pick an unused number. Follow the existing convention if it should appear in a world's list: `LevelNumbering.WORLD_LEVELS` in `level/LevelNumbering.java` is a separate, hand-maintained table — adding a level here does **not** automatically add it to a world's menu list; that's a second, explicit step |
+| `sourceClass` | string | Historical: the original engine's Java class this was converted from | Not read by any current code. Free text — put something identifying for your own reference (e.g. `"Custom.MyLevel_1"`) |
+| `backgroundColor` | string or `null` | Historical: the original engine's background fill color name | **Not read by any current code today** — the actual backdrop comes from `backgroundImage` (below) plus the world's `attribute`. Safe to leave as any string or `null` |
+| `time` | string (a number) | Historical: a countdown timer value, classic-Mario style | **Not read by any current code today** — this port has no level timer (`GameStateController` tracks score/coins/lives only, no clock — confirmed by reading that class). Safe to leave as `"400"` (matching every existing level) or omit its effect entirely |
+| `type` | string or `null` | A cosmetic/thematic tag from the original engine (`"GreenAndTrees"`, `"OrangeAndMushroom"`, `"Guns"`, or `null`) | **Not read by `LevelLoader` at all** (confirmed — no code branches on this field). Purely descriptive/historical; any string is safe |
+| `pos` | `{x, y}` (tile coords) or absent | A fallback spawn tile, used **only** when no other level's checkpoint points at this one (see `MarioGamePlay.startLevel`'s own doc — real play always arrives via a checkpoint instead) | Set it anyway, to a safe tile just above your level's own starting floor — it's your level's spawn point when reached directly from the menu rather than via another level's checkpoint |
+| `backgroundImage` | string or `""`/`null` | Selects the scrolling parallax backdrop and, for two special values, changes rendering: `"CloudsNight"` swaps the level's terrain look to black-and-white (§6) regardless of `attribute`; `"Fence"`/`"CloudsNight"` also swap the flagpole's own art. Other values (`"Mountain"`, `"Clouds"`, `"Fence2"`, `"Nothing$"`, `""`) just pick a parallax image, no gameplay effect | Pick one of the existing values unless you're prepared to also add a new backdrop asset + `LevelLoader`/packer support for it (see [MARIO_GAME_MECHANICS.md §14.2](MARIO_GAME_MECHANICS.md#142-add-a-new-static-terrain-look-new-theme-variant)) |
+| `attribute` | string | The level's **theme** — drives which terrain atlas loads (`MarioResourceManager.loadTheme`), the player's physics mode (`"Sea"` → swim physics), and several tile-lookup branches (e.g. `Helmet`'s color, `QuestionMark`'s grey-vs-yellow look). One of `"Ground"`, `"UnderGround"`, `"Castle"`, `"Sea"`, `"Clowd"` — **exhaustive**, nothing else is handled (`MarioResourceManager.themeAtlasPath` throws `IllegalArgumentException` on anything else) | Must be exactly one of the 5 values above |
+| `levelLength` | int (pixels) | Historical: the original engine's own scroll-bound. **Not authoritative today** — the real playable extent is derived from the `tiles[]` array's own max `x+lengthX` (see `LevelLoader.createWorld`). Several real shipped levels' `levelLength` doesn't match their actual tile extent at all (e.g. Level 841's `levelLength: 10000` against an actual ~3840px populated span — confirmed by reading the file) | Safe to set loosely (e.g. to your intended rough length in pixels) — nothing breaks if it doesn't exactly match your tile layout, but keep it in the right ballpark for anyone reading the raw JSON later |
+| `bombs` | boolean | Enables `SpawnController`'s ambient `Rocket` spawner for this level (ignores any placed `RocketLauncher` tiles — this is a *separate* mechanism, see [MARIO_GAME_MECHANICS.md §9.6](MARIO_GAME_MECHANICS.md#96-projectiles)/`world/SpawnController.java`) | Set `true` only if you want rockets flying in from off-screen periodically, independent of any placed turret |
+| `bombsTurnOff` | int (tile x) | Once the player passes this tile column, the ambient bomb spawner stops. `-1` when `bombs` is `false` (every non-bomb level uses `-1`, confirmed) | Pick a tile x near your level's end if `bombs: true`; leave `-1` otherwise |
+| `flyingFishes` | boolean | Enables `SpawnController`'s ambient jumping-`FishyGround` spawner (works on **any** attribute, not just Sea — see that class's own doc) | Set `true` for an ambient jumping-fish hazard independent of any placed enemy |
+| `flyingFishesLength` | int (pixels) | The world-x bound (not tile count — confirmed by reading `SpawnController`, this one field is pixels while `bombsTurnOff` above is tiles, an inconsistency in the original data preserved as-is) past which the ambient fish spawner stops; `-1` when `flyingFishes` is `false` | Pick a pixel x if enabled; leave `-1` otherwise |
+| `levelName` | string | `"normal"` for almost every level; a small number of special values are checked by name elsewhere in the code — `"OrangePump"` (Level 94) suppresses Piranha Plant spawning from pipes (see [MARIO_GAME_MECHANICS.md §8](MARIO_GAME_MECHANICS.md#8-tile-type-dispatch-registry)) | Use `"normal"` unless you specifically want that one documented special-case behavior |
+
+### 13.2 The `tiles[]` array — one placement per entry
+
+```json
+{"type": "QuestionMark", "x": 12, "y": 8, "lengthX": 1, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0}
+```
+
+| Field | Type | Meaning |
+|---|---|---|
+| `type` | string | The dispatch key — must exactly match one of the strings in **[MARIO_GAME_MECHANICS.md §8's tile-type dispatch registry](MARIO_GAME_MECHANICS.md#8-tile-type-dispatch-registry)** (the authoritative, complete list — not reproduced in full here to avoid the two copies drifting apart). Anything not in that registry is **silently ignored** by every `LevelLoader.spawn*` method — no error, the tile simply never spawns (confirmed: this is exactly what happened to the real, harmless `"CoinInside"` stray entry documented in §2's Level 21 notes) |
+| `x`, `y` | int (tile coordinates) | Position in the level's tile grid — **not pixels**. Multiplied by `MarioConfiguration.TILE_SIZE` (32) at load time. `x=0, y=0` is the top-left of the level; `y` increases *downward* (matching the engine's y-down convention, [MARIO_GAME_MECHANICS.md §2](MARIO_GAME_MECHANICS.md#2-coordinate-system-and-the-tile-grid)) |
+| `lengthX`, `lengthY` | int (tiles) | Footprint size. Most types are `1×1`; runs of static terrain, `tree`, `Wall`, wide pipes (`pump`/`PumpWarp`, 1 wide × N tall in the data even though the *art* is 2 tiles wide — see `Pump`'s own doc), and `RocketLauncher` (1 wide × N tall, first row = turret head) are the common multi-cell cases |
+| `extraInfo` | string or `null` | **Meaning is entirely `type`-dependent** — most types ignore it (`null`). Known uses: `FireBar`/`BigFireBar` read `"CW"`/`"ACW"` for spin direction. Consult §8's registry (or the constructing actor's own source) before assuming a meaning for a type not listed there |
+| `bridgeLength` | int | **Meaning is entirely `type`-dependent**, and the name is historical (not literally "bridge" for most types). Known uses: `BalenceLift` reads it as the horizontal tile-offset to its linked child platform; `Lift`/`LiftCar`/`LiftFall` read it as "how many source-art tiles wide to build the platform" (not a distance). `0` for every type that doesn't use it |
+| `patrolLength` | int | **Meaning is entirely `type`-dependent.** Known uses: `EnemyTurtlePatrol`/`FlyingTurtlePatrol` read it as a patrol range in tiles; `Boss`/`BossHammer` read it as the level's own bridge-end wall bound (`patrolLength × 32` = the world-x the boss can't walk past). `0` for every type that doesn't use it |
+
+**Design implication:** `extraInfo`/`bridgeLength`/`patrolLength` are three general-purpose
+parameter slots, not fixed-meaning fields — this is *why* the schema didn't need to
+change across 8 worlds' worth of increasingly different mechanics (confirmed design
+reasoning in
+[PLATFORMER_ENGINE_ARCHITECTURE.md §3.3](PLATFORMER_ENGINE_ARCHITECTURE.md#33-tiletyperegistry-the-single-highest-leverage-change)).
+A brand-new tile type is free to reinterpret any of the three however it needs — but that
+reinterpretation has to be written as real dispatch code first (§13.6 below), since
+today's `LevelLoader` only knows the interpretations already listed in §8's registry.
+
+### 13.3 The `checkpoints[]` array — level transitions
+
+```json
+{"kind": "CheckPoints", "x": 6768.0, "y": 384.0, "nextLevel": 12, "locX": 2, "locY": 3}
+```
+
+| Field | Type | Meaning |
+|---|---|---|
+| `kind` | string | Which trigger behavior applies — see the table below |
+| `x`, `y` | **float, pixels** — not tile coordinates | The exact trigger position. **This is the one place in the whole format that isn't tile-scaled** — unlike everything in `tiles[]`, these are already in world pixels (confirmed: Level 11's own end-flag checkpoint sits at `x: 6768.0`, matching its `levelLength`, not a small tile-range number). If hand-authoring, compute this as `tileX * 32`/`tileY * 32` yourself |
+| `nextLevel` | int | The `levelNumber` to transition to. **Must have a corresponding `level_<N>.json` file** — `MarioGamePlay.goToLevel` catches the resulting exception if it doesn't and just does nothing (no crash, but also no transition — a silent dead end, confirmed by reading that method's own doc) |
+| `locX`, `locY` | int, **tile coordinates in the target level** | Where the player spawns in `nextLevel` after this transition |
+
+| `kind` | Trigger condition |
+|---|---|
+| `CheckPoints` | Plain contact (the ordinary level-end flag) |
+| `InsidePumpHorzontally` | Contact + holding right + on ground (a horizontal pipe) |
+| `InsidePumpvertically` | Contact + within 10px horizontally + holding down (a vertical pipe) |
+| `ClowdGoUP_CheckPoint` | Contact + holding up (a beanstalk entrance) |
+| `Clowd_CheckPoint` | Plain contact, but with a 640px-wide trigger box instead of the default 32×64 (a beanstalk landing platform — see §10) |
+| `WhyYouDOThis` | Plain contact (a castle's "princess is in another castle" fake-out ending) |
+| `Princess` | Plain contact (the true final ending — only Level 845 uses this) |
+
+Any `kind` string not in this list falls through to the resolver's own default (plain
+contact) rather than erroring — but only the 7 values above have any real design meaning
+today; inventing a new one without also adding a real `case` to `CheckpointResolver`
+(see [MARIO_GAME_MECHANICS.md §10](MARIO_GAME_MECHANICS.md#10-checkpoints-and-teleports))
+just behaves like plain contact.
+
+### 13.4 The `teleports[]` array — same-level pipe warps
+
+```json
+{"inX": 20, "inY": 9, "outX": 45, "outY": 9}
+```
+
+All four fields are **tile coordinates** (unlike checkpoints' pixel `x`/`y` — a real
+inconsistency in the format, confirmed by reading `TeleportResolver`'s own trigger-box
+math, which multiplies `inX`/`inY` by 32 itself). Touching a zone near `(inX, inY)`
+repositions the player's `x` to `outX` — **`y` is not touched at all** (every existing
+teleport pair sits at the same floor height on both ends; a vertical teleport isn't
+something the current resolver supports — see
+[MARIO_GAME_MECHANICS.md §10](MARIO_GAME_MECHANICS.md#10-checkpoints-and-teleports)).
+Distinct from a checkpoint: never changes levels, just repositions within the current one.
+
+### 13.5 A complete worked example
+
+The smallest real level in the game, reproduced in full and annotated — `level_97.json`
+(the World-1 bonus room, a 20×15 UnderGround coin room):
+
+```json
+{
+  "levelNumber": 97,
+  "sourceClass": "Levels.One.BonusArea.BonusArea11A",
+  "backgroundColor": "Black",
+  "time": "400",
+  "type": "GreenAndTrees",
+  "pos": {"x": 10, "y": 12},
+  "backgroundImage": "",
+  "attribute": "UnderGround",
+  "levelLength": 640,
+  "bombs": false,
+  "bombsTurnOff": -1,
+  "flyingFishes": false,
+  "flyingFishesLength": -1,
+  "levelName": "normal",
+  "tiles": [
+    // Left wall: 1 tile wide, 12 tiles tall, starting 2 tiles down
+    {"type": "Brick", "x": 0, "y": 2, "lengthX": 1, "lengthY": 12, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    // Ceiling: 11 tiles wide, starting at x=4
+    {"type": "Brick", "x": 4, "y": 2, "lengthX": 11, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    // A block of bricks forming the right-side wall/floor structure
+    {"type": "Brick", "x": 4, "y": 10, "lengthX": 11, "lengthY": 3, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    // Three rows of coins floating in the open room (lengthX=9/11 tiles = a coin every tile across that span)
+    {"type": "Coin", "x": 5, "y": 5, "lengthX": 9, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "Coin", "x": 4, "y": 7, "lengthX": 11, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "Coin", "x": 4, "y": 9, "lengthX": 11, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    // The room's own floor, spanning its full width
+    {"type": "stone", "x": 0, "y": 13, "lengthX": 20, "lengthY": 2, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    // The pipe you arrive through (decorative pipe body — the real warp is data-driven via the checkpoint below, not this tile)
+    {"type": "PumpImage", "x": 19, "y": 2, "lengthX": 1, "lengthY": 9, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0},
+    {"type": "HoriImage", "x": 17, "y": 11, "lengthX": 1, "lengthY": 1, "extraInfo": null, "bridgeLength": 0, "patrolLength": 0}
+  ],
+  "checkpoints": [
+    // Exit: walk right off the platform near x=17 tiles (540px / 32 ≈ 16.9) to return
+    // to Level 11, arriving at tile (164, 9) there.
+    {"kind": "InsidePumpHorzontally", "x": 540.0, "y": 384.0, "nextLevel": 11, "locX": 164, "locY": 9}
+  ],
+  "teleports": []
+}
+```
+
+(The `//` comments above are for this doc only — real JSON doesn't support comments;
+strip them before using this as a template.)
+
+### 13.6 Step-by-step: authoring a brand-new level
+
+1. **Pick a `levelNumber`** not already used by any file in `mario/levels/`.
+2. **Decide the grid size and `attribute`** — sketch the level's rough shape first (how
+   many tiles wide/tall, which of the 5 themes). Grid size is derived automatically from
+   your tiles' own max extent, so you don't declare it explicitly — just make sure your
+   tile placements reach as far as you want the level to scroll.
+3. **Lay out static terrain** (`stone`/`chocolate`) for the ground/walls — these become
+   the baked, indestructible `TiledLayer` grid (§5 of
+   [MARIO_GAME_MECHANICS.md](MARIO_GAME_MECHANICS.md#5-the-world-model-marioworld)).
+   Leaving gaps in the floor creates pits — check §12's whole-game data or this
+   document's own per-level "Ground structure" notes (§1–§11 above) for what a
+   reasonable gap width looks like in existing levels before placing a new one.
+4. **Place interactive bricks/pipes/items** from
+   [MARIO_GAME_MECHANICS.md §8's registry](MARIO_GAME_MECHANICS.md#8-tile-type-dispatch-registry) —
+   every `type` string your level uses **must** appear in that table, or it silently
+   won't spawn (§13.2's own warning).
+5. **Place enemies**, using §12's whole-game placement totals as a difficulty-pacing
+   reference — e.g. a first-level-of-a-world typically leans on `EnemyMushroom`/
+   `EnemyTurtle` at modest density (see World 1's own levels, §1), not `Boss`/dense
+   `FireBar` rings (those are castle-specific).
+6. **Add at least one checkpoint** with `kind: "CheckPoints"` (or another kind from
+   §13.3's table) so the level actually ends somewhere — a level with no checkpoints is
+   playable but has no way to finish it.
+7. **If this level should be reachable from another level**, add a checkpoint *in that
+   other level's own JSON* pointing `nextLevel` at your new level number, with `locX`/
+   `locY` set to wherever you want the player to spawn in your new level.
+8. **If it should appear in the world/level-select menu**, add its `levelNumber` to the
+   appropriate world's array in `level/LevelNumbering.java`'s `WORLD_LEVELS` table — this
+   is a separate, code-side step, not something the JSON alone controls.
+9. **Smoke-test via the debug menu-level warp and in-level warp panel**
+   ([MARIO_GAME_MECHANICS.md §12](MARIO_GAME_MECHANICS.md#12-debugqa-tooling)) rather than
+   playing through every prior level to reach it.
+
+### 13.7 Common mistakes (verified against the actual parser/loader code)
+
+- **Using pixel coordinates in `tiles[]`.** Tile placements are tile indices, multiplied
+  by 32 at load time — a `Brick` at `x: 320` doesn't mean "320 pixels," it means tile
+  column 320 (10,240 pixels in), almost certainly far off the level's intended span.
+- **Using tile coordinates in a checkpoint's `x`/`y`.** These are the one pixel-scaled
+  fields in the whole format (§13.3) — the opposite mistake from the one above, and just
+  as easy to make by pattern-matching against `tiles[]`.
+- **A `type` string that doesn't exactly match the registry** (case-sensitive, exact
+  string match — `"questionmark"` or `"Question_Mark"` both silently do nothing;
+  it must be `"QuestionMark"`). No error is raised, so this fails silently — always
+  smoke-test a new tile placement rather than assuming a close-enough string works.
+- **Forgetting `bombsTurnOff`/`flyingFishesLength` when enabling `bombs`/`flyingFishes`.**
+  Leaving them at `-1` while the boolean is `true` means the ambient spawner runs (or
+  doesn't stop) in a way that likely wasn't intended — every real shipped level with
+  `bombs: true` sets a real `bombsTurnOff` tile column.
+  A `nextLevel` pointing at a level number with no matching JSON file — not an error,
+  just a checkpoint that silently does nothing when touched (§13.3).
+- **Missing the `LevelNumbering.WORLD_LEVELS` step.** A level with a valid JSON file but
+  no entry there is fully playable via checkpoints/direct-load but invisible in the menu
+  — easy to forget since the JSON alone feels like "the whole level."

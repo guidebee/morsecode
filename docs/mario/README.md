@@ -7,7 +7,8 @@ depends on what you're doing:
 - **[MARIO_PLAYER_GUIDE.md](MARIO_PLAYER_GUIDE.md)** — controls, power-ups, enemy field
   guide, a world tour. Start here if you're new to the game itself.
 - **[MARIO_LEVEL_ATLAS.md](MARIO_LEVEL_ATLAS.md)** — every one of the 55 levels, with a
-  schematic minimap and full data breakdown for each.
+  schematic minimap, a data breakdown, and design notes (pits/pacing) for each, plus
+  (§13) a complete level-JSON format reference for authoring brand-new levels.
 
 ## I want to extend or fix the code
 - **[MARIO_GAME_MECHANICS.md](MARIO_GAME_MECHANICS.md)** — the as-built technical

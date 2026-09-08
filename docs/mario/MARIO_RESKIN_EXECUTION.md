@@ -42,6 +42,11 @@ pass to fix cross-frame consistency before it enters the atlas), Path D for free
 reference throughout. Treat Path B as a deliberate, documented exception per-asset, not a
 default — get the ShareAlike implication signed off before using it on anything that ships.
 
+**2026-09-08 update:** §7 below supersedes this recommendation for the player/enemy/boss
+roster specifically — two free, commercial-use-permitted packs built around a robot
+identity close that gap without needing Path A/B/C at all for those assets. Path A/B/C/D
+above still applies as originally written for whatever §7 doesn't cover.
+
 ## 2. Curated resource shortlist
 
 Every entry below was checked against its own source page during this research pass —
@@ -93,7 +98,9 @@ page individually — several sites below are **not** blanket-CC0 even where mar
 Per [MARIO_GAME_MECHANICS.md §16.5](MARIO_GAME_MECHANICS.md#165-assets-that-might-not-need-original-art-at-all),
 seriously consider skipping a custom `font` atlas region entirely and using one of these
 (or the engine's already-bundled `uiSkin()` bitmap font) — zero new art for 48 of the
-603 total frames.
+603 total frames. **2026-09-08 update:** §7.3 below adds a sci-fi-themed UI/font pack that
+fits the identity better than a generic pixel font — prefer it if the team wants the HUD
+visibly on-theme rather than just "any free bitmap font."
 
 ### 2.5 Audio: sound effects
 
@@ -109,6 +116,8 @@ Map against
 sound keys — most (jump, coin, powerup, bump, stomp, kick, pause) have an obvious
 Kenney-pack analog; a few (the boss-specific `smb_bowserfalls`/`smb_bowserfire`,
 `smb_flagpole`) will need a closer listen-and-match pass or a custom recording/edit.
+**2026-09-08 update:** §7.3 below found a better-themed Kenney pack (`Sci-Fi Sounds`) for
+a robot-identity game — prefer it over the generic packs above where it covers the key.
 
 ### 2.6 Audio: music
 
@@ -123,6 +132,8 @@ likely need a different source. Worth a follow-up search pass specifically for *
 chiptune background tracks** (as opposed to one-shot jingles/SFX) before committing —
 OpenGameArt's music section and itch.io's `tag-chiptune` + `tag-music` + `assets-cc0`
 combination are the next places to check, not yet individually verified here.
+**2026-09-08 update: this gap is now closed, see §7.3** — two verified CC0 sources of
+seamless looping chiptune tracks were found.
 
 ### 2.7 AI-assisted generation (for first-draft exploration, per Path C in §1)
 
@@ -179,7 +190,8 @@ next until the current one is checked off.
       pins every subsequent asset's target dimensions.
 - [ ] Decide on Path B (LPC/CC-BY-SA) acceptability — yes/no, and if yes, for which
       specific asset categories only (§1's table). Record the decision in §6's tracker
-      regardless of the answer.
+      regardless of the answer. **2026-09-08 update:** §7.1 makes this likely moot for the
+      player/enemy/boss roster specifically — revisit only if §7's packs don't pan out.
 - [ ] Pick the AI-generation tool (if any) and confirm its commercial license tier is
       actually purchased/active before any output from it enters the shipped asset tree.
 
@@ -215,6 +227,12 @@ next until the current one is checked off.
       ([MARIO_GAME_MECHANICS.md §12](MARIO_GAME_MECHANICS.md#12-debugqa-tooling)) to cycle
       Small→Big→Fire→Small on demand instead of hunting for a Mushroom/Flower in a level.
 
+**2026-09-08 update:** consider sourcing this step's base art from
+[§7.1](#71-player--enemies--boss--two-strong-all-in-one-candidates)'s "Robot Master Series
+– Base Asset Pack" or "Robot Platform Pack" instead of drawing from scratch, then editing
+frame counts/layout to match the convention above — still cheaper than full original
+authoring even with the re-layout work.
+
 ### Step R.3 — Priority-1 world assets (highest on-screen frequency)
 
 Per [MARIO_GAME_MECHANICS.md §16.4](MARIO_GAME_MECHANICS.md#164-reskin-priority-by-on-screen-frequency)'s
@@ -240,25 +258,31 @@ tier 1: `Brick`, `stone`/`chocolate` (×5 themes), `EnemyMushroom`-equivalent.
 - [ ] For each, decide Path A vs. Path C (§1) individually rather than batching — a
       one-off enemy used 3 times in the whole game (e.g. `SonOfABuitch`) is a reasonable
       candidate for an AI-assisted first draft with a light cleanup pass; the boss is not.
+      **2026-09-08 update:** the mini-boss in
+      [§7.1](#71-player--enemies--boss--two-strong-all-in-one-candidates)'s "Robot Master
+      Series" pack is a real candidate for "The Warden" specifically — check it before
+      defaulting to a custom-drawn boss.
 
 ### Step R.5 — Scenery, backdrops, HUD, UI text
 
 - [ ] Parallax backgrounds (Mountain/Clouds/CloudsNight/Fence/Sea) — reference §2.3's
-      environment packs for composition ideas.
+      environment packs for composition ideas, plus
+      [§7.2](#72-world-theme-tilesbackgrounds)'s Night Shift pick.
 - [ ] Castles, flags, end-of-level banners.
 - [ ] Decide on the `font`/`info`/`info2` question from §2.4 (swap for a CC0 font vs. the
-      already-bundled engine skin font) rather than commissioning new glyph art.
+      already-bundled engine skin font) rather than commissioning new glyph art — or the
+      sci-fi UI pack in [§7.3](#73-ui-fonts-sfx-music).
 - [ ] Rewrite the 3 user-facing strings
       ([MARIO_RESKIN_PLAN.md §1.3](MARIO_RESKIN_PLAN.md)) to match the finalized identity
       from Step R.0.
 
 ### Step R.6 — Audio
 
-- [ ] Map all 23 sound effects to their closest Kenney-pack analog (§2.5), edit/trim as
-      needed to match the original's timing/feel where that matters (e.g. the jump sound's
-      short punchy length).
-- [ ] Source or compose the 5 looping music tracks (§2.6 flags this as the one audio
-      category without an obvious ready-made CC0 answer yet — budget real time here).
+- [ ] Map all 23 sound effects to their closest Kenney-pack analog (§2.5, or §7.3's
+      sci-fi-specific pack), edit/trim as needed to match the original's timing/feel where
+      that matters (e.g. the jump sound's short punchy length).
+- [ ] Source or compose the 5 looping music tracks (§2.6 flagged this as the one audio
+      category without an obvious ready-made CC0 answer — **now closed, see §7.3**).
 - [ ] Swap files under `assets/mario/audio/`, confirm every `sound(...)`/`music(...)` call
       site still resolves (call sites use the constant key, not a hardcoded filename, so
       this is a low-risk swap per
@@ -299,3 +323,59 @@ need no entry beyond "CC0, sourced from X on date Y" for the team's own records;
 under a different license (LPC's CC-BY-SA, CraftPix's redistribution-restricted terms, any
 AI tool's specific commercial-tier terms) needs its actual requirement spelled out here,
 not just "checked, fine."
+
+## 7. Sci-fi/robot-themed sourcing pass (2026-09-08 addendum)
+
+The §2 shortlist above was researched generically ("platformer CC0 pack") before
+[MARIO_RESKIN_PLAN.md §2](MARIO_RESKIN_PLAN.md#2-new-identity-starting-proposal--a-creative-decision-for-the-team-to-adjust-not-a-fixed-spec)'s
+sci-fi/robot identity ("Ampere", "Scuttler", "Roller", "The Warden") was locked in, and
+per the user's explicit ask, this pass is scoped to **existing free resources only** — no
+in-house drawing, no paid commissions. Searching *for that specific identity* (robot
+characters, sci-fi tiles/UI/SFX) turns up much better silhouette/theme matches than the
+generic packs in §2.2, including two packs that are close to a 1:1 drop-in for this
+game's actual roster. Every entry was checked against its own itch.io/kenney.nl page
+during this pass (2026-09-08) — re-verify before bulk-importing, same standing rule as
+§0 above.
+
+### 7.1 Player + enemies + boss — two strong all-in-one candidates
+
+| Pack | Contents | License | Fit |
+|---|---|---|---|
+| [**Robot Master Series – Base Asset Pack**](https://au-pixel.itch.io/robotbasepack) (AU_pixel) | 3 playable robots (walk/jump/attack/charge/dash/climb/damage/death, alt "covered-face" variants included specifically to reduce Mega Man similarity), 3 enemy types (walk/attack/bullets), **1 mini-boss** (gun + laser attacks, jet animation, pit-summon), plus intro-stage platforms, layered sky backgrounds, foreground props, HP-bar UI, explosions, gates | Pay-what-you-want (free tier). Commercial + non-commercial use OK, editable; **no resale/repackage/redistribution, no logo/trademark/NFT use** | Best single source for **Ampere + Scuttler/Roller + The Warden boss** in one coherent art style — the mini-boss alone is a rare find (most free packs stop at basic enemies) |
+| [**Robot Platform Pack**](https://edusilvart.itch.io/robot-platform-pack) (edusilvart) | 1 player robot (idle/run/jump/land/attack×2/hurt/death), 1 enemy robot (idle/shot/run/death + bullet), tileset, platforms, boxes, trampoline, **key/keycard/keycard-reader/door**, coin, spikes, button, lever, HP heart | Free ("name your own price"). Commercial use OK, **no resale** | Its item roster maps almost 1:1 onto Mario's (coin→coin/bolt, key→"access key" item, heart→spare-chassis/1-up, trampoline→spring) — good pick if the simpler single-enemy scope fits a given world better than the Base Asset Pack's larger cast |
+| [OpenGameArt "The Robot – Free Sprite"](https://opengameart.org/content/the-robot-free-sprite) | 10 animation states, separate PNG sequences | **CC0** (true public domain, no restrictions at all) | Fallback if the two packs above's no-redistribution clause is ever a problem — this one has zero strings attached |
+| [Foozle "Cute Platformer Robot"](https://foozlecc.itch.io/cute-platformer-robot) | Idle/walk/run/jump, sold as separated body parts for custom animation | **CC0** | Simple, CC0, good for a secondary/minor character or as a base to hand-edit |
+
+Both non-CC0 packs above license out "no resale/repackage as an asset pack," which is
+irrelevant here (the game isn't reselling the art itself) — record them in §6's tracker
+as "free, commercial-use-permitted, no-redistribution" rather than CC0.
+
+### 7.2 World-theme tiles/backgrounds
+
+| Theme (§2's world-name mapping) | Lead | License | Status |
+|---|---|---|---|
+| Surface (general fill-in) | [Kenney "Platformer Art Extended Tileset"](https://kenney.nl/assets/platformer-art-extended-tileset) — 360 assets | CC0 | Solid generic filler for whatever the two robot packs above don't cover |
+| Fortress (Castle-analog) | ansimuz "Warped – Space Station" / aske4 "Free Sci-Fi TileSet Space Station" (both itch.io) | Check each page individually — not yet confirmed CC0, likely free/pay-what-you-want | Promising silhouette (station corridors, consoles) for a "fortress" reading; verify license before committing |
+| Substrate (UnderGround-as-circuitry) | **No direct "circuit-board cave" pack found.** | — | Gap: recolor a free cave tileset (several 16×16 CC0 options exist, e.g. itch tag `cave`+`pixel-art`) with a circuit/conduit palette and Kenney sci-fi props layered in, rather than hunting further for an exact thematic match that likely doesn't exist as a free pack |
+| Flooded Sector (Sea-analog) | **Still the weakest lead**, confirming §1's original flag | — | No good free "sci-fi underwater" combo turned up this pass either (found underwater packs and sci-fi packs, not both at once); plan to reskin a generic CC0 underwater tileset with metal/glass/pipe dressing rather than keep searching for an exact match |
+| Night Shift (Night-analog) | [karsiori "Free Pixel Art – City Parallax Background"](https://karsiori.itch.io/free-pixel-art-city-background-pack) | CC0 (stated on page) | Good cyberpunk-night parallax backdrop layers |
+
+### 7.3 UI, fonts, SFX, music
+
+| Category | Pick | License | Note |
+|---|---|---|---|
+| HUD/UI (replaces needing a custom `font`/`info`/`info2` per §2.4) | [Kenney "UI Pack – Sci-Fi"](https://kenney.nl/assets/ui-pack-sci-fi) — 130 assets, buttons/panels/cursors/progress bars ×5 colors, **+2 bonus fonts** | CC0 | On-theme replacement for the whole HUD question in one pack — better fit than §2.4's generic pixel fonts given the sci-fi identity |
+| SFX (replaces §2.5's generic picks) | [Kenney "Sci-Fi Sounds"](https://kenney.nl/assets/sci-fi-sounds) — ~70 effects (engine/laser/beep-style) | CC0 | Thematically a better match than "Digital Audio"/"Impact Sounds" for a robot game; still cross-check against the 23-key sound table per §2.5's method |
+| Looping background music (closes §2.6's flagged gap — "no obvious ready-made CC0 answer") | [HydroGene "High Quality 8-bit/Chiptune Musics"](https://hydrogene.itch.io/high-quality-8-bit-musics) — 18 tracks, **confirmed seamless loops**, action/platformer-oriented | CC0, name-your-own-price, no attribution required | Direct fix for the one audio category §2.6 left open |
+| Looping music (backup/larger pool) | Tallbeard/Abstraction ["Music Loop Bundle"](https://tallbeard.itch.io/music-loop-bundle) — 200+ seamless loops | CC0/public domain; page adds a **non-binding** request not to use in AI/NFT projects | Bigger pool if HydroGene's 18 tracks don't cover all 5 `MUSIC_TRACKS` moods |
+
+### 7.4 Net effect on Step R.0's decisions
+
+- This closes §1's Path B (LPC/CC-BY-SA) question by making it **unnecessary** for the
+  player/enemy/boss roster — 7.1's packs cover that ground without ShareAlike strings.
+- §2.6's "no answer yet" gap for looping music is now closed (7.3).
+- Substrate and Flooded Sector world themes remain open — no exact free-pack match
+  exists; budget a recolor/dressing pass over a generic free tileset for those two
+  specifically rather than continuing to search for a perfect thematic hit.
+- Update §6's tracker with all of 7.1–7.3's entries once actually downloaded, noting the
+  two non-CC0-but-free-commercial packs' no-redistribution clause explicitly.

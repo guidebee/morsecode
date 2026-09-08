@@ -490,6 +490,105 @@ level JSON can carry decorative/dead tile types (a few confirmed-dead ones are l
 
 ## 9. Actor catalog
 
+### 9.0 Universal patterns — read this before designing a new actor
+
+Every actor class in this game, however different its behavior, is built from a small,
+consistent set of design moves. Learning these ten patterns is worth more than reading
+any single actor's code, because a new actor almost always turns out to be "one of these,
+recombined" rather than something genuinely new:
+
+1. **Tick-scaled constants (`frames = delta * PHYSICS_FPS`).** Every actor's movement
+   constants — speed, gravity, jump impulse, timers — are tuned as "per original 60fps
+   tick," then scaled by real elapsed time this same way, first established for `Player`
+   (§4.1) and repeated verbatim in `Enemy.walkAndFall`, `Boss`, `Monkey`, `SonOfABuitch`,
+   `PiranhaPlant`, `OctoPussy`, `FishyGround`/`FishyWater`, `Mushroom`/`Star`/`Life`,
+   `FireBall`/`Hammer`/`BossFire`, `Brick`/`Bank`/`Iron`'s bump animation, every `Lift`
+   variant, and more. **A new actor's constants should be designed in this same unit** —
+   "how far does this move in one 60fps tick" — not raw px/sec, so its feel stays
+   consistent with everything else on screen.
+2. **Evolution by successor-spawn, not just state change.** A huge fraction of "what
+   happens when this enemy is stomped" is actually "deactivate this instance and spawn a
+   *different* actor class at the same position": `EnemyTurtle` → `TurtleShell`,
+   `Helmet` → `HelmetShell`, `FlyingTurtle`/`FlyingTurtlePatrol` → `EnemyTurtle`,
+   `SpikeyEgg` (on landing) → `Spikey`. The pattern is always the same three lines:
+   `Successor s = new Successor(getX(), getY(), ...); MarioContext.world().addEnemy(s);
+   MarioContext.spawn(s); deactivate();` (swap `addEnemy`/`addBrick`/`addCollectible` for
+   the right list). **A new enemy's "damaged" or "angry" state is often best modeled as a
+   whole separate class**, not a flag inside one class — reach for this before adding a
+   third or fourth behavioral mode to a single `act()`.
+3. **The dormant/active unification flag.** Where the *original* engine needed two
+   classes because it had no way to swap a live object's behavior (destroy-and-recreate
+   instead), this port unifies them with one boolean: `TurtleShell`/`HelmetShell`'s
+   `moving` flag branches their entire `act()` (motionless-under-gravity vs.
+   walk-and-kill-things) and both touch-reaction methods, from one class. **This is the
+   template for any actor with a "sits still until triggered, then behaves completely
+   differently" lifecycle** — one flag, branch every method on it, rather than a class
+   hierarchy or a state-machine enum for just two states.
+4. **The reveal-item dispenser.** `QuestionMark`, `Bank`, `BankWithItem`, `InvisibleBrck`,
+   and `BrickWithStar` all share one shape for `hitFromBelow`: deactivate self, spawn a
+   permanent `Iron` block in the same spot (the "used up" state), and spawn an
+   `ItemReveal` — a rising preview icon that, once it reaches the top of its rise, invokes
+   a callback that constructs the *real* collectible and registers it. **Z-order is a
+   real, deliberate detail here, not an accident**: a growth-item reveal spawns *before*
+   its replacement `Iron` (so the rising icon draws behind the block it's replacing, while
+   still emerging), while a coin-pop reveal spawns *after* (so it draws in front) — this
+   matches the original engine's own two different rendering groups, and a new dispenser
+   brick should decide its own draw order deliberately, not by accident of code order.
+5. **Shared clock vs. independent phase — a real design choice, not a default.**
+   `OrbitingFireball` (reading `OscillatorClock.getDistance()`/`getInvertDistance()`) and
+   `FlyingTurtlePatrol` (reading `getSlowDistance()`) all read one centrally-ticked,
+   level-wide angle, so every fire-bar ring and bobbing turtle in a level stays visually
+   in lockstep — this matters because several rings/turtles can be on screen
+   simultaneously and drifting out of sync would look wrong. `Lift`, by contrast,
+   deliberately keeps its **own** independent `phase` field per instance, because
+   multiple lifts on the same shaft are placed at staggered positions specifically so they
+   *don't* move in lockstep (see `LevelLoader.spawnLifts`'s own multi-instance placement).
+   **Ask "should every instance of this move identically, or should they be able to
+   drift apart" before picking one design over the other.**
+6. **Deriving a semantic event from a movement helper's return value.** The original
+   engine's own architecture let some external system call back into an actor (e.g.
+   `setYloc`/`bounce()`) to tell it "you just landed" or "you just hit a ceiling." This
+   port's architecture has no such external caller, so several actors derive the same
+   information locally instead: `SpikeyEgg` hatches into a `Spikey` exactly when
+   `TileMovement.moveY(...)` returns `true` while it was still falling (`gravity >= 0`);
+   `FlyingTurtle` "bounces" back upward whenever the same call returns `true` for *either*
+   direction (floor or ceiling). **`TileMovement.moveX`/`moveY`'s boolean return ("did
+   this movement get blocked") is a cheap, general way to detect "hit a wall"/"landed"
+   without wiring up any new event/observer machinery** — reach for it before inventing a
+   new callback mechanism.
+7. **Damage-type immunity as a one-method opt-out.** `onStomped`/`onTouchedSide`/
+   `onDefeatedByProjectile` are three *independent* hooks (§9.1's `Enemy` base) —
+   overriding just one of them creates an enemy immune to exactly one thing: `Helmet`
+   overrides only `onDefeatedByProjectile()` to an empty body (fireball-immune, but still
+   dies to a stomp), `OrbitingFireball` and `Rocket` do the same (indestructible/immune to
+   fireballs respectively) while still reacting normally — or not at all — to touch.
+   **An empty override with a one-line comment explaining *why* it's empty is the
+   idiomatic way to say "this enemy is immune to X"** in this codebase — not a
+   `canBeDamagedBy(DamageType)` flag or similar generalized mechanism, which none of these
+   simple cases actually need.
+8. **The cheap "can't be safely stomped" flip.** `Spikey.onStomped` and
+   `PiranhaPlant.onStomped` are both one-line bodies that just call
+   `onTouchedSide(player)` — reusing the "hurt unless starred" logic for the *stomp* case
+   too, instead of the base class's "stomping kills" default. **This is the entire
+   difference between a jumpable and an unjumpable enemy** — a one-line delegation, not a
+   parallel implementation.
+9. **Multi-constructor projectiles instead of multi-class projectiles.** `Hammer` has two
+   constructors — one taking pre-computed `(xSpeed, gravity)` for `Boss`'s continuous
+   externally-tuned throw, one taking a `boolean towardLeft` for `Monkey`'s one-shot
+   randomized throw — both funneling into the same fields and the same `act()`/lifecycle
+   code. `Rocket` similarly has a 3-arg convenience constructor delegating to a 4-arg one
+   with a default `blackAndWhite=false`. **When two different enemies need "the same kind
+   of thing, launched differently," give the projectile a second constructor**, not a
+   second class.
+10. **A family of thin, purpose-named cleanup methods instead of one method with a flag.**
+    `FireBall` has three ways to end its life — `explode()` (silent, the shared base:
+    fall-out cleanup), `explodeAgainstWall()` (adds a bump sound), `explodeAgainstEnemy()`
+    (adds an `Explosion` visual but no sound) — each a thin wrapper calling the shared
+    `explode()`, rather than one `explode(boolean playSound, boolean showEffect)` method.
+    **Prefer several small, clearly-named methods over one parameterized method** when
+    each call site already knows exactly which variant it wants — it reads better at
+    every call site and needs no comment explaining what the flags mean.
+
 ### 9.1 Enemies (`extends Enemy`)
 
 ![Enemy sprite sheets](assets/mario-sprites/montages/enemies.png)
@@ -498,64 +597,221 @@ level JSON can carry decorative/dead tile types (a few confirmed-dead ones are l
 un-flipped to natural viewing orientation — see §13.4. This is the current
 Nintendo-derived placeholder art pending the reskin, not final art.)*
 
-`Enemy` (`actors/enemies/Enemy.java`) is the common base. It supplies:
+#### 9.1.0 The `Enemy` base contract
+
+`Enemy` (`actors/enemies/Enemy.java`) is deliberately thin — it supplies exactly the
+pieces every enemy needs and nothing an enemy might not:
 
 - `walkAndFall(delta, gravity, walkSpeed)` — constant-speed walk + gravity + wall-bounce,
-  a helper subclasses call from their own `act()` (not automatic — `TurtleShell` needs to
-  sit motionless until kicked, which a fixed base `act()` would fight).
-- `onStomped(player)` (default: `deactivate()`), `onTouchedSide(player)` (default: kill if
-  `player.hasStar()`, else `player.shrink()`), `onDefeatedByProjectile()` (default:
-  `deactivate()` unconditionally, even with a star) — **override whichever differ** for a
-  new enemy type.
-- `bouncesOffEnemies()` (default `false`) — opt in for `EnemyToEnemyResolver` to bounce
-  this type off other opted-in enemies on contact.
+  a helper subclasses *call* from their own `act()` rather than inherit automatically —
+  `TurtleShell` needs to sit motionless until kicked, which an automatic base `act()`
+  would fight, so the base class leaves the choice to the subclass instead of assuming
+  every enemy walks.
+- Three independent reaction hooks — `onStomped(player)` (default: `deactivate()`),
+  `onTouchedSide(player)` (default: kill if `player.hasStar()`, else `player.shrink()`),
+  `onDefeatedByProjectile()` (default: `deactivate()` unconditionally, even with a star) —
+  **override whichever ones differ**; leaving the rest alone is itself meaningful
+  information (see pattern 7 above), not laziness.
+- `bouncesOffEnemies()` (default `false`) — a one-method opt-in read by the *separate*
+  `EnemyToEnemyResolver` (§9.3 below), not checked by the enemy itself — keeping "does
+  this bounce off neighbors" decoupled from "how does this enemy move."
 
-| Class | Behavior |
-|---|---|
-| `EnemyMashroom` | Ground-walker. Every `Enemy` default applies unchanged — the simplest possible enemy. |
-| `EnemyTurtle` | Ground-walker; stomping produces a `TurtleShell` instead of just dying (override in the concrete class, not shown in the base). |
-| `EnemyTurtlePatrol` | Bounded to `[spawnX, spawnX + 32×patrolLength]`, turning at the bounds (not wall-bounce) |
-| `FlyingTurtle` | Free-roaming, wall-bounces horizontally, gentle constant downward drift |
-| `FlyingTurtlePatrol` | Never moves horizontally; bobs vertically around a center point via the shared `OscillatorClock` |
-| `TurtleShell` | Unifies the original's stationary/moving shell pair via a `moving` flag |
-| `Helmet` / `HelmetShell` | Buzzy-Beetle analog — walks like `EnemyTurtle` but **immune to fireballs** (confirmed by reading the source, not assumed); `HelmetShell` unifies stationary/moving like `TurtleShell` |
-| `Monkey` | Patrols ±1 tile, throws a `Hammer` at the player on a random timer |
-| `Spikey` / `SpikeyEgg` | **Never** safely stompable — every touch (any side, including straight down) is "star kills, else hurts" |
-| `SonOfABuitch` | Lakitu analog — floats at a fixed height (hardcoded `y=80`, ignoring level data's own `y`), sways around the player's X, throws `SpikeyEgg` |
-| `Boss` | See §9.1.1 |
-| `OrbitingFireball` | One fireball of a `FireBar`/`BigFireBar` ring — see §9.1.2 |
-| `PiranhaPlant` | Bobs a fixed 96px range out of a pipe; pauses retracted only while both near-bottom *and* the player is within 100px |
-| `Rocket` | Fired by `RocketLauncher`; straight-line, no gravity, no tile collision; a stomp always destroys it |
-| `FishyGround` | Ambient jumping-fish hazard (the `flyingFishes` level flag), not a placed enemy — see `SpawnController` |
-| `FishyWater` | Sea-level Cheep-Cheep analog — straight swim, optional vertical bob |
-| `OctoPussy` | Sea-level Bloober analog — rest-then-dart chase cycle |
+#### 9.1.1 Ground-walkers and their shell/successor pairs
 
-#### 9.1.1 `Boss` — the reference "complex enemy" pattern
+**`EnemyMashroom`** is the simplest possible enemy in the game and the one to copy first
+when building something new: it calls `walkAndFall` every frame, cycles between two
+hand-picked frames from a themed sub-region (`enemy.png`'s 2×4 strip — rows are
+Sea/Ground/UnderGround/Castle), opts into `bouncesOffEnemies()`, and overrides only
+`onDefeatedByProjectile()` (to add the `FallingDeadSprite` death visual — see
+§9.6). Every other reaction is the untouched `Enemy` default. Nothing else in the roster
+is simpler than this.
+
+**`EnemyTurtle`** adds exactly one behavioral difference on top of that same shape:
+`onStomped` doesn't deactivate — it spawns a `TurtleShell` at the same position (pattern 2)
+and *then* deactivates itself, so stomping doesn't kill the turtle, it transforms it.
+`onTouchedSide` is left at the `Enemy` default (side-touch still just hurts, unlike a
+`TurtleShell`'s own more dangerous side-touch — see next). Themed art (`turtle` vs.
+`turtle_dark`) is picked once at construction and threaded into the shell it later spawns,
+so a green turtle always produces a green shell.
+
+**`TurtleShell`** is the `moving`-flag unification (pattern 3) in its canonical form.
+Stationary (`moving=false`): `act()` only applies gravity via `TileMovement.moveY`, no
+horizontal drift at all. A touch from *either* direction while stationary calls the shared
+private `kick(player)` — sets `moving=true` and picks a direction *away* from wherever the
+player currently is (`movingRight = player.getX() < getX()`). Once moving: `act()` switches
+to `walkAndFall` (real horizontal drift now) and additionally calls
+`killOverlappingEnemies()` every frame — a small defensive-copy loop over
+`MarioContext.world().getEnemies()` that calls `onDefeatedByProjectile()` on anything it
+overlaps (a moving shell kills like a thrown fireball). Stomping a *moving* shell just
+stops it back to stationary (`moving=false`) rather than killing it outright — matching
+the classic games' "stomp a rolling shell to stop it, don't destroy it" rule. A side-touch
+while moving is the dangerous case: hurts the player (or, with a star, kills the shell).
+
+**`Helmet`/`HelmetShell`** is the *exact same* stationary/moving pair shape as
+`EnemyTurtle`/`TurtleShell` — literally the same method bodies, `kick`,
+`killOverlappingEnemies`, the works — with two differences worth noting as *design*
+choices, not bugs: (a) `color` is an explicit 3-way string (`"normal"`/`"dark"`/`"white"`)
+passed down by whichever level spawned it, not derived from the level's own `attribute`
+the way `EnemyTurtle`'s theme is; (b) both classes override `onDefeatedByProjectile()` to
+an empty body — **immune to Fire Mario's fireballs by design** (pattern 7), confirmed by
+reading the source rather than assumed, matching the classic games' own "buzzy beetles
+can't be fireballed" rule. `Helmet` itself also opts into `bouncesOffEnemies()`.
+
+**`Spikey`/`SpikeyEgg`** demonstrate pattern 8 (the cheap unstompable flip) plus pattern 2
+(spawn-a-successor) working together: `SpikeyEgg` is a falling projectile (thrown only by
+`SonOfABuitch`, never placed directly in level data) that arcs upward first
+(`gravity` starts at `-6`, ramps back down) before falling — and the moment
+`TileMovement.moveY` reports it landed while still falling (pattern 6), it hatches: spawns
+a `Spikey` at its own position and deactivates. `Spikey` itself is an ordinary
+`walkAndFall` ground-walker whose *only* override is `onStomped(player) { onTouchedSide
+(player); }` — one line, and jumping on it now hurts you exactly like touching it from the
+side would. Both classes also override `onDefeatedByProjectile()` normally (dies to a
+fireball, unlike `Helmet`) — the unstompable design is deliberately narrow (just the stomp
+reaction), not a blanket "hard to kill."
+
+#### 9.1.2 Bounded and free-roaming variants
+
+**`EnemyTurtlePatrol`** replaces `walkAndFall`'s wall-bounce with a fixed-range bounce:
+`leftBoundX`/`rightBoundX` are computed once at construction (`spawnX` ±
+`patrolLengthTiles × 32`, reading the tile's own `patrolLength` field — see
+[§8](#8-tile-type-dispatch-registry)), and `act()` flips `movingRight` when `getX()`
+crosses either bound, entirely independent of the tile grid. A stomp still spawns a
+`TurtleShell`, same as its unbounded cousin — the *only* difference from `EnemyTurtle` is
+the bounded-range movement, everything else (shell-spawn, gravity, animation) is
+identical, right down to reusing the exact same "always green" quirk faithfully ported
+from the original (this type always passes the literal `"Ground"` attribute to the shell
+it spawns, regardless of the level's real theme — confirmed a deliberate original
+behavior, not a porting slip, since World 1's own `Level_12` places one in an
+`UnderGround` level).
+
+**`FlyingTurtle`** demonstrates pattern 6 in a different shape: rather than one "landed"
+event, its `act()` checks `TileMovement.moveY`'s return on *every* frame and, whenever it's
+`true` (hit floor *or* ceiling), resets `gravity` to a fixed upward `BOUNCE_GRAVITY` —
+reproducing an indefinite bob/hover with no separate "am I near the ground" check at all.
+It also wall-bounces horizontally like a normal ground-walker. Stomping it spawns a
+regular `EnemyTurtle` (pattern 2) at the same spot, in whichever color matches its own.
+
+**`FlyingTurtlePatrol`** is the purest "read the shared clock" example (pattern 5): its
+`act()` is almost nothing but `setX(centerX); setY(centerY + cos(OscillatorClock
+.getSlowDistance()) * AMPLITUDE_PX);` — no gravity, no tile collision, no local timer at
+all, just a direct trig readout from the one shared angle every synchronized bobbing/
+orbiting actor in the level reads. Stomping it always spawns a plain green `EnemyTurtle`
+(the original's own "could be green-flagged, but the flag is never actually set true
+anywhere in the source" quirk, preserved faithfully rather than "fixed").
+
+#### 9.1.3 Projectile-throwers
+
+**`Monkey`** patrols a tight ±1 tile range (bounded exactly like `EnemyTurtlePatrol`,
+just a much smaller range), jumps on one random timer, and throws a `Hammer` at the
+player on a *second*, independent random timer (`updateHammerThrow`) — two unrelated
+timers ticking down side by side in the same `act()`, each reset to a fresh random value
+once it fires. The thrown `Hammer` always picks a direction toward wherever the player
+currently is at the moment of the throw, not a fixed direction. `onDefeatedByProjectile`
+is the only touch-reaction override (adds the kick sound + falling-dead sprite); stomp and
+side-touch are untouched `Enemy` defaults.
+
+**`SonOfABuitch`** (the Lakitu analog) is a "no gravity, no tile collision, doesn't even
+try" enemy — it overrides *no* movement helper at all, just directly sets its own
+position every frame: locked to a **hardcoded fixed height** (`FIXED_Y = 80`, ignoring
+whatever `y` the level data actually placed it at — a real, faithfully-preserved original
+quirk, not a bug), swaying side to side within `SWAY_LIMIT` of the player's current X, and
+throwing a `SpikeyEgg` on a random timer with a short "rearing back" telegraph frame just
+before each throw. Its own `onDefeatedByProjectile` is a plain kick-sound-and-deactivate —
+no successor spawn, no falling-dead sprite (a `SpikeyEgg` it already threw before dying
+lives on independently; killing the thrower doesn't retroactively affect eggs already in
+flight).
+
+#### 9.1.4 Water and flying specialists
+
+**`PiranhaPlant`** is a single-axis bob (a fixed 96px/3-tile vertical travel range) with
+one genuinely subtle piece of state worth understanding closely if you're building
+something similar: `CanStopMovingUp` (this port's `movingUp` check) is **only evaluated
+while still within the bottom 32px of its range**. Once it commits to rising (because the
+player was far enough away at that exact moment), it keeps rising all the way to the top
+even if the player then walks back into range mid-ascent — it only reconsiders once fully
+retracted again. This is ported *verbatim*, including the quirk, because it's exactly how
+the original plays and changing it would be a real behavior change, not a bug fix.
+`onStomped` delegates to `onTouchedSide` (pattern 8 — never safely stompable, matching
+`Spikey`), and it's spawned by `LevelLoader.spawnBricks`'s own `"pump"` case (not
+`spawnEnemies`, every other enemy's home) specifically so its layer-append order puts it
+*behind* its own pipe visually — see [§8](#8-tile-type-dispatch-registry)'s own note.
+
+**`FishyGround`** is a short-lived ambient projectile, not a persistent placed enemy — a
+single upward-arcing launch (gravity starts strongly negative, ramps back toward positive
+like a thrown object) that despawns once it falls back past a fixed world-Y. It's spawned
+periodically by `SpawnController` (§9.4 of this document isn't the right place for that —
+see [§14.6](#146-add-a-new-hazard)'s sibling recipe) rather than placed directly in level
+data at all.
+
+**`FishyWater`**/**`OctoPussy`** are both "never safely stompable" Sea-level swimmers
+(pattern 8's shape again — `onStomped` delegating to `onTouchedSide`), but with very
+different movement philosophies worth contrasting directly: `FishyWater` is almost
+stateless — constant leftward speed, optional vertical bob between two fixed offsets from
+its spawn point, that's the entire model, parameterized by a single `type` int (1–4)
+picking grey/red and straight/bobbing. `OctoPussy` is a small **finite state machine**
+disguised as one `act()` method: rest at a target point (drifting slowly downward,
+blinking between two frames) for a fixed wait, then dart in a straight line toward a
+freshly-chosen target (away from the player horizontally, upward only if the player is
+currently above it — otherwise it waits an *effectively infinite* time instead, via a
+`WAIT_TICKS_STUCK = 4000` sentinel), repeating once the target is reached; a separate,
+unconditional check (`getY() > RISE_TRIGGER_Y`) can interrupt the wait state at any time to
+force an immediate re-target upward, regardless of the timer. **This is worth studying as
+a compact template for "rest, then move to a new point, repeat" AI** — the whole thing is
+under 40 lines: two float fields for the current target, one float for the wait
+countdown, and a `stepToward` helper that moves at a constant px/frame speed toward
+whatever the current target is.
+
+#### 9.1.5 `OrbitingFireball` / `FireBar`
+
+Not placed individually in level data — `LevelLoader.spawnFireBar` reads one `FireBar`/
+`BigFireBar` tile and spawns 6 (or 12) `OrbitingFireball`s around that one pivot, each at
+a different radius (`j × 16px`), all reading the **shared** `OscillatorClock` angle
+(pattern 5) so every ring/bobbing enemy in a level stays in sync. `extraInfo`
+(`"CW"`/`"ACW"`) sets spin direction by choosing which of the clock's two counter-rotating
+angles (`getDistance()` vs. `getInvertDistance()`) this instance reads. It has no gravity,
+no tile collision, and is completely indestructible by design (pattern 7 — both
+`onTouchedSide` and `onDefeatedByProjectile` either hurt-only or no-op) — it exists purely
+to be touched, never to be interacted with otherwise, positioned by direct `setPosition`
+every single frame rather than any physics integration at all.
+
+#### 9.1.6 `Boss` — the reference "complex enemy" pattern
 
 `Boss` (`actors/enemies/Boss.java`) is the best template to copy for a new
-multi-behavior enemy: patrol ±3 tiles around spawn while the player is behind it, switch
-to a steady chase once the player passes it, jump on a random timer, and (mode-dependent)
-either breathe `BossFire` or throw `Hammer` on separate random timers — all bounded by a
-`maxXPx` wall. Defeat is two-tiered:
+multi-behavior enemy precisely because it combines several of §9.0's patterns in one
+class: patrol ±3 tiles around spawn while the player is behind it, switch to a steady
+chase once the player passes it (a genuine two-mode state machine, checked once per frame
+via `player.getX() > getX()`, no explicit enum needed for just two modes), jump on a
+random timer, and (mode-dependent, chosen once at construction via a `hammerMode`
+boolean — not a class hierarchy) either breathe `BossFire` or throw `Hammer` on
+*separate* random timers (two independent per-frame countdowns, same shape as `Monkey`'s
+own dual timers) — all bounded by a `maxXPx` wall passed in from the level's own
+`patrolLength` data. Defeat is two-tiered, using patterns 7/9's shapes together:
 
 - **Star touch/stomp** → instant `die(true)` (plays `smb_kick` + `smb_bowserfalls`,
   deactivates every *other* active enemy in the level too — matches the original).
 - **Fire Mario fireballs** → `onDefeatedByProjectile()` decrements a 5-hit life counter,
-  dies at `<0` (i.e. the 6th hit) via `die(false)` (no kick sound).
+  dies at `<0` (i.e. the 6th hit) via `die(false)` (no kick sound) — the *only* enemy in
+  the roster with a real multi-hit health pool rather than a one-touch kill.
 - **A plain stomp or side-touch without a star** just hurts the player (`shrink()`) —
   jumping on the boss's head alone never kills it, matching the classic games.
 
 Level completion is **not gated on defeating the boss** — the "cleared this castle"
 trigger is a separately-placed `"WhyYouDOThis"` checkpoint past it; walking past a boss
-you didn't fight is legitimate.
+you didn't fight is legitimate. See [§10](#10-checkpoints-and-teleports) for the full
+bridge-collapse/boss-fall sequence `MarioGameScreen` runs when the axe past the boss is
+triggered.
 
-#### 9.1.2 `OrbitingFireball` / `FireBar`
+#### 9.1.7 `Rocket` — reused art, no new asset
 
-Not placed individually in level data — `LevelLoader.spawnFireBar` reads one `FireBar`/
-`BigFireBar` tile and spawns 6 (or 12) `OrbitingFireball`s around that one pivot, each at
-a different radius (`j * 16px`), all reading a **shared** angle from `OscillatorClock`
-(the same clock `FlyingTurtlePatrol` reads) so every ring/bobbing enemy in a level stays
-in sync. `extraInfo` (`"CW"`/`"ACW"`) sets spin direction.
+`Rocket` (fired by `RocketLauncher`, §9.2) is worth a short callout for what it *doesn't*
+have: its own sprite sheet. `regionFor` slices frame index 3 out of the *already-shared*
+`"rocket_launcher"` strip (the same asset the stationary turret itself uses) rather than
+loading a dedicated region — matching the original engine's own identical re-use.
+**A new projectile-like enemy that's conceptually "a piece that detaches from an existing
+actor" doesn't need new art if the parent actor's own sprite sheet already contains a
+frame that reads correctly on its own.** Movement is otherwise the simplest shape in the
+whole roster: constant horizontal speed, no gravity, no tile collision, deactivates once
+it drifts far enough past either edge of the level.
 
 ### 9.2 Bricks (`extends InteractiveBrick`)
 
@@ -563,93 +819,370 @@ in sync. `extraInfo` (`"CW"`/`"ACW"`) sets spin direction.
 
 `InteractiveBrick` (`actors/bricks/InteractiveBrick.java`) supplies `isActive()`,
 `overlaps(...)`, `deactivate()`, and one overridable hook: `hitFromBelow(player)`
-(default: no-op — matches Stone/Pump/Iron's original no-op `HitFromDown()`).
+(default: no-op — matches Stone/Pump/Iron's original no-op `HitFromDown()`). Every brick
+in the game is either a permanent solid block (no-op `hitFromBelow`), a "bonk" reaction
+(brief bump animation, stays solid), or a "reveal" dispenser (pattern 4 from §9.0).
 
-| Class | `hitFromBelow` behavior |
-|---|---|
-| `Brick` | Big/Fire: breaks into 4 `BrickFragment`s. Small: bonks (hop + `smb_bump`), stays solid. |
-| `Bank` | Dispenses a coin on every hit for ~1.67s from the first hit, then becomes `Iron` |
-| `QuestionMark` | One-shot reveal (coin, or Mushroom/Flower depending on power state), becomes `Iron` |
-| `BankWithItem` | Same reveal logic as `QuestionMark`, styled as a plain themed brick |
-| `BrickWithStar` | One-shot `Star` reveal, becomes `Iron` |
-| `InvisibleBrck` | Invisible until hit, then behaves like the reveal bricks above |
-| `Iron`, `Pump`, `WoodenBridge`, `Tree` (canopy), `Bouncer`, `RocketLauncher(Body)` | No-op — permanent solid geometry |
-| `Axe` | Not hit-reactive; see §9.3 |
-| `TemporaryInvisibleBrick` | Not player-placed — `Brick` spawns one under itself for ~10 ticks after breaking, so something standing exactly on top doesn't fall through a frame early |
+**The bump-hop animation is copy-pasted identically across four classes** (`Brick`,
+`Bank`, `Iron`, and implicitly whatever a reveal brick becomes after it exhausts) — worth
+recognizing as one small reusable shape rather than four independent implementations:
+a `bumpTicks` float, negative when idle; once triggered, `bumpTicks` counts up from `0`
+across `BUMP_DURATION_TICKS` (9 original ticks, ~150ms), and each frame `setY(restY -
+BUMP_PEAK_OFFSET_PX * 4f * t * (1f - t))` where `t = bumpTicks / BUMP_DURATION_TICKS` — a
+simple parabola (zero at `t=0` and `t=1`, peak at `t=0.5`) standing in for the original
+engine's own tick-by-tick gravity-ramp simulation of the same hop, deliberately
+simplified since replicating that exactly would read as an original-engine implementation
+detail, not an intentional shape worth preserving.
+
+**`Brick`** — the only brick with power-state-dependent behavior: Big/Fire Mario breaks it
+into 4 physics-driven `BrickFragment`s and deactivates it permanently (also spawning a
+`TemporaryInvisibleBrick`, §9.2's own note below, so nothing standing exactly on top falls
+through a frame early); Small Mario just bonks it (the shared hop animation, `smb_bump`,
+stays solid). Also reused, unmodified, as Level 14's boss-bridge segments (`"BridgeBloks"`
+tile type) via a second constructor overload taking an explicit region — the *only*
+brick class in the game reused for a visually distinct purpose this way, confirming a new
+"just a different skin of an existing solid tile" type doesn't need a whole new class.
+
+**`Bank`** — the multi-hit coin dispenser, and a good example of a "real-time window, not
+a hit-count budget" design worth getting right if copying this pattern: `ticksLeft` (from
+`ACTIVE_TICKS = 100`, ~1.67s) only starts counting down once `active` is set true by the
+*first* hit, and decrements every frame regardless of whether the block is being hit again
+that frame — a player who hits it once, waits, then hits it again after the window closes
+gets an `Iron` block on that second hit, even though it's only been hit twice total. (This
+project's own commit history includes a correction here: an earlier version implemented
+it as a 100-*hit* counter instead, which is effectively unlimited in practice since no
+player realistically hits a block 100 times — a good cautionary example of why "read the
+original's exact tick-vs-hit semantics" mattered even for a seemingly simple brick.)
+
+**`QuestionMark`/`BankWithItem`/`InvisibleBrck`/`BrickWithStar`** are all the reveal-item
+dispenser pattern (§9.0 pattern 4) with only cosmetic differences: `QuestionMark` bobs
+through a 3-frame idle loop and swaps to a grey region on UnderGround/Castle levels;
+`BankWithItem` looks like a plain themed brick instead of a "?" mark (used by the
+`BrickWithMushroom`/`BrickWith1UP`/`BrickWithCoin` tile types); `InvisibleBrck` is
+invisible until hit (a lazily-shared, runtime-generated blank `Pixmap` region — one GPU
+texture for every invisible brick in the game, not one each); `BrickWithStar` always
+reveals a `Star`, no branching. All four route through the identical
+"deactivate → spawn `Iron` → spawn `ItemReveal` with the right draw order" shape.
+
+**`RocketLauncher`** is the one interactive-but-still-solid brick with its own `act()`
+loop (everything else in this section either only reacts to `hitFromBelow` or is
+permanently inert): a random-interval timer fires a `Rocket` toward the player, but only
+once the player has left a 100px "safe zone" either side — and, matching the original
+faithfully, the countdown keeps ticking down to zero even while the player is standing
+inside that zone; it just silently skips firing and waits for the *next* full cycle to
+check again, rather than pausing the timer while unsafe. `RocketLauncherBody` is purely
+the stacked, solid segments below the turret head — no logic of its own at all.
+
+**`Bouncer`** demonstrates a clean event-wiring choice worth noting: the actual launch
+physics live entirely in `Player.moveYWithCollision`'s own landing check (a Bouncer never
+lets Mario stand on it, always relaunching him at roughly double a normal jump's impulse),
+and `Bouncer` itself is otherwise inert (`hitFromBelow` is a no-op, matching `Iron`). The
+*only* thing `Bouncer` itself does is hold a reference to its own decorative `Spring`
+sprite (linked once by `LevelLoader.spawnBricks`'s "Bouncer" case right after both are
+constructed) and expose `triggerSpring()`, called by `Player` the same frame it applies
+the launch impulse. **This is the shape to copy when one actor's event needs to trigger a
+second, purely cosmetic actor's animation**: a thin reference + a one-method trigger, not
+polling or a shared event bus.
+
+**`Axe`, `WoodenBridge`, `Tree` (canopy row), `TemporaryInvisibleBrick`** are covered in
+§9.3 (`Axe`, since it's really a hazard/hybrid) and inline above (`WoodenBridge`/`Tree` are
+plain permanent solid geometry, no logic beyond picking the right cap/middle art frame for
+`Tree`'s own column position; `TemporaryInvisibleBrick` is `Brick`'s own ~10-tick
+placeholder, spawned automatically, never placed by level data).
 
 ### 9.3 Hazards (`implements Hazard`)
 
 Contact-damage actors that **cannot** be stomped, kicked, or killed by a fireball, and
 award no stomp bounce — `HazardCollisionResolver` always just hurts on touch (star
-excepted). `Axe` is a special hybrid: an unconditional invisible wall (`AxeResolver`,
-every frame, regardless of height) *plus* a one-shot boss-finale trigger
-(`AxeResolver.findTriggered`) that kicks off the bridge-collapse/boss-fall sequence in
-`MarioGameScreen`. `BossFire` and `Hammer` (thrown or ambient) are the other two.
+excepted, and gated by the same duck-overhead-clearance check `EnemyCollisionResolver`
+uses, so a crouching Big/Fire Mario can pass under a hazard sitting entirely above him).
+The `Hazard` interface is deliberately minimal — `isActive()`, `overlaps(...)`, `getY()`,
+`getHeight()` — exactly what one generic resolver needs and nothing about *how* a hazard
+moves, which is why `Hammer` and `BossFire` (both really projectiles, see §9.2 of the
+tile registry) can implement it alongside their own independent `Sprite`-based movement
+without any awkward fit.
+
+**`Axe`** is the one genuine hybrid in the whole actor roster — two independent
+responsibilities living in one class, worth understanding as two separate mechanisms
+rather than one:
+
+1. **An unconditional invisible wall**, enforced every frame by `AxeResolver.resolve`
+   (`if (player.getX() > axe.getX()) player.setX(axe.getX())`, height never checked) —
+   this runs regardless of whether the axe has been "chopped" yet, *except* it's skipped
+   entirely once `isTriggered()` is true (a real bug this port found and fixed on-device:
+   without that check, `MarioGameScreen`'s own post-trigger forced-walk-right command
+   would drive the player straight back into this same wall every single frame,
+   permanently stuck).
+2. **A one-shot "chop the rope" touch**, detected by `AxeResolver.findTriggered` (a plain
+   AABB overlap, only while `!isTriggered()`) and acted on by `MarioGameScreen.triggerAxe`
+   — which calls `axe.trigger()` (flips the flag, hides the sprite), finds any still-active
+   `Boss` in the level and kicks off `BossFallingAnim.spawnCollapse`, deactivates every
+   other active enemy in the level (matching the original's own "the fight is over"
+   cleanup), and hands the player a forced-walk-right `PlayerCommand` to auto-walk off
+   toward the level's real end checkpoint.
+
+**`BossFire`** serves two roles from one class, unified by one constructor: a handful
+placed directly in a castle level's own data (a static hazard drifting across the boss
+room) and the projectile `Boss` itself throws in non-hammer mode — both just drift left at
+a constant speed while bobbing toward a randomly-chosen target height among the room's
+floor levels, so one class covers both. **`Hammer`** is described in §9.6 below (it's
+really a projectile that happens to implement `Hazard` for collision purposes, same as
+`BossFire`).
 
 ### 9.4 Lifts (`implements LiftSurface`)
 
-`LiftSurface` supplies `getDeltaX()`, `getTopY()`, `isLandingSpot(...)`, and an optional
-`onRidden()` hook (used only by `BalanceLiftPlatform`'s seesaw physics — a plain `Lift`'s
-motion never depends on whether it's ridden).
+`LiftSurface` supplies `getDeltaX()` (this frame's horizontal movement, for carrying a
+rider along), `getTopY()`, `isLandingSpot(x, y, width, height)` (horizontal overlap plus
+the rider's feet sitting within `LANDING_TOLERANCE` of the top — a per-frame "snap onto
+wherever the surface currently is" test, not a swept collision), and an optional
+`onRidden()` hook (default no-op) called by `LiftCollisionResolver` exactly once per frame
+a rider is actually caught standing on a given surface. This one small interface is what
+lets four *very* differently-behaving classes all be caught generically by one resolver:
 
-| Class | Motion |
-|---|---|
-| `Lift` | One class, a `Motion` enum (`UP_DOWN`/`LEFT_RIGHT`/`LEFT_RIGHT_INVERT`/`UP`/`DOWN`) unifies the original's 5 near-identical classes |
-| `BalanceLiftPlatform` | A seesaw pair — standing on either side sinks it and raises the linked other, decaying back to level when unridden |
-| `LiftFall` | Sits still until ridden, then falls away forever at constant speed (never resets) |
-| `LiftCar` | Sits still until ridden, then slides right forever at constant speed (never resets) |
+**`Lift`** unifies what the original engine built as five separate, near-identical
+classes (`Lift_UpDown`/`Lift_LeftRight`/`Lift_LeftRightInvert`/`LiftUP`/`LiftDown`) into
+one class with a `Motion` enum — the same "one class, one flag/enum, branch every method"
+consolidation `TurtleShell` applies to its own stationary/moving pair (pattern 3), just
+with a 5-way enum instead of a boolean. `UP_DOWN`/`LEFT_RIGHT`/`LEFT_RIGHT_INVERT` are
+smooth oscillations (`cos` of an ever-advancing per-instance `phase`, deliberately *not*
+the shared `OscillatorClock` — see pattern 5's own reasoning for why independent phase is
+the right choice here); `UP`/`DOWN` travel continuously and wrap around a fixed range
+centered on their spawn point (several instances placed along one shaft, staggered, read
+together as a continuous conveyor — see `LevelLoader.spawnLifts`). `onRidden()` is a no-op
+here — a plain `Lift`'s motion never depends on whether anyone's standing on it, unlike
+every other class in this section.
+
+**`LiftFall`**/**`LiftCar`** are the "trigger once, then commit forever" shape, sideways
+vs. downward: both sit completely motionless until `onRidden()` first fires (flips one
+boolean), then move at a constant speed in their one fixed direction *permanently* — never
+resetting, never stopping, removed only once they've traveled well past the level's own
+bounds. **`LiftCar`** specifically is what carries the player up the 4 pure-climb "Clowd"
+beanstalk levels' vertical shafts, one triggered car at a time.
+
+**`BalanceLiftPlatform`** is the most involved of the four, and the best example in the
+codebase of **deliberately simplifying a coupled physics pair during porting** rather than
+transcribing the original's own shape faithfully: the original gives each of the two
+seesaw platforms its own independent speed field, and has each one push the other by its
+own speed every frame (redundant, since only one side's speed is ever actually nonzero at
+once). This port instead designates one platform `primary` at link time
+(`BalanceLiftPlatform.link(a, b)`) and gives it sole ownership of the shared physics — one
+`speedY`, one signed `direction` recording which side is currently "heavy" — applying the
+computed movement to *both* platforms from inside the primary's own `act()`; the
+secondary's own `act()` is a no-op, since its position is fully determined by the primary
+within the same frame. **When two actors' state is mathematically coupled (one's up is
+always the other's down), model the physics once, on one designated "owner," rather than
+having both sides independently compute a result that has to agree.**
 
 ### 9.5 Items (`implements Collectible`)
 
 `CollectibleItem` supplies shared AABB/active-flag bookkeeping; `Collectible.onCollected
 (player)` is any-side touch (matches the original's identical behavior regardless of
-touch direction).
+touch direction — none of the five distinguish stomp from side-touch at all, unlike almost
+every enemy).
 
-| Class | Effect |
-|---|---|
-| `Coin` | Score only |
-| `Mushroom` | Grows the player |
-| `Flower` | Grows to Fire (stationary, animated in place) |
-| `Star` | Temporary invincibility; bounces like a ball while drifting sideways |
-| `Life` | Extra life; falls under gravity with **no floor check** in the original (matches — see the class's own doc for the quirk this preserves) |
+**`Coin`** is the simplest — no movement at all, just a spinning 3-frame idle animation
+(`{0,0,0,0,1,2,1,0}` at 150ms/frame, a hand-authored sequence rather than a plain
+round-robin, giving it a pause-then-flicker look) and, on collection, credits score/coins
+via `GameStateController.addCoin()` (which itself handles the classic 100-coins-to-a-life
+wraparound — see [§11](#11-camera-hud-and-game-state)).
+
+**`Mushroom`**/**`Life`** both walk-and-fall like a ground-walker enemy (constant speed,
+gravity, wall-bounce via `TileMovement`, not `Enemy.walkAndFall` itself since neither
+class extends `Enemy` — items are a structurally separate list from enemies, per
+[§5](#5-the-world-model-marioworld), so they duplicate the small amount of physics code
+rather than sharing a base class with actors they're not otherwise related to). **`Life`**
+specifically preserves a deliberate original quirk *by choosing not to preserve it*: the
+original's own `Life.update()` calls `moveY(Gravity)` with no floor check at all, relying
+entirely on an external collision manager (that this port's architecture doesn't have) to
+stop it from sinking through the ground — so this port gives it real `TileMovement`-based
+ground/wall collision instead of literally falling through the floor, a rare case of the
+port fixing rather than faithfully reproducing an original behavior, documented plainly as
+such.
+
+**`Star`** is the one bouncing item — re-launches upward (`BOUNCE_IMPULSE`) every time
+`TileMovement.moveY` reports a downward landing while it was still falling (pattern 6
+again), while drifting sideways and wall-bouncing the whole time, giving it its
+characteristic "bounces down the level like a ball" motion. On collection it calls
+`player.collectStar()` (starts the invincibility timer — see §4.4) rather than doing
+anything itself.
+
+**`Flower`** is the one item this port *changed* rather than ported faithfully: the
+original's own touch callbacks for Flower are all empty — touching it does nothing in the
+shipped original game, which reads as an unfinished feature (every other power-up item
+*does* apply its effect, and a Flower only ever spawns when Mario is already Big, i.e.
+exactly when growing to Fire makes sense) rather than an intentional design. This port
+implements the obviously-intended `onCollected` (`player.grow()`) instead of faithfully
+reproducing the no-op, per the original porting plan's own explicit instruction to "port
+the grow/shrink animation sequences" — a good example of when this project's own
+documented philosophy favors fixing an evident bug over byte-for-byte fidelity.
 
 ### 9.6 Projectiles
 
-| Class | Notes |
-|---|---|
-| `FireBall` | Player's Fire attack — capped at 2 concurrent; launches already at terminal fall speed; bounces off ground; explodes on wall or enemy hit (wall: `smb_bump` + `fx.Explosion`; enemy: silent explosion) |
-| `Hammer` | Two roles via two constructors: `Boss`'s continuous throw (externally-computed speed/gravity) and `Monkey`'s single toss |
-| `BossFire` | Both a static placed hazard (Level 14's drifting flames) and `Boss`'s own thrown projectile — same class, two spawn sites |
+**`FireBall`** (Fire Mario's own attack, capped at 2 concurrent in flight — enforced by
+`Player.applyFire`, not by `FireBall` itself) demonstrates pattern 10 (a family of
+purpose-named cleanup methods) most clearly of anything in the codebase: `explode()` is
+the shared, silent base (just deactivate + remove — the fall-out-of-bounds case);
+`explodeAgainstWall()` adds a `smb_bump` sound on top of the shared `Explosion` visual (a
+wall hit is loud); `explodeAgainstEnemy()` adds the same visual but *no* sound (an enemy
+hit is silent — confirmed by reading the two distinct original collision-callback classes
+directly, not assumed). It launches already at terminal fall speed (`gravity` starts at
+its own cap, so it only ever ramps back up to that speed *after* its first bounce, never
+climbing to it beforehand) and bounces off the ground indefinitely until it hits a wall or
+falls out of bounds.
+
+**`Hammer`** and **`BossFire`** are covered in §9.1.3/§9.1.6 (thrown by `Monkey`/`Boss`)
+and §9.3 (both `implements Hazard` for collision purposes, and `BossFire` doubles as a
+directly-placed level hazard) — see pattern 9 (`Hammer`'s two constructors) and the
+"served from two call sites" note on `BossFire` for the reusable shapes each demonstrates.
 
 ### 9.7 Scenery (purely decorative, non-collided)
 
 ![Scenery and backdrop sprite sheets](assets/mario-sprites/montages/scenery.png)
 
-`Scenery` draws a fixed image at a fixed position with no collision participation at all
-— the flagpole rod/ball, castles, lava, water backdrop, walls. `FlagPole` is the one part
-of the flag that *does* react (the cloth, slides down once touched — `MarioGameScreen`'s
-level-complete state machine drives this). `FlagWinBanner` is the small banner that rises
-beside the castle once the real end-of-level checkpoint fires.
+`Scenery` (`actors/scenery/Scenery.java`) is the baseline: draws one fixed image at a
+fixed world position, no collision participation of any kind — the flagpole rod/ball,
+castles, lava, water backdrop, decorative walls. It has exactly two constructors: draw at
+the region's own native pixel size, or (used by exactly one tile type, `"WhiteLine"`) draw
+stretched to an explicit size — the one decoration in the whole game that isn't shown at
+its source pixel dimensions.
+
+**`FlagPole`** is the one part of the level-end flag that *does* have real logic —
+everything else about a flag (the rod, the ball ornament) is plain, never-moving
+`Scenery` spawned alongside it by `LevelLoader.spawnScenery`'s own `"Flag"` case.
+`FlagPole` itself is just the cloth pennant: its `overlaps(player)` hitbox deliberately
+spans the *entire* 9-tile rod height (not just this cloth sprite's own current position),
+matching the original's real collision shape; touching it anywhere along that height
+(checked in `MarioGameScreen`'s `PLAYING` state, §10) starts `startSliding()`, which glides
+the cloth down to the rod's foot over a few frames, and separately computes a
+height-based score bonus (`heightBonusScore`) — a deliberate *extension* beyond the
+original's own reference source, whose own score system was never finished (every
+score-related line in the original's `DrawScore`/`IncreaseLife` is commented out,
+confirmed by reading both), documented plainly as an addition rather than a fidelity port.
+
+**`FlagWinBanner`** is the small banner that rises beside the castle once the level's real
+end-of-level checkpoint (not the flagpole touch — a separate, later trigger) fires — a
+one-field state machine (`stopY`, computed once at construction as an offset from the
+triggering checkpoint's own position, not a hardcoded absolute coordinate, so it still
+looks right if a future level's castle checkpoint ever sits somewhere different) that
+rises at a constant speed until it reaches that stop line, then simply does nothing more.
+
+**`Spring`** is the decorative coil rendered one tile above a `Bouncer` (§9.2) — a single
+non-looping "squish and recover" animation strip, triggered externally via `play()`
+(called by `Bouncer.triggerSpring()`, itself called by `Player` at the exact moment of a
+real bounce) rather than via its own collision detection. **Tying a purely cosmetic
+animation to the *authoritative* gameplay event that should trigger it** (the player's own
+landing-and-launch check) **rather than giving the decoration its own separate,
+approximate collision check** is the reusable lesson here — the original engine's own
+architecture had the decoration doing its own incidental overlap test, which this port
+deliberately avoided depending on.
 
 ---
 
 ## 10. Checkpoints and teleports
 
-**Checkpoints** (`CheckpointResolver`) are cross-level transitions — level-end flags, pipe
-entrances into bonus areas, castle "fake-out" endings. Each has a `kind` string gating a
-different trigger condition (ported from the original's per-ID switch):
+### 10.1 The level-completion state machine
+
+Checkpoints aren't just data read once — they drive a real state machine in
+`MarioGameScreen`, and understanding that machine is what "how does reaching the end of a
+level actually work" means in this codebase. `LevelState` is a 4-value enum:
+
+```java
+private enum LevelState {PLAYING, ENTERING, ADVANCING, GAME_OVER}
+```
+
+`updateLevelCompletion(delta)` runs this every frame, and the `PLAYING` branch is checked
+in a fixed priority order — worth internalizing, since it's the order a new kind of
+level-ending trigger would need to slot into:
+
+1. **Player death** (`player.consumeDeath()`) — checked first, unconditionally.
+2. **Flagpole touch** (`flagPole.overlaps(player)`, only if this level actually has one and
+   it hasn't been touched yet) — starts the slide sequence (`beginFlagSlide`) *before* any
+   checkpoint is even considered, since touching the pole happens well before Mario
+   physically reaches the real `"CheckPoints"` checkpoint further down the level.
+3. **A just-triggered axe** (`AxeResolver.findTriggered`) — kicks off the boss-finale
+   sequence (`triggerAxe`, §9.3's own `Axe` write-up).
+4. **A touched checkpoint** (`CheckpointResolver.findTouched`), dispatched by `kind`:
+   - `"CheckPoints"` → `beginCelebration` — the ordinary case for a level reached directly
+     without a flagpole (or if the pole was somehow skirted around).
+   - `"WhyYouDOThis"` → `beginAnotherCastleMessage(hit, "another_castle_message")` — the
+     classic fake-out ending.
+   - `"Princess"` → `beginAnotherCastleMessage(hit, "quest_complete")` — the true ending,
+     reusing the *same* method as the fake-out with a different overlay image, since both
+     are structurally "freeze here, show one image, then transition" (one more example of
+     §9.0's "don't build two things when one parameterized thing already covers both"
+     instinct, applied at the screen level rather than the actor level).
+   - Anything else (the pipe/beanstalk kinds) → `beginTransition`.
+
+Every one of these "begin" methods shares the same shape: set `levelState = ENTERING`,
+hand the player a frozen/forced `PlayerCommand` (locking out real input for the
+transition's duration), and set a `transitionTimer` countdown. What differs is only what
+plays during that countdown:
+
+| Method | What's distinct about it |
+|---|---|
+| `beginFlagSlide` | Grants shield invincibility, starts the pole's own slide animation, stops the level's music, plays `smb_flagpole`. Once the player lands (`ENTERING`'s own `flagSliding` branch), hands over a plain walk-right command so Mario auto-walks toward the real checkpoint further down — the slide and the walk-off are two separate forced-command phases, not one. |
+| `beginCelebration` | Hides the real player, spawns a `FlagWinBanner`, a coin-flip chance of `Fireworks`, stops music, plays `smb_stage_clear`. |
+| `beginTransition` | The pipe/beanstalk case: for a pipe kind specifically, hides the real player and spawns a `PipeEntryAnimation` stand-in (an animated double sliding into the pipe) instead of just freezing in place. Sound is kind-dependent: `smb_pipe` for a pipe, nothing at all for a beanstalk (`"Clowd"`-prefixed kinds — the original's own source comments out its would-be stage-clear sound here, confirmed by reading it, not assumed), `smb_stage_clear` for anything else. |
+| `beginAnotherCastleMessage` | Snaps the player's X to just short of the checkpoint, spawns one overlay image (`another_castle_message` or `quest_complete`) as plain `Scenery` — no animation, just a still image shown for the same `CELEBRATION_SECONDS` window every other celebratory transition uses. |
+
+Once `transitionTimer` reaches zero in `ENTERING`, `advanceToNextLevel()` calls
+`gamePlay.goToLevel(pendingCheckpoint.nextLevel, locX, locY)`. If that succeeds, it marks
+*this* level (not the target) cleared via `MarioSaveState.markCleared` — any successful
+exit counts, matching that class's own documented choice not to track a finer
+"reached-vs-cleared" distinction — and moves to `ADVANCING` (a deliberately empty state:
+the screen has already been swapped out by `goToLevel`, so this frame's own
+`updateLevelCompletion` call has nothing left to do). If it fails (the target level number
+has no shipped JSON file — see [MARIO_LEVEL_ATLAS.md §13.3](MARIO_LEVEL_ATLAS.md#133-the-checkpoints-array--level-transitions)'s
+own note on this), it rolls back to `PLAYING` and restores the player's visibility/input
+rather than leaving the game stuck mid-transition forever.
+
+`GAME_OVER` is reached only from `handlePlayerDeath` (called when `consumeDeath()` fires
+and `GameStateController.loseLife()` reports the last life just ran out) — freezes the
+player, stops music, shows a "GAME OVER" HUD message, plays `smb_gameover`, and after a
+fixed countdown calls `gamePlay.goToMenu()`.
+
+**Design takeaway for a new kind of level-ending trigger:** it needs (a) a `kind` string
+recognized by `CheckpointResolver` (or a wholly new detection method, if it's not
+checkpoint-shaped at all — like the flagpole and axe triggers, which are their own special
+cases checked *before* the checkpoint scan, not checkpoint kinds themselves), and (b) one
+new `begin*` method in `MarioGameScreen` following the shared shape above (freeze input,
+set a timer, do the kind-specific visual/audio, let `ENTERING`'s existing countdown/
+`advanceToNextLevel` machinery carry it the rest of the way) — you don't need to touch the
+state machine's own enum or its outer per-frame dispatch loop for a new *kind* of ending,
+only add one more `case` and one more method.
+
+### 10.2 Checkpoint trigger conditions
+
+Each checkpoint's `kind` string gates a different contact condition (ported from the
+original's per-ID switch — see [MARIO_LEVEL_ATLAS.md §13.3](MARIO_LEVEL_ATLAS.md#133-the-checkpoints-array--level-transitions) for
+the full JSON field reference):
 
 | `kind` | Trigger condition |
 |---|---|
-| `InsidePumpHorzontally` | Holding right + on ground |
-| `InsidePumpvertically` | Within 10px horizontally + holding down |
-| `ClowdGoUP_CheckPoint` | Holding up (beanstalk climb entry) |
-| `Clowd_CheckPoint` | Plain contact, but with a 640px-wide trigger box (a whole landing platform, not a point) |
-| everything else (`CheckPoints`, `WhyYouDOThis`, ...) | Plain contact |
+| `CheckPoints` | Plain contact (the ordinary level-end flag) |
+| `InsidePumpHorzontally` | Contact + holding right + on ground (a horizontal pipe) |
+| `InsidePumpvertically` | Contact + within 10px horizontally + holding down (a vertical pipe) |
+| `ClowdGoUP_CheckPoint` | Contact + holding up (a beanstalk entrance) |
+| `Clowd_CheckPoint` | Plain contact, but with a 640px-wide trigger box instead of the default 32×64 (a beanstalk landing platform — a whole platform, not a point) |
+| `WhyYouDOThis` | Plain contact (a castle's fake-out ending) |
+| `Princess` | Plain contact (the true final ending) |
 
-**Teleports** (`TeleportResolver`) are same-level pipe warps — touching a 32×96px zone at
-`(inX+32, inY)` sets the player's `x` to `outX` and leaves `y` untouched (every teleport
-pair in the shipped data sits at the same floor height on both ends).
+Every kind not in this table falls through to `CheckpointResolver`'s own default (plain
+contact) — but only the 7 above are recognized by `MarioGameScreen`'s own dispatch switch
+(§10.1); inventing an 8th string without also adding a real `case` there just behaves like
+a `"CheckPoints"`-style plain-contact ending by coincidence, not a distinct new kind of
+transition.
+
+### 10.3 Teleports
+
+`TeleportResolver`'s job is much narrower than checkpoints — same-level pipe warps, never
+a level change. Touching a 32×96px zone positioned at `(inX+32, inY)` (the `+32` offset is
+deliberate, confirmed against the original's own identical trigger placement, not a
+rounding artifact) sets the player's `x` to `outX` and leaves `y` completely untouched —
+every teleport pair in the shipped data sits at the same floor height on both ends, so a
+vertical teleport was never a case this resolver needed to support. Distinct from a
+checkpoint in every way that matters: no level swap, no `MarioGamePlay` involvement at
+all, no `MarioSaveState` write, just a same-frame reposition.
 
 ---
 

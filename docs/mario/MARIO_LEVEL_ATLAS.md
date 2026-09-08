@@ -136,7 +136,7 @@ and the boss (a stomp/side-touch just hurts you unless starred; 6 fireball hits 
 Star kill it), reach the `Axe` at the bridge's far end to collapse it and drop the boss,
 then a `"WhyYouDOThis"` checkpoint past it delivers the "your quest is over ... but our
 princess is in another castle" beat — see
-[MARIO_GAME_MECHANICS.md §9.1.1](MARIO_GAME_MECHANICS.md#911-boss--the-reference-complex-enemy-pattern).
+[MARIO_GAME_MECHANICS.md §9.1.6](MARIO_GAME_MECHANICS.md#916-boss--the-reference-complex-enemy-pattern).
 
 ---
 - **Ground structure:** this level's floor height varies across large stretches (multi-tier platforming/bridges rather than one continuous strip) — see its minimap for the actual layout rather than a single tile range. **Pacing:** enemy encounters concentrate in the level's opening third (8/0/0 opening/middle/closing).

@@ -639,26 +639,90 @@ unchanged, just relocated into one list instead of 8 lines. **Compiled successfu
 
 ## Phase E — `PowerStateActor`
 
-- [ ] New file `platformer/actor/PowerStateActor.java`, per
+- [x] New file `platformer/actor/PowerStateActor.java`, per
   [PLATFORMER_ENGINE_ARCHITECTURE.md §3.2](PLATFORMER_ENGINE_ARCHITECTURE.md#32-powerstateactor-the-reusable-half-of-player).
-  Extract from `Player.java`: the invincibility/star/shield timers, the morph-transition
-  flipbook machinery (`beginTransition`/`updateTransition`/`transitionFrames`/etc.), the
-  checkpoint/respawn fields and `updateCheckpoint`, `setForcedCommand`/`clearForcedCommand`.
-  Leave `applyMovement` (physics) and `paintPowerState` (rendering) abstract.
-- [ ] `actors/player/Player.java` becomes `extends PowerStateActor<PlayerPowerState>`,
+  Extracted from `Player.java`: the invincibility/star/shield timers (`invincibleTimer`/
+  `starTimer`/`shieldTimer`/`blinkVisible`/`debugInvincible`, `isInvincible`/`hasStar`/
+  `setInvincibleFor`/`setDebugInvincible`/`isDebugInvincible`), the morph-transition
+  flipbook machinery (`beginTransition`/`updateTransition`/`transitionFrames`/`isTransitioning`/
+  `currentTransitionFrame`), and the checkpoint/respawn fields + `updateCheckpoint`. Left
+  `applyMovement` (everything else a frame does) and `paintPowerState` (rendering)
+  abstract, exactly as asked.
+
+  **Three technical corrections found while implementing** — the architecture doc's own
+  "all moved verbatim, since none of it reads a Mario-specific constant" claim doesn't
+  quite hold for two of these once the real code is read closely, and the plan's own
+  extraction list includes one item that turned out not to belong here at all:
+
+  1. **`beginTransition` couldn't move verbatim** — the original private method took a
+     `String regionName` and called `MarioResourceManager.region(regionName)` directly, a
+     Mario-specific resource lookup the generic base can't perform. Split it: the base's
+     `beginTransition(TextureRegion[] frames, S target, float width, float height, float
+     yShift)` now takes pre-built frames (Player's own new `startTransition` private
+     method does the `MarioResourceManager.region(...).split(...)` + facing-flip work
+     first, then calls the base method) and a plain `yShift` pixel amount instead of a
+     `preShiftUp32` boolean that read two concrete `PlayerPowerState` enum constants
+     directly (`PlayerPowerState.BIG.height - PlayerPowerState.SMALL.height`) — literal
+     enum values a `Enum<S>`-bounded generic base has no way to reference. Completing a
+     transition needed the same treatment: `updateTransition` now calls an abstract
+     `onTransitionComplete(S target)` hook instead of applying the new power state itself
+     (which needs `initFrames`/`setSize`, both Mario-specific), and `Player`'s override
+     just calls its own existing `changePowerState(target)`.
+  2. **`updateCheckpoint`'s own tuning constants stayed in `Player`, threaded as
+     parameters** (`updateCheckpoint(delta, eligible, saveIntervalSeconds, minDistancePx)`)
+     instead of moving into the base as baked-in values — `CHECKPOINT_SAVE_INTERVAL_SECONDS`/
+     `CHECKPOINT_MIN_DISTANCE_PX` are this game's own tuning, not a toolkit default, the
+     same reasoning Phase B1 already applied to `TileMetrics`. Similarly, `updateCheckpoint`
+     doesn't read `onGround`/`onLift` itself (both stay Mario-specific physics fields in
+     `Player`) — it takes a plain `eligible` boolean the caller computes
+     (`onGround && !onLift`).
+  3. **`setForcedCommand`/`clearForcedCommand` did *not* move, despite being named in this
+     plan's own extraction list** — moving them would need the forced-command field typed
+     as something, and the only concrete type available is Mario's own `PlayerCommand`;
+     giving `PowerStateActor` a second generic type parameter for it would contradict this
+     phase's own next line, which explicitly types the result as
+     `PowerStateActor<PlayerPowerState>` (one parameter). Once `applyMovement` was scoped
+     as `applyMovement(float delta)` — no command parameter at all, since nothing in the
+     shared base ever needs to interpret a "command" — there was nothing left for the base
+     to gain from owning this field anyway: `Player` already polls its own `input`/
+     `forcedCommand` entirely inside its own `applyMovement` override. Left in `Player`,
+     documented in both classes why. (This mechanism is arguably Phase G's more natural
+     home once a generic `PlatformerCommand` exists, not this phase's.)
+
+- [x] `actors/player/Player.java` becomes `extends PowerStateActor<PlayerPowerState>`,
   implementing `applyMovement` with today's `applyHorizontalInput`/`applyJump`/
-  `applyGravity`/`moveXWithCollision`/`moveYWithCollision` body, unchanged.
+  `applyGravity`/`moveXWithCollision`/`moveYWithCollision` body, unchanged — plus
+  everything else the old `act()` override did that isn't part of the extraction above
+  (input polling, the death-animation state machine, fire, animation), since
+  `PowerStateActor.act()` now owns only the shared timer tick before delegating to
+  `applyMovement`. Verified the exact original per-frame ordering survives the split:
+  the old `act()` ticked star/invincible/shield timers *and* the star-color-cycle render
+  update in one block, before checking `dyingAnimated`/`transitionFrames`; the new split
+  ticks the three countdowns in `PowerStateActor.act()` first, then `Player.applyMovement`
+  runs the color-cycle update as its own first line before its own dying/transitioning
+  checks — same relative order, confirmed by tracing through by hand (the one place the
+  two versions could theoretically differ - whether `starTimer`'s countdown is checked
+  before or after this frame's own decrement - is provably unobservable, since `paint()`
+  only ever reads the color-cycle state when `hasStar()` is still true, and the two
+  versions never disagree about `hasStar()` within the same frame).
 
 **This is the highest-risk mechanical phase** — `Player.java` is 1150 lines and the
 scaffolding/physics boundary, while conceptually clean (per
 [MARIO_GAME_MECHANICS.md §4](MARIO_GAME_MECHANICS.md#4-player-mechanics)), touches many
-fields. Do this as several small commits (timers first, then transitions, then
-checkpoints, then the forced-command scripting), each independently regression-tested,
-rather than one large extraction.
+fields. This doc's own advice to do it as several small, independently-tested commits
+(timers, then transitions, then checkpoints, then forced-command scripting) assumed a
+human implementer working across sessions with real playtests between steps; done here in
+one pass instead, verified by careful reading plus a full clean compile rather than
+incremental on-device checks — the exit criteria below still needs a real playthrough
+before this is trusted the way B1/B2's own phases already were.
 
 **Exit criteria:** full regression pass, with particular attention to grow/shrink
 transitions, Star invincibility, and the flagpole/axe scripted sequences (`forcedCommand`)
-— the parts of `Player` this phase moves the most code around in.
+— the parts of `Player` this phase moves the most code around in. **Compiled successfully**
+via `gradlew :app:compileDebugJavaWithJavac --rerun-tasks` (a full clean rebuild), and every
+inherited-field/method reference (`invincibleTimer`, `blinkVisible`, `checkpointX/Y`,
+`isInvincible()`, `hasStar()`, ...) was grep-checked for accidental re-declaration/shadowing
+in `Player.java` after the split, not just left to the compiler to catch.
 
 ---
 

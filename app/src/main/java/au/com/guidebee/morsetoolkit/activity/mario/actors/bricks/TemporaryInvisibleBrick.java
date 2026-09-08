@@ -4,6 +4,7 @@ import com.guidebee.game.graphics.Pixmap;
 import com.guidebee.game.graphics.Texture;
 import com.guidebee.game.graphics.TextureRegion;
 
+import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
 
 /**
@@ -38,9 +39,14 @@ public class TemporaryInvisibleBrick extends InteractiveBrick {
         MarioContext.spawn(brick);
     }
 
+    /**
+     * Generated at {@code tileSize * ART_SCALE}, not bare {@code tileSize} -
+     * see {@code InvisibleBrck.blankRegion}'s matching note on why.
+     */
     private static TextureRegion transparentRegion(int tileSize) {
         if (transparentRegion == null) {
-            Pixmap pixmap = new Pixmap(tileSize, tileSize, Pixmap.Format.RGBA8888);
+            int pixelSize = tileSize * MarioConfiguration.ART_SCALE;
+            Pixmap pixmap = new Pixmap(pixelSize, pixelSize, Pixmap.Format.RGBA8888);
             pixmap.setColor(0f, 0f, 0f, 0f);
             pixmap.fill();
             Texture texture = new Texture(pixmap);

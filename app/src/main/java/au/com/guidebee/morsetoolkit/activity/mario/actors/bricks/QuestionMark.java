@@ -2,6 +2,7 @@ package au.com.guidebee.morsetoolkit.activity.mario.actors.bricks;
 
 import com.guidebee.game.graphics.TextureRegion;
 
+import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.items.Flower;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.items.Mushroom;
@@ -74,7 +75,8 @@ public class QuestionMark extends InteractiveBrick {
             // for the fire case (the original animates Flower's reveal too;
             // skipping that animation while rising is a cosmetic simplification).
             TextureRegion preview = big
-                    ? MarioResourceManager.region("flower").split(tileSize, tileSize)[0][0]
+                    ? MarioResourceManager.region("flower")
+                            .split(tileSize * MarioConfiguration.ART_SCALE, tileSize * MarioConfiguration.ART_SCALE)[0][0]
                     : MarioResourceManager.region("mashroom");
             ItemReveal reveal = new ItemReveal(preview, getX(), getY(), RISE_SPEED_PX_PER_SEC, (x, y) -> {
                 if (big) {

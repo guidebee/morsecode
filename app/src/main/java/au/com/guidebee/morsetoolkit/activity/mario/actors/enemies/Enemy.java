@@ -3,6 +3,7 @@ package au.com.guidebee.morsetoolkit.activity.mario.actors.enemies;
 import com.guidebee.game.graphics.TextureRegion;
 import com.guidebee.game.microedition.Sprite;
 
+import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.player.Player;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
 import au.com.guidebee.morsetoolkit.platformer.core.TileMovement;
@@ -27,8 +28,17 @@ public abstract class Enemy extends Sprite {
     private boolean active = true;
     protected boolean movingRight;
 
+    /**
+     * {@code frameWidth}/{@code frameHeight} are world-space (unaffected by
+     * {@link MarioConfiguration#ART_SCALE}) - {@code region} is sliced at
+     * {@code frameWidth * ART_SCALE} per {@link com.guidebee.game.microedition.Sprite}'s
+     * own two-arg constructor (which uses that same value for both the pixel
+     * split and the actor's world bounds), so the bounds are corrected back
+     * to world space immediately after via {@link #setSize}.
+     */
     protected Enemy(TextureRegion region, int frameWidth, int frameHeight, float x, float y, boolean movingRight) {
-        super(region, frameWidth, frameHeight);
+        super(region, frameWidth * MarioConfiguration.ART_SCALE, frameHeight * MarioConfiguration.ART_SCALE);
+        setSize(frameWidth, frameHeight);
         setPosition(x, y);
         this.movingRight = movingRight;
     }

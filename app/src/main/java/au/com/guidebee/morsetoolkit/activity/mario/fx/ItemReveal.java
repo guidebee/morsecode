@@ -3,6 +3,7 @@ package au.com.guidebee.morsetoolkit.activity.mario.fx;
 import com.guidebee.game.graphics.TextureRegion;
 import com.guidebee.game.microedition.Sprite;
 
+import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 
 /**
@@ -33,8 +34,14 @@ public class ItemReveal extends Sprite {
     private float delayTimer;
     private boolean rising;
 
+    /**
+     * {@code region} is already sliced (by the caller) to one frame's worth
+     * of pixels - see {@code FallingDeadSprite}'s matching constructor doc
+     * for why the world-size correction below is needed.
+     */
     public ItemReveal(TextureRegion region, float x, float y, float riseSpeedPxPerSec, Spawner spawner, int tileSize) {
         super(region);
+        setSize(getWidth() / MarioConfiguration.ART_SCALE, getHeight() / MarioConfiguration.ART_SCALE);
         setPosition(x, y);
         this.targetY = y - tileSize;
         this.riseSpeedPxPerSec = riseSpeedPxPerSec;

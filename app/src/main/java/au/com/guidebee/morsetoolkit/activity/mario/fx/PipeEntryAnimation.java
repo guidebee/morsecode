@@ -3,6 +3,7 @@ package au.com.guidebee.morsetoolkit.activity.mario.fx;
 import com.guidebee.game.graphics.TextureRegion;
 import com.guidebee.game.microedition.Sprite;
 
+import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.player.Player;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.player.PlayerPowerState;
@@ -42,9 +43,11 @@ public class PipeEntryAnimation extends Sprite {
     private float animTimer;
     private int walkFrameIndex;
 
+    /** {@code frameWidth}/{@code frameHeight} are world-space, per {@link Player}'s {@code PlayerPowerState}. */
     private PipeEntryAnimation(TextureRegion region, int frameWidth, int frameHeight,
                                 float x, float y, boolean horizontal, float duration) {
-        super(region, frameWidth, frameHeight);
+        super(region, frameWidth * MarioConfiguration.ART_SCALE, frameHeight * MarioConfiguration.ART_SCALE);
+        setSize(frameWidth, frameHeight);
         setPosition(x, y);
         this.horizontal = horizontal;
         this.lifetime = duration;

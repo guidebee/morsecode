@@ -4,6 +4,7 @@ import com.guidebee.game.graphics.TextureRegion;
 import com.guidebee.game.graphics.Texture;
 import com.guidebee.game.graphics.Pixmap;
 
+import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.items.Life;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.player.Player;
@@ -36,10 +37,19 @@ public class InvisibleBrck extends InteractiveBrick {
         setVisible(false);
     }
 
-    /** Lazily-cached shared blank texture - one GPU texture for every invisible brick, not one each. */
+    /**
+     * Lazily-cached shared blank texture - one GPU texture for every invisible
+     * brick, not one each. Generated at {@code tileSize * ART_SCALE} (not
+     * bare {@code tileSize}) purely so it follows the same pixel-size
+     * convention every real atlas region does - {@link InteractiveBrick}'s
+     * single-region constructor divides by {@code ART_SCALE} unconditionally
+     * to get back to world space, and a flat color is no less correct at
+     * whatever resolution it's generated at.
+     */
     private static TextureRegion blankRegion(int tileSize) {
         if (blankRegion == null) {
-            Pixmap pixmap = new Pixmap(tileSize, tileSize, Pixmap.Format.RGBA8888);
+            int pixelSize = tileSize * MarioConfiguration.ART_SCALE;
+            Pixmap pixmap = new Pixmap(pixelSize, pixelSize, Pixmap.Format.RGBA8888);
             blankRegion = new TextureRegion(new Texture(pixmap));
         }
         return blankRegion;

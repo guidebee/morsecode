@@ -1,5 +1,6 @@
 package au.com.guidebee.morsetoolkit.activity.mario.actors.enemies;
 
+import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.fx.FallingDeadSprite;
 
@@ -71,7 +72,9 @@ public class EnemyMashroom extends Enemy {
     public void onDefeatedByProjectile() {
         MarioResourceManager.sound("smb_kick").play();
         FallingDeadSprite.spawn(getX(), getY(),
-                MarioResourceManager.region("enemy").split(tileSize, tileSize)[frameA / 2][frameA % 2]);
+                MarioResourceManager.region("enemy")
+                        .split(tileSize * MarioConfiguration.ART_SCALE, tileSize * MarioConfiguration.ART_SCALE)
+                        [frameA / 2][frameA % 2]);
         deactivate();
     }
 }

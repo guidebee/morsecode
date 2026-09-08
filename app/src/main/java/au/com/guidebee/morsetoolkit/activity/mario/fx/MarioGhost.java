@@ -4,6 +4,7 @@ import com.guidebee.game.graphics.Batch;
 import com.guidebee.game.graphics.TextureRegion;
 import com.guidebee.game.microedition.Layer;
 
+import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.player.Player;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.player.PlayerPowerState;
@@ -36,7 +37,8 @@ public class MarioGhost extends Layer {
         super(player.getX(), player.getY(), player.getWidth(), player.getHeight(), true);
         PlayerPowerState state = player.getPowerState();
         int frame = player.isFacingRight() ? STANDING_RIGHT_FRAME : STANDING_LEFT_FRAME;
-        TextureRegion[][] frames = MarioResourceManager.region(state.regionName).split(state.width, state.height);
+        TextureRegion[][] frames = MarioResourceManager.region(state.regionName)
+                .split(state.width * MarioConfiguration.ART_SCALE, state.height * MarioConfiguration.ART_SCALE);
         int cols = frames[0].length;
         region = frames[frame / cols][frame % cols];
     }

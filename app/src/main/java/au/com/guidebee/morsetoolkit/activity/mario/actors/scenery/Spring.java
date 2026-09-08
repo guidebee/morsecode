@@ -2,6 +2,7 @@ package au.com.guidebee.morsetoolkit.activity.mario.actors.scenery;
 
 import com.guidebee.game.microedition.Sprite;
 
+import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 
 /**
@@ -34,7 +35,9 @@ public class Spring extends Sprite {
     private float frameTimer;
 
     public Spring(float x, float y, int tileSize) {
-        super(MarioResourceManager.region("spring"), tileSize, tileSize * 2);
+        super(MarioResourceManager.region("spring"),
+                tileSize * MarioConfiguration.ART_SCALE, tileSize * 2 * MarioConfiguration.ART_SCALE);
+        setSize(tileSize, tileSize * 2);
         setPosition(x, y);
     }
 

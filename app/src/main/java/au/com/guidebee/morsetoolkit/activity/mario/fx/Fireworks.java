@@ -2,6 +2,7 @@ package au.com.guidebee.morsetoolkit.activity.mario.fx;
 
 import com.guidebee.game.microedition.Sprite;
 
+import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
 
@@ -35,7 +36,9 @@ public class Fireworks extends Sprite {
     private float frameTimer;
 
     private Fireworks(int baseX, int tileSize) {
-        super(MarioResourceManager.region("explosion"), tileSize, tileSize);
+        super(MarioResourceManager.region("explosion"),
+                tileSize * MarioConfiguration.ART_SCALE, tileSize * MarioConfiguration.ART_SCALE);
+        setSize(tileSize, tileSize);
         setFrameSequence(FRAME_SEQUENCE);
         this.baseX = baseX;
         this.tileSize = tileSize;

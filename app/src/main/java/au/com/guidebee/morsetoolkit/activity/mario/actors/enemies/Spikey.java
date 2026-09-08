@@ -1,5 +1,6 @@
 package au.com.guidebee.morsetoolkit.activity.mario.actors.enemies;
 
+import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.player.Player;
 import au.com.guidebee.morsetoolkit.activity.mario.fx.FallingDeadSprite;
@@ -66,7 +67,8 @@ public class Spikey extends Enemy {
     @Override
     public void onDefeatedByProjectile() {
         MarioResourceManager.sound("smb_kick").play();
-        FallingDeadSprite.spawn(getX(), getY(), MarioResourceManager.region("spikey").split(tileSize, tileSize)[0][0]);
+        FallingDeadSprite.spawn(getX(), getY(), MarioResourceManager.region("spikey")
+                .split(tileSize * MarioConfiguration.ART_SCALE, tileSize * MarioConfiguration.ART_SCALE)[0][0]);
         deactivate();
     }
 }

@@ -2,6 +2,7 @@ package au.com.guidebee.morsetoolkit.activity.mario.actors.projectiles;
 
 import com.guidebee.game.microedition.Sprite;
 
+import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.fx.Explosion;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
@@ -36,7 +37,9 @@ public class FireBall extends Sprite {
     private float animTimer;
 
     public FireBall(float x, float y, boolean movingRight) {
-        super(MarioResourceManager.region("fire_ball"), FRAME_SIZE, FRAME_SIZE);
+        super(MarioResourceManager.region("fire_ball"),
+                FRAME_SIZE * MarioConfiguration.ART_SCALE, FRAME_SIZE * MarioConfiguration.ART_SCALE);
+        setSize(FRAME_SIZE, FRAME_SIZE);
         setPosition(x, y);
         this.movingRight = movingRight;
     }

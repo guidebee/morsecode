@@ -2,6 +2,7 @@ package au.com.guidebee.morsetoolkit.activity.mario.fx;
 
 import com.guidebee.game.microedition.Sprite;
 
+import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
 
@@ -30,7 +31,9 @@ public class BrickFragment extends Sprite {
     private float animTimer;
 
     private BrickFragment(float x, float y, float xSpeed, float gravity, int[] frameSequence) {
-        super(MarioResourceManager.region("brick_peaces"), FRAME_SIZE, FRAME_SIZE);
+        super(MarioResourceManager.region("brick_peaces"),
+                FRAME_SIZE * MarioConfiguration.ART_SCALE, FRAME_SIZE * MarioConfiguration.ART_SCALE);
+        setSize(FRAME_SIZE, FRAME_SIZE);
         setFrameSequence(frameSequence);
         // Centers the 16x16 fragment within the 32x32 brick tile - matches
         // the original's `setLocation(x + 8, y + 8)`.

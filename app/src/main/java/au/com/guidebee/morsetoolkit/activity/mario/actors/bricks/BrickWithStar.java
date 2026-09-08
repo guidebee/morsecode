@@ -2,6 +2,7 @@ package au.com.guidebee.morsetoolkit.activity.mario.actors.bricks;
 
 import com.guidebee.game.graphics.TextureRegion;
 
+import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.items.Star;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.player.Player;
@@ -31,7 +32,7 @@ public class BrickWithStar extends InteractiveBrick {
         deactivate();
 
         TextureRegion preview = MarioResourceManager.region("star")
-                .split(tileSize, tileSize)[0][0];
+                .split(tileSize * MarioConfiguration.ART_SCALE, tileSize * MarioConfiguration.ART_SCALE)[0][0];
         ItemReveal reveal = new ItemReveal(preview, getX(), getY(), RISE_SPEED_PX_PER_SEC, (x, y) -> {
             Star star = new Star(x, y, tileSize);
             MarioContext.world().addCollectible(star);

@@ -2,6 +2,7 @@ package au.com.guidebee.morsetoolkit.activity.mario.fx;
 
 import com.guidebee.game.microedition.Sprite;
 
+import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
 
@@ -29,7 +30,9 @@ public class Bubble extends Sprite {
     private float frameTimer;
 
     private Bubble(float x, float y) {
-        super(MarioResourceManager.region("bubble"), FRAME_WIDTH, FRAME_HEIGHT);
+        super(MarioResourceManager.region("bubble"),
+                FRAME_WIDTH * MarioConfiguration.ART_SCALE, FRAME_HEIGHT * MarioConfiguration.ART_SCALE);
+        setSize(FRAME_WIDTH, FRAME_HEIGHT);
         setFrameSequence(FRAME_SEQUENCE);
         setPosition(x, y);
     }

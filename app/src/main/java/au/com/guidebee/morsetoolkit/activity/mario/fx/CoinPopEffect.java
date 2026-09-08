@@ -2,6 +2,7 @@ package au.com.guidebee.morsetoolkit.activity.mario.fx;
 
 import com.guidebee.game.microedition.Sprite;
 
+import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
 
@@ -24,7 +25,9 @@ public class CoinPopEffect extends Sprite {
     private float animTimer;
 
     public CoinPopEffect(float x, float y, int tileSize) {
-        super(MarioResourceManager.region("coin_anim"), tileSize, tileSize);
+        super(MarioResourceManager.region("coin_anim"),
+                tileSize * MarioConfiguration.ART_SCALE, tileSize * MarioConfiguration.ART_SCALE);
+        setSize(tileSize, tileSize);
         setPosition(x, y);
         MarioResourceManager.sound("smb_coin").play();
         MarioContext.gameState().addCoin();

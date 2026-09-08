@@ -3,6 +3,7 @@ package au.com.guidebee.morsetoolkit.activity.mario.fx;
 import com.guidebee.game.graphics.TextureRegion;
 import com.guidebee.game.microedition.Sprite;
 
+import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.player.Player;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
 
@@ -33,8 +34,17 @@ public class FallingDeadSprite extends Sprite {
     private final float driftSpeed;
     private float gravity = GRAVITY_START;
 
+    /**
+     * {@code region} is already sliced (by the caller) to one frame's worth
+     * of pixels, so - unlike a world-space size passed explicitly - its own
+     * {@code getRegionWidth()/Height()} are {@code ART_SCALE} times the
+     * world size once new higher-res art lands; {@link Sprite}'s one-arg
+     * constructor derives bounds straight from those, so correct them back
+     * down to world space immediately after.
+     */
     private FallingDeadSprite(float x, float y, TextureRegion region, boolean driftRight) {
         super(flipVertical(region));
+        setSize(getWidth() / MarioConfiguration.ART_SCALE, getHeight() / MarioConfiguration.ART_SCALE);
         setPosition(x, y);
         driftSpeed = driftRight ? DRIFT_SPEED : -DRIFT_SPEED;
     }

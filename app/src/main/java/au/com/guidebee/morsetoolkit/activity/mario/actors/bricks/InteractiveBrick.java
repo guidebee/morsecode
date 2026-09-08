@@ -3,6 +3,7 @@ package au.com.guidebee.morsetoolkit.activity.mario.actors.bricks;
 import com.guidebee.game.graphics.TextureRegion;
 import com.guidebee.game.microedition.Sprite;
 
+import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.player.Player;
 import au.com.guidebee.morsetoolkit.platformer.core.SolidTile;
 
@@ -24,14 +25,28 @@ public abstract class InteractiveBrick extends Sprite implements SolidTile {
 
     private boolean active = true;
 
+    /**
+     * {@code region} is a single already-tile-sized atlas region (not a
+     * multi-frame strip) - its own pixel dimensions are {@code ART_SCALE}
+     * times the world size once new higher-res art lands, so the bounds
+     * {@link Sprite}'s one-arg constructor derives from it need correcting
+     * back down to world space.
+     */
     protected InteractiveBrick(TextureRegion region, float x, float y) {
         super(region);
+        setSize(getWidth() / MarioConfiguration.ART_SCALE, getHeight() / MarioConfiguration.ART_SCALE);
         setPosition(x, y);
     }
 
-    /** For a brick backed by a multi-frame strip region (e.g. {@link Iron}'s themed variants). */
+    /**
+     * For a brick backed by a multi-frame strip region (e.g. {@link Iron}'s
+     * themed variants). {@code frameWidth}/{@code frameHeight} are
+     * world-space - see {@code Enemy}'s own constructor doc for why the
+     * {@link #setSize} call right after {@code super(...)} is needed.
+     */
     protected InteractiveBrick(TextureRegion region, int frameWidth, int frameHeight, float x, float y) {
-        super(region, frameWidth, frameHeight);
+        super(region, frameWidth * MarioConfiguration.ART_SCALE, frameHeight * MarioConfiguration.ART_SCALE);
+        setSize(frameWidth, frameHeight);
         setPosition(x, y);
     }
 

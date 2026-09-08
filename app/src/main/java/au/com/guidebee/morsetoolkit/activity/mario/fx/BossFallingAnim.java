@@ -2,6 +2,7 @@ package au.com.guidebee.morsetoolkit.activity.mario.fx;
 
 import com.guidebee.game.microedition.Sprite;
 
+import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.Axe;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.Boss;
@@ -63,7 +64,9 @@ public class BossFallingAnim extends Sprite {
     private boolean roared;
 
     private BossFallingAnim(float x, float y, MarioGhost ghost, int tileSize) {
-        super(MarioResourceManager.region("boss"), tileSize * 2, tileSize * 2);
+        super(MarioResourceManager.region("boss"),
+                tileSize * 2 * MarioConfiguration.ART_SCALE, tileSize * 2 * MarioConfiguration.ART_SCALE);
+        setSize(tileSize * 2, tileSize * 2);
         setPosition(x, y);
         this.startY = y;
         this.ghost = ghost;

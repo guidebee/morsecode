@@ -4,6 +4,7 @@ import com.guidebee.game.graphics.Batch;
 import com.guidebee.game.graphics.TextureRegion;
 import com.guidebee.game.microedition.Layer;
 
+import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 
 /**
@@ -117,7 +118,11 @@ public class Lift extends Layer implements LiftSurface {
 
     @Override
     public void paint(Batch g) {
-        int nativeWidth = region.getRegionWidth();
+        // Tiled at world-space repeat width, not the region's raw pixel
+        // width - those only coincide while ART_SCALE == 1 (see
+        // MarioConfiguration's own doc); dividing keeps each repeat the same
+        // world-space size regardless of the source art's pixel density.
+        int nativeWidth = region.getRegionWidth() / MarioConfiguration.ART_SCALE;
         int height = (int) getHeight();
         for (int drawn = 0; drawn < getWidth(); drawn += nativeWidth) {
             g.draw(region, getX() + drawn, getY(), nativeWidth, height);

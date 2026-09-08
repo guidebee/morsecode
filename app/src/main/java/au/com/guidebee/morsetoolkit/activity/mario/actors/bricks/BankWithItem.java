@@ -2,6 +2,7 @@ package au.com.guidebee.morsetoolkit.activity.mario.actors.bricks;
 
 import com.guidebee.game.graphics.TextureRegion;
 
+import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.items.Flower;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.items.Life;
@@ -50,7 +51,8 @@ public class BankWithItem extends InteractiveBrick {
             case "Mashroom": {
                 boolean big = player.getPowerState() != PlayerPowerState.SMALL;
                 TextureRegion preview = big
-                        ? MarioResourceManager.region("flower").split(tileSize, tileSize)[0][0]
+                        ? MarioResourceManager.region("flower")
+                                .split(tileSize * MarioConfiguration.ART_SCALE, tileSize * MarioConfiguration.ART_SCALE)[0][0]
                         : MarioResourceManager.region("mashroom");
                 ItemReveal reveal = new ItemReveal(preview, getX(), getY(), RISE_SPEED_PX_PER_SEC, (x, y) -> {
                     if (big) {
@@ -72,7 +74,7 @@ public class BankWithItem extends InteractiveBrick {
             }
             case "1UP": {
                 TextureRegion preview = MarioResourceManager.region("one_up")
-                        .split(tileSize, tileSize)[0][0];
+                        .split(tileSize * MarioConfiguration.ART_SCALE, tileSize * MarioConfiguration.ART_SCALE)[0][0];
                 ItemReveal reveal = new ItemReveal(preview, getX(), getY(), RISE_SPEED_PX_PER_SEC, (x, y) -> {
                     Life life = new Life(x, y, tileSize);
                     MarioContext.world().addCollectible(life);

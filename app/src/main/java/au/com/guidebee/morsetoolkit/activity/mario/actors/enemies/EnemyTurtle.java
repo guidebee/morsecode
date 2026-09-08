@@ -2,6 +2,7 @@ package au.com.guidebee.morsetoolkit.activity.mario.actors.enemies;
 
 import com.guidebee.game.graphics.TextureRegion;
 
+import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.player.Player;
 import au.com.guidebee.morsetoolkit.activity.mario.fx.FallingDeadSprite;
@@ -82,7 +83,8 @@ public class EnemyTurtle extends Enemy {
     @Override
     public void onDefeatedByProjectile() {
         MarioResourceManager.sound("smb_kick").play();
-        FallingDeadSprite.spawn(getX(), getY(), regionFor(attribute).split(tileSize, (tileSize * 3) / 2)[0][0]);
+        FallingDeadSprite.spawn(getX(), getY(), regionFor(attribute)
+                .split(tileSize * MarioConfiguration.ART_SCALE, ((tileSize * 3) / 2) * MarioConfiguration.ART_SCALE)[0][0]);
         deactivate();
     }
 }

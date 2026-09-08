@@ -4,6 +4,7 @@ import com.guidebee.game.graphics.Batch;
 import com.guidebee.game.graphics.TextureRegion;
 import com.guidebee.game.microedition.Layer;
 
+import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 
 /**
@@ -115,7 +116,8 @@ public class BalanceLiftPlatform extends Layer implements LiftSurface {
     /** Tiles the native (16x16) "lift" image across the platform's width, like {@link Lift#paint} - stretching a small source tile would blur it. */
     @Override
     public void paint(Batch g) {
-        int nativeWidth = region.getRegionWidth();
+        // See Lift#paint's matching note on why this divides by ART_SCALE.
+        int nativeWidth = region.getRegionWidth() / MarioConfiguration.ART_SCALE;
         float height = getHeight();
         for (float drawn = 0; drawn < getWidth(); drawn += nativeWidth) {
             g.draw(region, getX() + drawn, getY(), nativeWidth, height);

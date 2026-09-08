@@ -4,6 +4,7 @@ import com.guidebee.game.microedition.Sprite;
 
 import java.util.Random;
 
+import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.hazards.Hazard;
 
@@ -42,7 +43,9 @@ public class BossFire extends Sprite implements Hazard {
     private float animTimer;
 
     public BossFire(float x, float y, int tileSize) {
-        super(MarioResourceManager.region("boss_fire"), (tileSize * 3) / 2, tileSize / 2);
+        super(MarioResourceManager.region("boss_fire"),
+                ((tileSize * 3) / 2) * MarioConfiguration.ART_SCALE, (tileSize / 2) * MarioConfiguration.ART_SCALE);
+        setSize((tileSize * 3) / 2, tileSize / 2);
         setPosition(x, y);
         // Ported from `Utility.getRandom(6, 9) * 32` - a random height among
         // the boss room's own floor levels.

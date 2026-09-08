@@ -4,6 +4,7 @@ import com.guidebee.game.microedition.Sprite;
 
 import java.util.Random;
 
+import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.hazards.Hazard;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
@@ -59,7 +60,9 @@ public class Hammer extends Sprite implements Hazard {
      * @param gravity initial vertical speed - ported from {@code Boss}'s {@code HammerGravity}.
      */
     public Hammer(float x, float y, float xSpeed, float gravity) {
-        super(MarioResourceManager.region("bw_hammer"), FRAME_WIDTH, FRAME_HEIGHT);
+        super(MarioResourceManager.region("bw_hammer"),
+                FRAME_WIDTH * MarioConfiguration.ART_SCALE, FRAME_HEIGHT * MarioConfiguration.ART_SCALE);
+        setSize(FRAME_WIDTH, FRAME_HEIGHT);
         setPosition(x, y);
         this.xSpeed = xSpeed;
         this.gravity = gravity;

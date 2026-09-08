@@ -33,6 +33,20 @@ public final class MarioConfiguration {
 
     public static final int TILE_SIZE = 32;
 
+    /**
+     * Multiplier applied to TILE_SIZE to get the pixel resolution new art is
+     * authored/packed at (see docs/mario/MARIO_RESKIN_PLAN.md §4.1) — e.g. at
+     * ART_SCALE=2 a 32-world-unit tile is backed by a 64x64px source image.
+     * Deliberately 1 for now: this constant's whole job in
+     * docs/mario/MARIO_RESKIN_EXECUTION.md Step R.1 is to prove the code change
+     * threading it through is behavior-preserving on the *existing* placeholder
+     * art before any new art lands — it becomes 2 only once Step R.2's actual
+     * 64px player art is packed. Changing this value alone (once real higher-res
+     * art exists) is what re-targets every pixel-slice call site below to the
+     * new resolution without touching world-space sizes.
+     */
+    public static final int ART_SCALE = 1;
+
     public static final int TILE_STONE = 1;
     public static final int TILE_CHOCOLATE = 2;
 

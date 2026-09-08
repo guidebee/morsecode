@@ -2,6 +2,7 @@ package au.com.guidebee.morsetoolkit.activity.mario.actors.bricks;
 
 import com.guidebee.game.microedition.Sprite;
 
+import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.player.Player;
 
@@ -30,7 +31,9 @@ public class Axe extends Sprite {
     private boolean triggered;
 
     public Axe(float x, float y, int tileSize) {
-        super(MarioResourceManager.region("axe"), tileSize, tileSize);
+        super(MarioResourceManager.region("axe"),
+                tileSize * MarioConfiguration.ART_SCALE, tileSize * MarioConfiguration.ART_SCALE);
+        setSize(tileSize, tileSize);
         setFrameSequence(new int[]{0, 1, 2, 3, 2, 1});
         setPosition(x, y);
     }

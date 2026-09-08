@@ -4,6 +4,7 @@ import com.guidebee.game.microedition.Sprite;
 
 import java.util.Random;
 
+import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 
 /**
@@ -40,7 +41,9 @@ public class LavaBall extends Sprite {
     private float eruptTimer;
 
     public LavaBall(float x, int tileSize) {
-        super(MarioResourceManager.region("lava_ball"), tileSize, tileSize);
+        super(MarioResourceManager.region("lava_ball"),
+                tileSize * MarioConfiguration.ART_SCALE, tileSize * MarioConfiguration.ART_SCALE);
+        setSize(tileSize, tileSize);
         setPosition(x, 14 * tileSize);
         setFrame(0);
     }

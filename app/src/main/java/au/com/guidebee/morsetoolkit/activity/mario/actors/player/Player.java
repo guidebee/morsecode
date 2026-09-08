@@ -3,6 +3,7 @@ package au.com.guidebee.morsetoolkit.activity.mario.actors.player;
 import com.guidebee.game.graphics.Batch;
 import com.guidebee.game.graphics.TextureRegion;
 
+import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.Bouncer;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.InteractiveBrick;
@@ -241,8 +242,10 @@ public class Player extends PowerStateActor<PlayerPowerState> {
 
     private void initFrames(PlayerPowerState state) {
         TextureRegion region = MarioResourceManager.region(state.regionName);
-        frameRegions = region.split(state.width, state.height);
-        frameCols = region.getRegionWidth() / state.width;
+        int pixelWidth = state.width * MarioConfiguration.ART_SCALE;
+        int pixelHeight = state.height * MarioConfiguration.ART_SCALE;
+        frameRegions = region.split(pixelWidth, pixelHeight);
+        frameCols = region.getRegionWidth() / pixelWidth;
         frame = 0;
     }
 
@@ -296,7 +299,8 @@ public class Player extends PowerStateActor<PlayerPowerState> {
     private TextureRegion[][] smallBlackFrames() {
         if (smallBlackFrames == null) {
             smallBlackFrames = MarioResourceManager.region("small_black_mario")
-                    .split(PlayerPowerState.SMALL.width, PlayerPowerState.SMALL.height);
+                    .split(PlayerPowerState.SMALL.width * MarioConfiguration.ART_SCALE,
+                            PlayerPowerState.SMALL.height * MarioConfiguration.ART_SCALE);
         }
         return smallBlackFrames;
     }
@@ -304,7 +308,8 @@ public class Player extends PowerStateActor<PlayerPowerState> {
     private TextureRegion[][] smallGreenFrames() {
         if (smallGreenFrames == null) {
             smallGreenFrames = MarioResourceManager.region("small_green_mario")
-                    .split(PlayerPowerState.SMALL.width, PlayerPowerState.SMALL.height);
+                    .split(PlayerPowerState.SMALL.width * MarioConfiguration.ART_SCALE,
+                            PlayerPowerState.SMALL.height * MarioConfiguration.ART_SCALE);
         }
         return smallGreenFrames;
     }
@@ -312,7 +317,8 @@ public class Player extends PowerStateActor<PlayerPowerState> {
     private TextureRegion[][] smallRedFrames() {
         if (smallRedFrames == null) {
             smallRedFrames = MarioResourceManager.region("small_red_mario")
-                    .split(PlayerPowerState.SMALL.width, PlayerPowerState.SMALL.height);
+                    .split(PlayerPowerState.SMALL.width * MarioConfiguration.ART_SCALE,
+                            PlayerPowerState.SMALL.height * MarioConfiguration.ART_SCALE);
         }
         return smallRedFrames;
     }
@@ -321,7 +327,8 @@ public class Player extends PowerStateActor<PlayerPowerState> {
     private TextureRegion[][] bigBlackFrames() {
         if (bigBlackFrames == null) {
             bigBlackFrames = MarioResourceManager.region("big_black_mario")
-                    .split(PlayerPowerState.BIG.width, PlayerPowerState.BIG.height);
+                    .split(PlayerPowerState.BIG.width * MarioConfiguration.ART_SCALE,
+                            PlayerPowerState.BIG.height * MarioConfiguration.ART_SCALE);
         }
         return bigBlackFrames;
     }
@@ -329,7 +336,8 @@ public class Player extends PowerStateActor<PlayerPowerState> {
     private TextureRegion[][] bigGreenFrames() {
         if (bigGreenFrames == null) {
             bigGreenFrames = MarioResourceManager.region("big_green_mario")
-                    .split(PlayerPowerState.BIG.width, PlayerPowerState.BIG.height);
+                    .split(PlayerPowerState.BIG.width * MarioConfiguration.ART_SCALE,
+                            PlayerPowerState.BIG.height * MarioConfiguration.ART_SCALE);
         }
         return bigGreenFrames;
     }
@@ -337,7 +345,8 @@ public class Player extends PowerStateActor<PlayerPowerState> {
     private TextureRegion[][] bigRedFrames() {
         if (bigRedFrames == null) {
             bigRedFrames = MarioResourceManager.region("big_red_mario")
-                    .split(PlayerPowerState.BIG.width, PlayerPowerState.BIG.height);
+                    .split(PlayerPowerState.BIG.width * MarioConfiguration.ART_SCALE,
+                            PlayerPowerState.BIG.height * MarioConfiguration.ART_SCALE);
         }
         return bigRedFrames;
     }
@@ -810,7 +819,8 @@ public class Player extends PowerStateActor<PlayerPowerState> {
      */
     private void startTransition(String regionName, PlayerPowerState target, boolean preShiftUp32) {
         TextureRegion[] rowFrames = MarioResourceManager.region(regionName)
-                .split(transitionFrameWidth, transitionFrameHeight)[0];
+                .split(transitionFrameWidth * MarioConfiguration.ART_SCALE,
+                        transitionFrameHeight * MarioConfiguration.ART_SCALE)[0];
         TextureRegion[] frames = new TextureRegion[rowFrames.length];
         for (int i = 0; i < rowFrames.length; i++) {
             TextureRegion copy = new TextureRegion(rowFrames[i]);

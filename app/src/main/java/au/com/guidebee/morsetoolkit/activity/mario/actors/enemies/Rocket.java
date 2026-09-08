@@ -2,6 +2,7 @@ package au.com.guidebee.morsetoolkit.activity.mario.actors.enemies;
 
 import com.guidebee.game.graphics.TextureRegion;
 
+import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.player.Player;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
@@ -44,7 +45,7 @@ public class Rocket extends Enemy {
 
     private static TextureRegion regionFor(boolean movingRight, boolean blackAndWhite, int tileSize) {
         TextureRegion frame = MarioResourceManager.region(blackAndWhite ? "bw_rocket_launcher" : "rocket_launcher")
-                .split(tileSize, tileSize)[3][0];
+                .split(tileSize * MarioConfiguration.ART_SCALE, tileSize * MarioConfiguration.ART_SCALE)[3][0];
         if (movingRight) {
             TextureRegion flipped = new TextureRegion(frame);
             flipped.flip(true, false);

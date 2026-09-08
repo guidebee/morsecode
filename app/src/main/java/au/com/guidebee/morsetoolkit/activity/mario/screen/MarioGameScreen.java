@@ -349,7 +349,8 @@ public class MarioGameScreen extends ScreenAdapter {
         // Scenery goes first so bricks/enemies/the player draw in front of it.
         MarioContext.init(layerManager, world, gamePlay.gameState());
         OscillatorClock.reset();
-        flagPole = LevelLoader.spawnScenery(level);
+        LevelLoader.spawnScenery(level);
+        flagPole = world.getFlagPole();
         LevelLoader.spawnBricks(level);
         LevelLoader.spawnEnemies(level);
         LevelLoader.spawnLifts(level);

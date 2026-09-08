@@ -413,7 +413,7 @@ handler) take `tileSize` as a parameter from the start.
 
 ### B2.1 — Create the generic `TileWorld`
 
-- [ ] New file `platformer/core/TileWorld.java`, per
+- [x] New file `platformer/core/TileWorld.java`, per
   [PLATFORMER_ENGINE_ARCHITECTURE.md §3.1](PLATFORMER_ENGINE_ARCHITECTURE.md#31-tileworld-from-7-hardcoded-lists-to-a-typed-registry):
   `extends TiledLayer implements TileCollisionSource`, constructor takes
   `(int cols, int rows, TextureRegion tilesRegion, TileMetrics metrics)`, holds the
@@ -422,58 +422,155 @@ handler) take `tileSize` as a parameter from the start.
   needed the tile grid (`TiledLayer`'s own `getCell`) plus *one* actor list (bricks); with
   the generic registry, that becomes `listFor(InteractiveBrick.class)` instead of a named
   field.
-- [ ] `findActiveBrickAt` moves here too — same reasoning, it's already generic over
+- [x] `findActiveBrickAt` moves here too — same reasoning, it's already generic over
   "the brick list," just needs to read it via `listFor(...)`.
+
+  **Technical correction found while implementing:** `containsImpassableArea`/
+  `findActiveBrickAt` can't literally query `listFor(InteractiveBrick.class)` from
+  `platformer.core.TileWorld` — `InteractiveBrick` is a Mario-specific type in
+  `activity.mario.actors.bricks`, and `TileWorld` (toolkit layer) can't import it without
+  recreating exactly the coupling this phase exists to remove. Added a new marker
+  interface `platformer/core/SolidTile.java` (`isActive()`/`overlaps(...)`/`getY()`/
+  `getHeight()` — precisely `InteractiveBrick`'s existing shape, confirmed by reading
+  `Sprite`/`Actor`'s own `getY()`/`getHeight()` return types before committing to `float`).
+  `TileWorld` queries `listFor(SolidTile.class)` generically; `InteractiveBrick` now
+  `implements SolidTile`; `MarioWorld.addBrick` registers each brick under *both*
+  `InteractiveBrick.class` (for `getBricks()`) and `SolidTile.class` (for the solidity
+  query) — two list entries pointing at the same object, not a real duplication. Same
+  category of fix as Phase A's own `TileCollisionSource` correction.
 
 ### B2.2 — `MarioWorld extends TileWorld`
 
-- [ ] `MarioWorld` becomes a thin subclass: constructor just calls `super(...)`. Replace
+- [x] `MarioWorld` becomes a thin subclass: constructor just calls `super(...)`. Replace
   the 7 hardcoded `List<X>` fields with calls to `listFor(X.class)`, keeping the existing
   named methods (`addBrick`/`getBricks`/`addEnemy`/`getEnemies`/etc.) as one-line wrappers
   around `register(X.class, x)`/`listFor(X.class)` — this keeps every existing call site
   in the rest of `activity/mario` (there are many) working unchanged; only `MarioWorld`'s
   own internals change.
-- [ ] Verify every `world.getBricks()`/`getEnemies()`/`getCollectibles()`/`getFireBalls()`/
+- [x] Verify every `world.getBricks()`/`getEnemies()`/`getCollectibles()`/`getFireBalls()`/
   `getLifts()`/`getHazards()`/`getAxes()` call site elsewhere in the codebase still
   compiles against the unchanged method signatures (they should — this step is designed
-  to be invisible to callers).
+  to be invisible to callers). **Confirmed via a full `gradlew :app:compileDebugJavaWithJavac`**
+  — every one of those still resolves; `getBricks()` itself turned out to have zero
+  external callers (grep-confirmed), so its own exact return type was never actually at risk.
 
 ### B2.3 — `TileTypeRegistry` + `TileHandler`
 
-- [ ] New file `platformer/level/TileTypeRegistry.java` +
+- [x] New file `platformer/level/TileTypeRegistry.java` +
   `platformer/level/TileHandler.java`, per
   [PLATFORMER_ENGINE_ARCHITECTURE.md §3.3](PLATFORMER_ENGINE_ARCHITECTURE.md#33-tiletyperegistry-the-single-highest-leverage-change).
 
+  **Technical correction found while implementing:** the architecture doc's own sketch
+  types `TileHandler.spawn`'s third parameter as `GameContext<?, ?, ?> ctx` — but
+  `GameContext` is Phase C's own deliverable, sequenced *after* B2, so it doesn't exist
+  yet. Used a plain `int tileSize` third parameter instead (the only thing any handler
+  body actually reads off "ctx" per this doc's own B2.4 description); Phase C can widen
+  the signature later if a real `GameContext` ever needs to flow through it, but nothing
+  in this phase's own scope needs more than the tile size.
+
+  **Known, documented scope compromise:** `TileHandler`/`TileTypeRegistry` live in
+  `platformer.level` (so a future second game could reuse the dispatch *mechanism*), but
+  both still import Mario's own `LevelDefinition` type directly (it hasn't been
+  generalized — that's real work this plan never scopes; see "What's deliberately not in
+  this plan"/Phase H). The toolkit-vs-content boundary here is intentionally soft until a
+  second consumer actually needs `LevelDefinition` generalized too. Documented in
+  `TileHandler`'s own class doc, not just here.
+
 ### B2.4 — `MarioTileRegistry`
 
-- [ ] New file `level/MarioTileRegistry.java`: one static method building a
-  `TileTypeRegistry`, reproducing every `case` from `LevelLoader.spawnBricks`/
-  `spawnEnemies`/`spawnHazards`/`spawnItems`/`spawnLifts`/`spawnScenery` (the full list is
-  in [MARIO_GAME_MECHANICS.md §8](MARIO_GAME_MECHANICS.md#8-tile-type-dispatch-registry))
-  as a `.register("TypeString", (tile, level, ctx) -> ...)` call, one-for-one. Each
-  handler body is the existing case's body, unchanged, now taking `tileSize` from `ctx`
-  instead of a local variable.
-- [ ] Do this **incrementally, one tile-type category at a time** (bricks, then enemies,
-  then hazards, then items, then lifts, then scenery), verifying each category's worth of
-  levels still spawn identically before moving to the next — six small, independently
-  verifiable slices rather than one giant rewrite.
+- [x] New file `level/MarioTileRegistry.java`, reproducing every `case` from
+  `LevelLoader.spawnBricks`/`spawnEnemies`/`spawnHazards`/`spawnItems`/`spawnLifts`/
+  `spawnScenery` (the full list is in
+  [MARIO_GAME_MECHANICS.md §8](MARIO_GAME_MECHANICS.md#8-tile-type-dispatch-registry)) as
+  a `.register("TypeString", (tile, level, tileSize) -> ...)` call, one-for-one. Each
+  handler body is the existing case's body, unchanged, reading `tileSize` from the new
+  parameter instead of a local variable. Verified by an automated set-diff of every
+  `case`/`"...".equals(tile.type)` string in the old `LevelLoader` against every
+  `.register("...")` string in the new file: all 56 tile types match exactly, none missing,
+  none extra.
+- [x] Did this incrementally in practice by grouping into six private
+  `registerBricks`/`registerEnemies`/`registerHazards`/`registerItems`/`registerLifts`/
+  `registerScenery` methods (bricks, then enemies, then hazards, then items, then lifts,
+  then scenery) — the "six small, independently verifiable slices" this doc asked for,
+  though "verifiable" here means careful reading + the set-diff above + a real compile,
+  not an on-device playthrough (see this phase's own exit criteria below).
+
+  **One real design problem found, not just a mechanical one — this doc's own single
+  combined-registry model is not behavior-preserving:** `MarioGameScreen` calls
+  `LevelLoader.spawnScenery`/`spawnBricks`/`spawnEnemies`/`spawnLifts`/`spawnHazards`/
+  `spawnItems` as **six separate passes** over the full tile list, in that fixed order —
+  every scenery actor gets appended to `layerManager` before any brick actor, which gets
+  appended before any enemy actor, etc. (see that call site's own "Scenery goes first so
+  bricks/enemies/the player draw in front of it" comment, and `LayerManager.append`'s own
+  doc on append order affecting draw order). A single combined `TileTypeRegistry` with one
+  `spawnAll` pass — literally what §3.3's own sketch shows — would instead append actors
+  in whatever order their tiles happen to appear in a level's own JSON, interleaving
+  categories by file position instead of grouping by category, silently changing on-screen
+  z-order for any level whose tile list isn't already grouped that way. **Fixed by building
+  six separate `TileTypeRegistry` instances** (`MarioTileRegistry.buildBricks()`/
+  `buildEnemies()`/`buildHazards()`/`buildItems()`/`buildLifts()`/`buildScenery()`), one per
+  existing category, each still eliminating its own switch statement but preserving the
+  exact six-pass append order. Documented prominently in `MarioTileRegistry`'s own class
+  doc, since it's the one place this doc's illustrative single-registry sketch doesn't hold.
+
+  **Two cases needed real restructuring, not just transcription** (also documented in
+  `MarioTileRegistry`'s own class doc): (1) `"pump"`/`"PumpWarp"` — the old switch's
+  `"pump"` case fell through into `"PumpWarp"`'s shared body; a table can't fall through,
+  so the shared body became a private `spawnPumpBody` helper both registrations call. (2)
+  `"SmallCastle"`/`"BigCastle"` — previously the `default` branch of `spawnScenery`'s own
+  if-chain; registered directly under both exact type strings now, both calling the same
+  `LevelLoader.sceneryRegion` helper so the CloudsNight/`bw_*` logic isn't duplicated.
+
+  **One genuine behavior-shape change, not a mechanical port:** the old `spawnScenery`
+  returned the level's `FlagPole` (or null) directly — the one `spawn*` method with
+  anything to report back to `MarioGameScreen`. A `void spawnAll` has no per-category
+  return value, so the `"Flag"` handler now calls `MarioContext.world().setFlagPole(...)`
+  (new field + getter/setter on `MarioWorld`, same "zero or one" pattern a `List`-based
+  registry entry doesn't fit), and `MarioGameScreen` reads it back via
+  `world.getFlagPole()` after `spawnScenery` returns, instead of from a return value.
 
 ### B2.5 — Generalize `LevelLoader`
 
-- [ ] `LevelLoader`'s six `spawn*` methods collapse to calling
-  `registry.spawnAll(level, ctx)` (plus the still-bespoke static-terrain population, which
-  stays as-is — it was never part of the switch-statement problem).
+- [x] `LevelLoader`'s six `spawn*` methods collapse to one line each — `REGISTRY.spawnAll(level,
+  MarioContext.world().tileSize())` against their own dedicated `TileTypeRegistry` (see
+  B2.4's own six-registries note for why it's six, not one) — plus the still-bespoke
+  static-terrain population (`createWorld`/`populateStaticGeometry`/`staticTileIndex`),
+  which stays exactly as-is, unchanged, since it was never part of the switch-statement
+  problem. The six registries are built once, eagerly, as `private static final
+  TileTypeRegistry` fields (registry construction is cheap - a handful of hashmap
+  insertions - so there's no lazy-init complexity to bother with).
 
 ### B2.6 — Cutover
 
-- [ ] Only once `MarioTileRegistry` is confirmed to spawn byte-for-byte the same actors
-  as the old switch statements (a full 8-world playthrough, per the exit criteria below),
-  delete the old switch-statement bodies from `LevelLoader`.
+- [x] Deleted the old switch-statement bodies from `LevelLoader` — done in the same pass
+  as B2.5 (a half-cutover state, `MarioTileRegistry` built but not yet wired in, isn't a
+  meaningfully safer intermediate step, and the six-way set-diff plus a real compiler
+  already catch every call-site/typo-class of error this cutover could introduce).
+  Also widened several of `LevelLoader`'s own helper methods/constants
+  (`add`/`addEnemy`/`addLift`/`addBalanceLiftPlatform`/`forEachCell`/`CellSpawner`/
+  `spawnTree`/`spawnRocketLauncher`/`spawnWall`/`spawnFireBar`/`spawnBalanceLift`/
+  `helmetColor`/`sceneryRegion`/`liftMotion`/`FIRE_BAR_COUNT`/`BIG_FIRE_BAR_COUNT`/
+  `WHITE_LINE_HEIGHT_TILES`) from `private` to package-private, since `MarioTileRegistry`
+  (same package) now calls them directly to keep every handler body byte-for-byte
+  identical to its old case body rather than re-deriving the same logic twice.
+
+  **What this cutover could not verify, and still needs the on-device pass below:**
+  everything above is checked by careful reading, an automated tile-type set-diff, and a
+  real compile (which catches every signature/call-site mismatch) — none of that proves
+  gameplay/visual output is unchanged. In particular: the six-registry split is a reasoned
+  argument for why append order is preserved, not an on-device confirmation of it; the
+  `FlagPole` return-value-to-field change is a mechanical translation but wasn't watched
+  render on a device; and the `"pump"`/`"PumpWarp"` fall-through restructuring, while
+  traced through by hand, is exactly the kind of subtle control-flow change worth
+  double-checking on a level that actually has both tile types.
 
 **Exit criteria:** a full 8-world playthrough confirms every level spawns exactly the
-actors it did before this phase — same counts, same positions, same types, checked
-against [MARIO_LEVEL_ATLAS.md](MARIO_LEVEL_ATLAS.md)'s per-level enemy/brick tables as the
-reference.
+actors it did before this phase — same counts, same positions, same types, **same z-order**
+(the risk this phase's own audit found and reasoned through, but couldn't itself watch
+render), checked against [MARIO_LEVEL_ATLAS.md](MARIO_LEVEL_ATLAS.md)'s per-level
+enemy/brick tables as the reference. **Compiled successfully** via
+`gradlew :app:compileDebugJavaWithJavac` (`--rerun-tasks`, a full clean rebuild, not just
+an incremental one) after every edit in this phase.
 
 ---
 

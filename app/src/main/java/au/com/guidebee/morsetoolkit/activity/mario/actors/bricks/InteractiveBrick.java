@@ -4,6 +4,7 @@ import com.guidebee.game.graphics.TextureRegion;
 import com.guidebee.game.microedition.Sprite;
 
 import au.com.guidebee.morsetoolkit.activity.mario.actors.player.Player;
+import au.com.guidebee.morsetoolkit.platformer.core.SolidTile;
 
 /**
  * Common base for the original engine's "BasicBrick"-implementing classes
@@ -14,12 +15,12 @@ import au.com.guidebee.morsetoolkit.activity.mario.actors.player.Player;
  * actors - see {@code MarioConfiguration}'s note on why: they need to react
  * to being hit (break, dispense an item, disappear) or, for {@code Pump},
  * because their art is wider than one tile and TiledLayer can't represent
- * that. {@code MarioWorld} tracks them in its own {@code bricks} list rather
- * than the tile grid, and folds them into
- * {@link au.com.guidebee.morsetoolkit.activity.mario.world.MarioWorld#containsImpassableArea}
- * so the rest of collision doesn't need to know the difference.
+ * that. {@code MarioWorld} registers them under {@link SolidTile} (see that
+ * interface's own doc) so the generic {@code TileWorld}'s
+ * {@code containsImpassableArea} folds them in without needing to know
+ * they're bricks specifically.
  */
-public abstract class InteractiveBrick extends Sprite {
+public abstract class InteractiveBrick extends Sprite implements SolidTile {
 
     private boolean active = true;
 

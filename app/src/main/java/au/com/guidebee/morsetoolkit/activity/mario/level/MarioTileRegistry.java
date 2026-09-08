@@ -2,6 +2,7 @@ package au.com.guidebee.morsetoolkit.activity.mario.level;
 
 import com.guidebee.game.graphics.TextureRegion;
 
+import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.Axe;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.Bank;
@@ -194,7 +195,8 @@ public final class MarioTileRegistry {
         registry.register("HoriImage", (tile, level, tileSize) -> {
             // Ported from Mario.java's case 44 - two 2-tile pieces side by side, one tile-pair apart.
             int pieceSize = tileSize * 2;
-            TextureRegion[][] frames = MarioResourceManager.region("hori_image").split(pieceSize, pieceSize);
+            TextureRegion[][] frames = MarioResourceManager.region("hori_image")
+                    .split(pieceSize * MarioConfiguration.ART_SCALE, pieceSize * MarioConfiguration.ART_SCALE);
             float x = tile.x * tileSize;
             float y = tile.y * tileSize;
             LevelLoader.add(new Pump(x, y, frames[0][0]));

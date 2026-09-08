@@ -4,6 +4,8 @@ import com.guidebee.game.graphics.Batch;
 import com.guidebee.game.graphics.TextureRegion;
 import com.guidebee.game.microedition.Layer;
 
+import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
+
 /**
  * A purely decorative, non-solid image drawn at its native size and a fixed
  * world position - the flagpole and the end-of-level castles. These never
@@ -18,7 +20,8 @@ public class Scenery extends Layer {
     private final TextureRegion region;
 
     public Scenery(float x, float y, TextureRegion region) {
-        this(x, y, region, region.getRegionWidth(), region.getRegionHeight());
+        this(x, y, region, region.getRegionWidth() / MarioConfiguration.ART_SCALE,
+                region.getRegionHeight() / MarioConfiguration.ART_SCALE);
     }
 
     /**

@@ -285,7 +285,8 @@ public final class LevelLoader {
      */
     static void spawnWall(LevelDefinition.Tile tile) {
         int tileSize = MarioContext.world().tileSize();
-        TextureRegion[][] frames = MarioResourceManager.region("wall").split(tileSize, tileSize);
+        TextureRegion[][] frames = MarioResourceManager.region("wall")
+                .split(tileSize * MarioConfiguration.ART_SCALE, tileSize * MarioConfiguration.ART_SCALE);
         for (int dx = 0; dx < tile.lengthX; dx++) {
             for (int dy = 0; dy < tile.lengthY; dy++) {
                 TextureRegion frame = frames[0][dy == 0 ? 0 : 1];
@@ -314,7 +315,8 @@ public final class LevelLoader {
      */
     static void spawnRocketLauncher(LevelDefinition.Tile tile) {
         int tileSize = MarioContext.world().tileSize();
-        TextureRegion[][] frames = MarioResourceManager.region("rocket_launcher").split(tileSize, tileSize);
+        TextureRegion[][] frames = MarioResourceManager.region("rocket_launcher")
+                .split(tileSize * MarioConfiguration.ART_SCALE, tileSize * MarioConfiguration.ART_SCALE);
         for (int dy = 0; dy < tile.lengthY; dy++) {
             float x = tile.x * tileSize;
             float y = (tile.y + dy) * tileSize;
@@ -354,7 +356,7 @@ public final class LevelLoader {
         int tileSize = MarioContext.world().tileSize();
         int lastColumn = tile.lengthX - 1;
         TextureRegion trunkFrame = MarioResourceManager.region(blackAndWhite ? "bw_tree" : "tree")
-                .split(tileSize, tileSize)[0][3];
+                .split(tileSize * MarioConfiguration.ART_SCALE, tileSize * MarioConfiguration.ART_SCALE)[0][3];
         for (int dx = 0; dx < tile.lengthX; dx++) {
             float x = (tile.x + dx) * tileSize;
             add(new Tree(x, tile.y * tileSize, dx, lastColumn, blackAndWhite, tileSize));

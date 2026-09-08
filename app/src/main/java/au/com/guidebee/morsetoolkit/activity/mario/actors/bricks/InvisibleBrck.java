@@ -62,7 +62,7 @@ public class InvisibleBrck extends InteractiveBrick {
 
         if ("1UP".equals(insideItem)) {
             TextureRegion preview = MarioResourceManager.region("one_up")
-                    .split(tileSize, tileSize)[0][0];
+                    .split(tileSize * MarioConfiguration.ART_SCALE, tileSize * MarioConfiguration.ART_SCALE)[0][0];
             ItemReveal reveal = new ItemReveal(preview, getX(), getY(), RISE_SPEED_PX_PER_SEC, (x, y) -> {
                 Life life = new Life(x, y, tileSize);
                 MarioContext.world().addCollectible(life);

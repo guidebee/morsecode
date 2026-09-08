@@ -4,6 +4,8 @@ import com.guidebee.game.graphics.Batch;
 import com.guidebee.game.graphics.TextureRegion;
 import com.guidebee.game.microedition.Layer;
 
+import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
+
 /**
  * A level's own scrolling backdrop, ported from {@code Mario.java}'s "Tiled
  * background" block: repeats a level's {@code backgroundImage} (Mountain/
@@ -47,7 +49,8 @@ public class BackgroundBand extends Layer {
      * is derived from the level's length instead of hardcoded).
      */
     public BackgroundBand(TextureRegion region, float y, int tileCount) {
-        super(0, y, region.getRegionWidth() * tileCount, region.getRegionHeight(), true);
+        super(0, y, (region.getRegionWidth() / MarioConfiguration.ART_SCALE) * tileCount,
+                region.getRegionHeight() / MarioConfiguration.ART_SCALE, true);
         this.region = region;
         this.y = y;
         this.tileCount = tileCount;
@@ -55,8 +58,8 @@ public class BackgroundBand extends Layer {
 
     @Override
     public void paint(Batch g) {
-        int nativeWidth = region.getRegionWidth();
-        float height = region.getRegionHeight();
+        int nativeWidth = region.getRegionWidth() / MarioConfiguration.ART_SCALE;
+        float height = region.getRegionHeight() / MarioConfiguration.ART_SCALE;
         for (int i = 0; i < tileCount; i++) {
             g.draw(region, i * nativeWidth, y, nativeWidth, height);
         }

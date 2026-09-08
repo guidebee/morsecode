@@ -232,18 +232,50 @@ next until the current one is checked off.
 
 ### Step R.1 — Land the `ART_SCALE` code decoupling (no new art yet)
 
-- [ ] Implement [MARIO_RESKIN_PLAN.md §4.1](MARIO_RESKIN_PLAN.md#41-resolution-architecture-this-is-not-a-pure-content-swap)'s
+- [x] Implement [MARIO_RESKIN_PLAN.md §4.1](MARIO_RESKIN_PLAN.md#41-resolution-architecture-this-is-not-a-pure-content-swap)'s
       `MarioConfiguration.ART_SCALE` constant + the matching `/ART_SCALE` division at
       every call site that treats a texture region's pixel size as a world size — by this
       point, R.0's prerequisite means those call sites already take `tileSize` as an
       explicit parameter (not a hardcoded literal) per
       [PLATFORMER_ENGINE_ARCHITECTURE.md §3.8](PLATFORMER_ENGINE_ARCHITECTURE.md#38-tilemetrics-making-tile-size-a-first-class-non-global-value)'s
       full ~40-call-site list, not just the `PlayerPowerState`/`Scenery`/`Lift` trio this
-      step originally scoped.
+      step originally scoped. **Done 2026-09-08: `ART_SCALE` added at `1`** (a literal
+      no-op, per this step's own "no new art yet" scope — becomes `2` only once Step R.2's
+      real 64px art is packed).
+
+      **Technical finding made while implementing, not anticipated by this doc's own
+      scoping paragraph:** `com.guidebee.game.microedition.Sprite`'s two-arg constructor
+      uses the *same* `frameWidth`/`frameHeight` value both to set the actor's world-space
+      bounds and to slice the atlas region — the engine has no way to decouple those two
+      roles internally. Every Mario call site that constructs through it now passes
+      `worldSize * ART_SCALE` to `super(...)` for correct pixel slicing, then immediately
+      calls `setSize(worldSize, ...)` to put the actor's own bounds back in world space —
+      documented inline at each fix site. Fixing the three shared bases
+      (`actors/enemies/Enemy.java`, `actors/items/CollectibleItem.java`,
+      `actors/bricks/InteractiveBrick.java`) covered most concrete subclasses at once;
+      each subclass's own *separate* manual `.split(...)` calls (death-frame extraction,
+      item-reveal previews, `LevelLoader`/`MarioTileRegistry`'s tile-dispatch handlers)
+      still needed individual fixes since they don't go through those bases. Two more
+      one-off cases found by re-grepping `getRegionWidth()`/`getRegionHeight()` after the
+      mechanical pass: `fx/BackgroundBand.java` and `actors/scenery/Scenery.java`'s
+      single-arg constructor both derived world size directly from a region's raw pixel
+      dimensions (no `.split()` involved), and all four lift classes'
+      (`Lift`/`LiftCar`/`LiftFall`/`BalanceLiftPlatform`) `paint()` methods tile the "lift"
+      texture at its *native pixel width* — all needed the same `/ART_SCALE` correction.
+      `actors/bricks/InvisibleBrck.java`/`TemporaryInvisibleBrick.java`'s synthetically
+      generated (not atlas-sourced) blank/transparent placeholder textures needed the
+      opposite fix — generated *at* `tileSize * ART_SCALE` pixels instead of bare
+      `tileSize`, so they follow the same convention `InteractiveBrick`'s now-uniform
+      single-region-constructor division expects, rather than being a special case in that
+      shared base.
+      Verified via `gradlew :app:compileDebugJavaWithJavac --rerun-tasks` (full clean
+      rebuild) after every group of files, per this doc set's own discipline — compile
+      only proves call sites are correct, not gameplay/visual output.
 - [ ] Re-pack the *existing* placeholder art unchanged, confirm all 8 worlds still
       render/collide identically (this is [MARIO_RESKIN_PLAN.md §4.4.2](MARIO_RESKIN_PLAN.md)'s
       own isolation step — verify the code change before any art changes, so a bug is
-      unambiguously attributable to one or the other).
+      unambiguously attributable to one or the other). **Still open — on-device regression
+      pass, the user's own next step**, same as every other phase in this doc set.
 
 ### Step R.2 — Player character (Path A, priority 1)
 

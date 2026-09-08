@@ -5,7 +5,7 @@ import com.guidebee.game.microedition.Sprite;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.fx.Explosion;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
-import au.com.guidebee.morsetoolkit.activity.mario.world.TileMovement;
+import au.com.guidebee.morsetoolkit.platformer.core.TileMovement;
 
 /**
  * Fire Mario's fireball, ported from {@code Objects/FireBall.java}: launches

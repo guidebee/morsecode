@@ -8,6 +8,7 @@ import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.FishyGround;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.enemies.Rocket;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.player.Player;
 import au.com.guidebee.morsetoolkit.activity.mario.level.LevelDefinition;
+import au.com.guidebee.morsetoolkit.platformer.core.CameraFollow;
 
 /**
  * Ticking background spawners tied to a level's own data flags, ported from
@@ -76,13 +77,13 @@ public class SpawnController {
         this.flyingFishesLength = level.flyingFishesLength;
     }
 
-    public void update(float delta, CameraController camera, Player player) {
+    public void update(float delta, CameraFollow camera, Player player) {
         float frames = delta * PHYSICS_FPS;
         updateBombs(frames, camera, player);
         updateFlyingFishes(frames, player);
     }
 
-    private void updateBombs(float frames, CameraController camera, Player player) {
+    private void updateBombs(float frames, CameraFollow camera, Player player) {
         if (!bombsEnabled || player.getX() / MarioConfiguration.TILE_SIZE >= bombsTurnOffTile) {
             return;
         }

@@ -55,10 +55,10 @@ import au.com.guidebee.morsetoolkit.activity.mario.level.LevelLoader;
 import au.com.guidebee.morsetoolkit.activity.mario.level.LevelNumbering;
 import au.com.guidebee.morsetoolkit.activity.mario.state.GameStateController;
 import au.com.guidebee.morsetoolkit.activity.mario.state.MarioSaveState;
-import au.com.guidebee.morsetoolkit.activity.mario.world.CameraController;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioWorld;
-import au.com.guidebee.morsetoolkit.activity.mario.world.OscillatorClock;
+import au.com.guidebee.morsetoolkit.platformer.core.CameraFollow;
+import au.com.guidebee.morsetoolkit.platformer.core.OscillatorClock;
 import au.com.guidebee.morsetoolkit.activity.mario.world.SpawnController;
 
 import java.util.ArrayList;
@@ -230,7 +230,7 @@ public class MarioGameScreen extends ScreenAdapter {
     private final int viewportHeight;
     private final MarioWorld world;
     private final Player player;
-    private final CameraController camera;
+    private final CameraFollow camera;
     private final SpawnController spawnController;
     private final String levelAttribute;
     /** Null for levels with no "Flag" tile (the castle/boss-only ones) - see {@link #updateLevelCompletion}'s PLAYING case. */
@@ -385,7 +385,7 @@ public class MarioGameScreen extends ScreenAdapter {
         layerManager.append(player);
         MarioContext.setPlayer(player);
 
-        camera = new CameraController(viewportWidth, viewportHeight,
+        camera = new CameraFollow(viewportWidth, viewportHeight,
                 world.getWidthPx(), world.getHeightPx());
         camera.centerOn(player.getX(), player.getY());
         spawnController = new SpawnController(level);

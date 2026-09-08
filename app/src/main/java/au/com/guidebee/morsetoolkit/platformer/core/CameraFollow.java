@@ -1,4 +1,4 @@
-package au.com.guidebee.morsetoolkit.activity.mario.world;
+package au.com.guidebee.morsetoolkit.platformer.core;
 
 /**
  * Clamps a scroll position to a level's bounds, for a "camera window" onto
@@ -24,7 +24,7 @@ package au.com.guidebee.morsetoolkit.activity.mario.world;
  * temporary debug auto-scroll to exercise it end-to-end; Step 4 replaces that
  * with {@code centerOn(player.getX(), player.getY())} every frame.
  */
-public class CameraController {
+public class CameraFollow {
 
     private final int viewportWidth;
     private final int viewportHeight;
@@ -35,8 +35,8 @@ public class CameraController {
     private float x;
     private float y;
 
-    public CameraController(int viewportWidth, int viewportHeight,
-                             int levelWidthPx, int levelHeightPx) {
+    public CameraFollow(int viewportWidth, int viewportHeight,
+                         int levelWidthPx, int levelHeightPx) {
         this.viewportWidth = viewportWidth;
         this.viewportHeight = viewportHeight;
         this.levelWidthPx = levelWidthPx;

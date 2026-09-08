@@ -1,4 +1,4 @@
-package au.com.guidebee.morsetoolkit.activity.mario.world;
+package au.com.guidebee.morsetoolkit.platformer.core;
 
 import com.guidebee.game.scene.Actor;
 
@@ -18,7 +18,7 @@ public final class TileMovement {
     }
 
     /** Moves an actor horizontally, clamping at a wall. @return true if it hit a wall. */
-    public static boolean moveX(Actor actor, float dx, MarioWorld world) {
+    public static boolean moveX(Actor actor, float dx, TileCollisionSource world) {
         int width = (int) actor.getWidth();
         int height = (int) actor.getHeight();
         int tileSize = MarioConfiguration.TILE_SIZE;
@@ -37,7 +37,7 @@ public final class TileMovement {
     }
 
     /** Moves an actor vertically, clamping at floor/ceiling. @return true if it landed or hit a ceiling. */
-    public static boolean moveY(Actor actor, float dy, MarioWorld world) {
+    public static boolean moveY(Actor actor, float dy, TileCollisionSource world) {
         int width = (int) actor.getWidth();
         int height = (int) actor.getHeight();
         int tileSize = MarioConfiguration.TILE_SIZE;

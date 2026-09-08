@@ -50,11 +50,11 @@ in full) and move exactly as described.
 
 ### A.1 — Create the package
 
-- [ ] Create `app/src/main/java/au/com/guidebee/morsetoolkit/platformer/core/`.
+- [x] Create `app/src/main/java/au/com/guidebee/morsetoolkit/platformer/core/`.
 
 ### A.2 — Define `TileCollisionSource`
 
-- [ ] New file `platformer/core/TileCollisionSource.java`:
+- [x] New file `platformer/core/TileCollisionSource.java`:
 
   ```java
   package au.com.guidebee.morsetoolkit.platformer.core;
@@ -70,54 +70,64 @@ in full) and move exactly as described.
 
 ### A.3 — Retrofit `MarioWorld`
 
-- [ ] `world/MarioWorld.java`: add `implements TileCollisionSource` to the class
+- [x] `world/MarioWorld.java`: add `implements TileCollisionSource` to the class
   declaration. No method bodies change — `containsImpassableArea`'s two existing
   overloads already match this interface exactly (confirmed: `MarioWorld.java`'s own
   two-overload shape is the interface's shape, verbatim).
 
 ### A.4 — Move `OscillatorClock`
 
-- [ ] Move `world/OscillatorClock.java` → `platformer/core/OscillatorClock.java`. Change
+- [x] Move `world/OscillatorClock.java` → `platformer/core/OscillatorClock.java`. Change
   only the `package` line. Zero other changes — it has no imports beyond its own package
   declaration today.
-- [ ] Update the import in every file that references it:
+- [x] Update the import in every file that references it:
   `actors/enemies/FlyingTurtlePatrol.java`, `actors/enemies/OrbitingFireball.java`,
   `screen/MarioGameScreen.java` (calls `OscillatorClock.reset()`/`.advance(delta)`).
 
 ### A.5 — Move `CameraController` → `CameraFollow`
 
-- [ ] Move `world/CameraController.java` → `platformer/core/CameraFollow.java`, renaming
+- [x] Move `world/CameraController.java` → `platformer/core/CameraFollow.java`, renaming
   the class itself (`public class CameraFollow`). No field/method changes — every member
   is already primitive-typed.
-- [ ] Update the import + type reference in `screen/MarioGameScreen.java` (the only
-  consumer — confirmed by the earlier grep in this conversation, the only other file
-  referencing `CameraController` besides `hud/ScoreHud.java`'s own doc-comment mention,
-  which needs no code change, just leave the comment as historical prose or update it to
-  say `CameraFollow` while touching the file anyway).
+- [x] Update the import + type reference in `screen/MarioGameScreen.java` **and**
+  `world/SpawnController.java` — the actual audit for this implementation found
+  `SpawnController.update`/`updateBombs` also take a `CameraController` parameter (same
+  package, so no import statement existed to grep for), which this plan's own audit
+  missed. `hud/ScoreHud.java`'s doc-comment mention was left as historical prose,
+  unchanged.
 
 ### A.6 — Move `TileMovement`, retyped to the interface
 
-- [ ] Move `world/TileMovement.java` → `platformer/core/TileMovement.java`. Change the
+- [x] Move `world/TileMovement.java` → `platformer/core/TileMovement.java`. Change the
   `package` line, and change both `moveX`/`moveY`'s `MarioWorld world` parameter to
   `TileCollisionSource world`. No other changes — both methods only ever call
   `world.containsImpassableArea(...)`, never a `MarioWorld`-specific member, confirmed by
   re-reading the file in full.
-- [ ] Update the import in every caller: `actors/enemies/Enemy.java` (`walkAndFall`'s own
-  `TileMovement.moveX/moveY` calls), and every direct caller —
-  `actors/enemies/Boss.java`, `actors/items/Life.java`, `actors/items/Mushroom.java`,
-  `actors/items/Star.java`, `actors/projectiles/FireBall.java` (confirmed by the earlier
-  grep — these are the files calling `TileMovement.moveX`/`moveY` directly rather than
-  through `Enemy.walkAndFall`).
+- [x] Update the import in every caller. The actual grep run during implementation found
+  12 direct callers, six more than this plan's own list:
+  `actors/enemies/Enemy.java`, `actors/enemies/Boss.java`, `actors/items/Life.java`,
+  `actors/items/Mushroom.java`, `actors/items/Star.java`,
+  `actors/projectiles/FireBall.java` (as this plan said), plus
+  `actors/enemies/EnemyTurtlePatrol.java`, `actors/enemies/FlyingTurtle.java`,
+  `actors/enemies/HelmetShell.java`, `actors/enemies/Monkey.java`,
+  `actors/enemies/SpikeyEgg.java`, `actors/enemies/TurtleShell.java` (missed by this
+  plan's earlier audit).
 
 ### A.7 — Delete-and-verify
 
-- [ ] Confirm `world/TileMovement.java`, `world/OscillatorClock.java`,
+- [x] Confirm `world/TileMovement.java`, `world/OscillatorClock.java`,
   `world/CameraController.java` no longer exist under `mario/world/`.
-- [ ] Grep the whole `activity/mario` tree for `mario.world.TileMovement`,
-  `mario.world.OscillatorClock`, `mario.world.CameraController` — zero hits expected.
+- [x] Grep the whole `activity/mario` tree for `mario.world.TileMovement`,
+  `mario.world.OscillatorClock`, `mario.world.CameraController` — zero hits (confirmed).
 
 **Exit criteria:** full regression pass, identical to before the move — this phase changed
 zero behavior, only package locations and one new interface with no new logic.
+**Compiled successfully** via `gradlew :app:compileDebugJavaWithJavac` (the environment's
+JDK 21 install and Android SDK are in fact present; the earlier "no compilation available"
+note only applied to whatever machine originally wrote this plan) — a stronger check than
+the manual read-through this plan otherwise budgets for. Still run the full
+[MARIO_LEVEL_ATLAS.md](MARIO_LEVEL_ATLAS.md) on-device regression pass before starting
+Phase B1.
 
 ---
 

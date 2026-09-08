@@ -14,6 +14,7 @@ import au.com.guidebee.morsetoolkit.activity.mario.actors.hazards.Hazard;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.items.Collectible;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.lifts.LiftSurface;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.projectiles.FireBall;
+import au.com.guidebee.morsetoolkit.platformer.core.TileCollisionSource;
 
 /**
  * The static-terrain grid for one level - a {@code TiledLayer} sized to that
@@ -27,7 +28,7 @@ import au.com.guidebee.morsetoolkit.activity.mario.actors.projectiles.FireBall;
  * exhausted Bank spawning an Iron, a reveal effect spawning a Mushroom) via
  * {@link MarioContext}.
  */
-public class MarioWorld extends TiledLayer {
+public class MarioWorld extends TiledLayer implements TileCollisionSource {
 
     private final List<InteractiveBrick> bricks = new ArrayList<>();
     private final List<Collectible> collectibles = new ArrayList<>();

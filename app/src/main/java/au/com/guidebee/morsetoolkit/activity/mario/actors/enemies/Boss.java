@@ -8,7 +8,7 @@ import au.com.guidebee.morsetoolkit.activity.mario.actors.player.Player;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.projectiles.BossFire;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.projectiles.Hammer;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
-import au.com.guidebee.morsetoolkit.activity.mario.world.TileMovement;
+import au.com.guidebee.morsetoolkit.platformer.core.TileMovement;
 
 /**
  * The end-of-castle boss, ported from {@code Objects/Boss.java}. Patrols

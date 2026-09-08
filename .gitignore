@@ -8,3 +8,5 @@
 .externalNativeBuild
 .cxx
 /gameengine/build/
+**/bin/
+**/obj/

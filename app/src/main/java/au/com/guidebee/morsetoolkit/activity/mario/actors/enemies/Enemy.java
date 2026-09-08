@@ -5,7 +5,7 @@ import com.guidebee.game.microedition.Sprite;
 
 import au.com.guidebee.morsetoolkit.activity.mario.actors.player.Player;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
-import au.com.guidebee.morsetoolkit.activity.mario.world.TileMovement;
+import au.com.guidebee.morsetoolkit.platformer.core.TileMovement;
 
 /**
  * Common base for enemies (EnemyMashroom/EnemyTurtle/TurtleShell in the

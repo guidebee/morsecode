@@ -2,7 +2,7 @@ package au.com.guidebee.morsetoolkit.activity.mario.actors.enemies;
 
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.player.Player;
-import au.com.guidebee.morsetoolkit.activity.mario.world.OscillatorClock;
+import au.com.guidebee.morsetoolkit.platformer.core.OscillatorClock;
 
 /**
  * One fireball of a {@code FireBar}/{@code BigFireBar} ring, ported from

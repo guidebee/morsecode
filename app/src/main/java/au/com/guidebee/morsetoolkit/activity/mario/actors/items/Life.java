@@ -3,7 +3,7 @@ package au.com.guidebee.morsetoolkit.activity.mario.actors.items;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.player.Player;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
-import au.com.guidebee.morsetoolkit.activity.mario.world.TileMovement;
+import au.com.guidebee.morsetoolkit.platformer.core.TileMovement;
 
 /**
  * The 1UP (extra life) power-up, ported from {@code Objects/Life.java}:

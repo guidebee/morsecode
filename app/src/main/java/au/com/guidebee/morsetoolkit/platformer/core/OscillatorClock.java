@@ -1,4 +1,4 @@
-package au.com.guidebee.morsetoolkit.activity.mario.world;
+package au.com.guidebee.morsetoolkit.platformer.core;
 
 /**
  * Three shared, ever-advancing angles, ported from {@code Mario.java}'s own

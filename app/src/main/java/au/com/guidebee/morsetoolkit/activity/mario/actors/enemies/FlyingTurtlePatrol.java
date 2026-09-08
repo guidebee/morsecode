@@ -6,7 +6,7 @@ import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.player.Player;
 import au.com.guidebee.morsetoolkit.activity.mario.fx.FallingDeadSprite;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
-import au.com.guidebee.morsetoolkit.activity.mario.world.OscillatorClock;
+import au.com.guidebee.morsetoolkit.platformer.core.OscillatorClock;
 
 /**
  * A turtle that bobs up and down in place, ported from

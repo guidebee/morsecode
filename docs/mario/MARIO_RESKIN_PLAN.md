@@ -215,11 +215,28 @@ which this plan (like the original) commits to leaving untouched.
   - `PackMarioAtlas.ASSETS`' `cols`/`rows` stay describing the *frame grid* (unchanged —
     a 4×7 player strip is still 4×7 frames, just each frame is now `ART_SCALE`× more
     pixels); no changes needed there beyond the source PNGs themselves being bigger.
-- This is a small, mechanical, one-time change (three or four call sites plus one new
-  constant), done **once**, before any high-res art is dropped in — not per-asset, and
-  not touched again afterward. It's the only code change this whole reskin makes;
+- This is a small, mechanical, one-time change (per call site) plus one new constant,
+  done **once**, before any high-res art is dropped in — not per-asset, and not touched
+  again afterward. It's the only *shape* of code change this whole reskin makes;
   everything else in this document really is a content-only swap, exactly as the
   original plan claimed.
+
+**Correction (2026-09-08): "three or four call sites" undercounted the real list.** A
+direct grep-and-read audit (done while designing
+[../mario/PLATFORMER_ENGINE_ARCHITECTURE.md §3.8](PLATFORMER_ENGINE_ARCHITECTURE.md#38-tilemetrics-making-tile-size-a-first-class-non-global-value))
+found **21 actor classes** (`Boss`, `EnemyTurtle`, `Helmet`, `Coin`, `Spring`, `Player`,
+`Axe`, `Fireworks`, and more — not just `PlayerPowerState`/`Scenery`/`Lift`) each declare
+their own local `FRAME_WIDTH`/`FRAME_HEIGHT`/`FRAME_SIZE = 32` constant, passed into
+`Sprite(region, frameWidth, frameHeight)`. Confirmed by reading the engine source
+(`gameengine/.../microedition/Sprite.java`): that constructor feeds the same number into
+`super(0, 0, frameWidth, frameHeight, true)`, so it's simultaneously the atlas-slice size
+*and* the actor's collision hitbox — exactly the same "two things equal today only by
+coincidence" trap this section already describes for `PlayerPowerState`/`Scenery`/`Lift`,
+just repeated across most of the enemy/item/fx roster instead of three classes. The fix
+is identical in shape (each one needs a `frameWidthPx = width * ART_SCALE`-style split
+between its world-space size and its atlas-slice size) — this doesn't change the
+design, only the honest scope: budget **~20+ call sites**, not "three or four," for
+step 4.4.2 below.
 
 **Picking `ART_SCALE`:** a product/creative call, but as a technical recommendation,
 **start at `ART_SCALE=2`** (64px-per-tile source art) rather than 4×. Reasoning: pixel
@@ -297,7 +314,7 @@ resolution upgrade's memory growth too. Concretely:
   exercises §4.1's decoupling under real content, across **all 8 worlds** (not just
   World 1, since this now runs after Phase 2 — see §5).
 
-## 5. Ordering: Phase 2 first, reskin+high-res last, as one pass
+## 5. Ordering: Phase 2 → platformer re-architecture → reskin, as sequential passes
 
 **Revised recommendation (reversing the original version of this plan): build
 [MARIO_PORT_PLAN_PHASE2.md](MARIO_PORT_PLAN_PHASE2.md) to completion first, entirely on
@@ -341,15 +358,35 @@ is not fine to ship. Treat "reskin+high-res has landed" as a hard release-blocki
 tracked explicitly (e.g. a checklist item on whatever tracks this app's release
 readiness), not an implicit assumption.
 
+**Amendment (2026-09-08): a third pass now sits between Phase 2 and the reskin.** Per
+[PLATFORMER_ENGINE_ARCHITECTURE.md §6.4](PLATFORMER_ENGINE_ARCHITECTURE.md#64-sequencing-against-the-reskin--decided),
+the team has decided to extract the reusable "platformer toolkit" layer that document
+designs — including making tile size a first-class, non-global value (that document's
+§3.8) rather than the ~40 scattered literals audited there — and migrate Mario onto it,
+**before** starting this plan's own §4 execution. `TILE_SIZE` itself is not changing as
+part of this (it stays `32`); this is an internal code-restructuring pass, not a
+resolution or gameplay change, and the reasoning for running it before the reskin is the
+same reasoning this section already gives for running Phase 2 before the reskin: verify
+the restructuring is behavior-neutral against art you already know, not against new art
+at the same time. That plan's own regression discipline (a full
+[MARIO_LEVEL_ATLAS.md](MARIO_LEVEL_ATLAS.md) pass at every phase boundary) governs this
+pass, not a separate checklist here.
+
 **Concretely:**
 1. Run [MARIO_PORT_PLAN_PHASE2.md](MARIO_PORT_PLAN_PHASE2.md) Steps P2.0–P2.7 to
    completion, entirely against placeholder Nintendo-derived art, internal-only.
-2. Then run this plan's §4: 4.4.1 (finalize the real asset spec sheet from the
+2. Run [PLATFORMER_ENGINE_ARCHITECTURE.md §7](PLATFORMER_ENGINE_ARCHITECTURE.md#7-migration-plan)'s
+   Phases A–G to completion — the toolkit extraction plus migrating Mario onto it — with a
+   full regression pass at every phase boundary, entirely against the same placeholder
+   art. (That document's Phase H, building a small second consumer to validate the
+   design, is explicitly not part of this — it has no bearing on Mario or the reskin and
+   runs on its own schedule, whenever a second game is actually planned.)
+3. Then run this plan's §4: 4.4.1 (finalize the real asset spec sheet from the
    as-built game) → 4.4.2 (land the `ART_SCALE` decoupling, verified against the
    *existing* art first) → 4.4.3–4.4.6 (source and swap in all ~130+ assets + audio +
    strings, at the new resolution, in the new identity) → 4.4.7 (full 8-world
    regression pass).
-3. Only after that regression pass is clean does the release gate in the paragraph
+4. Only after that regression pass is clean does the release gate in the paragraph
    above open.
 
 `C:\workspace\Mario`'s source code remains fair game to read as a *behavior/mechanics

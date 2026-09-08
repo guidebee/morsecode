@@ -167,6 +167,12 @@ next until the current one is checked off.
 
 ### Step R.0 — Decisions (blocking everything else)
 
+- [ ] **Prerequisite, not a decision:** confirm
+      [PLATFORMER_ENGINE_ARCHITECTURE.md §7](PLATFORMER_ENGINE_ARCHITECTURE.md#7-migration-plan)'s
+      Phases A–G are complete and Mario's full regression pass is clean on the current
+      placeholder art. Per
+      [MARIO_RESKIN_PLAN.md §5](MARIO_RESKIN_PLAN.md#5-ordering-phase-2--platformer-re-architecture--reskin-as-sequential-passes)'s
+      amended ordering, none of the steps below start before this is true.
 - [ ] Finalize the new identity (character/enemy/world names) — starting strawman already
       in [MARIO_RESKIN_PLAN.md §2](MARIO_RESKIN_PLAN.md#2-new-identity-starting-proposal--a-creative-decision-for-the-team-to-adjust-not-a-fixed-spec).
 - [ ] Confirm `ART_SCALE` (recommend `2`, i.e. 64px/tile, per that plan's §4.1) — this
@@ -180,8 +186,13 @@ next until the current one is checked off.
 ### Step R.1 — Land the `ART_SCALE` code decoupling (no new art yet)
 
 - [ ] Implement [MARIO_RESKIN_PLAN.md §4.1](MARIO_RESKIN_PLAN.md#41-resolution-architecture-this-is-not-a-pure-content-swap)'s
-      `MarioConfiguration.ART_SCALE` constant + the `PlayerPowerState`/`Scenery`/`Lift`
-      call-site changes it describes.
+      `MarioConfiguration.ART_SCALE` constant + the matching `/ART_SCALE` division at
+      every call site that treats a texture region's pixel size as a world size — by this
+      point, R.0's prerequisite means those call sites already take `tileSize` as an
+      explicit parameter (not a hardcoded literal) per
+      [PLATFORMER_ENGINE_ARCHITECTURE.md §3.8](PLATFORMER_ENGINE_ARCHITECTURE.md#38-tilemetrics-making-tile-size-a-first-class-non-global-value)'s
+      full ~40-call-site list, not just the `PlayerPowerState`/`Scenery`/`Lift` trio this
+      step originally scoped.
 - [ ] Re-pack the *existing* placeholder art unchanged, confirm all 8 worlds still
       render/collide identically (this is [MARIO_RESKIN_PLAN.md §4.4.2](MARIO_RESKIN_PLAN.md)'s
       own isolation step — verify the code change before any art changes, so a bug is

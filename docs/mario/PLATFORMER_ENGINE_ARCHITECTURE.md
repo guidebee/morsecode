@@ -130,6 +130,7 @@ Gradle module — see §6.3 for why):
 ```
 app/src/main/java/au/com/guidebee/morsetoolkit/platformer/
   core/
+    TileMetrics.java            // NEW - tile size as a value, not a global (§3.8)
     TileWorld.java              // generalized MarioWorld: TiledLayer + a registry of
                                  // typed actor lists (§3.1) + containsImpassableArea
     TileMovement.java           // moved verbatim from mario.world
@@ -393,6 +394,119 @@ generically enough to lift almost unchanged; the only per-game input is the "whi
 (`List<String> interestingTileTypes`) instead of Mario's own hardcoded list. A new game's
 debug tooling is then "supply your own short list of type strings," not a rewrite.
 
+### 3.8 `TileMetrics`: making tile size a first-class, non-global value
+
+A concrete requirement worth designing in explicitly, not leaving implicit: **the
+toolkit itself must not hardcode a tile size anywhere**, so a future game can pick 16px,
+48px, or 64px tiles as freely as it picks its own art. This is a real gap in today's code,
+audited directly rather than assumed — worth stating precisely before proposing the fix.
+
+**What's already fine:** GGE's own `TiledLayer` constructor takes `tileWidth`/`tileHeight`
+as plain arguments (`gameengine/.../microedition/TiledLayer.java`) — it doesn't assume 32,
+or even assume square tiles. The engine layer was never the obstacle.
+
+**What isn't fine today, audited by grep + reading, not guessed:**
+
+1. `MarioConfiguration.TILE_SIZE` is a `public static final int = 32`, imported directly
+   by **26 files / 71 call sites** across `activity/mario` for tile-index ↔ world-pixel
+   conversion (`LevelLoader`, `MarioWorld`, `TileMovement`, HUD/debug code, ...). Every one
+   of these is mechanically easy to retarget — they already go through one named constant.
+2. **21 more classes** (`Boss`, `EnemyTurtle`, `Helmet`, `Coin`, `Spring`, `Player`, `Axe`,
+   `Fireworks`, ... — the full list is longer than this) each declare their *own* local
+   `FRAME_WIDTH`/`FRAME_HEIGHT`/`FRAME_SIZE = 32` constant, numerically equal to
+   `TILE_SIZE` today purely by coincidence, not by reference. This matters more than it
+   sounds: GGE's `Sprite(TextureRegion, frameWidth, frameHeight)` constructor
+   (`gameengine/.../microedition/Sprite.java`) feeds that same number into
+   `super(0, 0, frameWidth, frameHeight, true)` — i.e. it sets **both** the atlas-slice
+   size **and** the actor's actual collision hitbox in one call. These 21 numbers are
+   quietly load-bearing for physics, not just art, and nothing in the compiler enforces
+   that they stay equal to `TILE_SIZE`. This is a real, larger count than
+   [MARIO_RESKIN_PLAN.md §4.1](MARIO_RESKIN_PLAN.md#41-resolution-architecture-this-is-not-a-pure-content-swap)
+   originally estimated ("three or four call sites") for the *same underlying problem* —
+   that estimate covered only `PlayerPowerState`/`Scenery`/`Lift`; this audit found the
+   pattern repeats across most of the enemy/item/fx roster. Correcting that estimate here
+   rather than leaving it stale in the reskin plan.
+3. **A handful of spots do raw tile-relative arithmetic with no constant reference at
+   all** — `Boss.java`'s `((int) getY() / 32) * 32` (snapping a fireball spawn to a tile
+   row), `BossFire.java`'s `(6 + RANDOM.nextInt(4)) * 32` (randomizing among floor
+   levels), `EnemyTurtlePatrol`/`FlyingTurtlePatrol`'s `x + 32 * patrolLengthTiles` /
+   `y + 32 * patrolLengthTiles` (patrol-range math), `FlagWinBanner`'s
+   `START_OFFSET_Y = -96f` / `RISE_DISTANCE = 64f`, and `Player`'s own
+   `DUCK_HEAD_ROOM_PX = 32f` / `DUCK_OVERHEAD_CLEARANCE_PX = 48f`. These would silently
+   misbehave (not crash) if `TILE_SIZE` ever changed without also finding and updating
+   each of them by hand.
+
+**The design fix — thread tile size through the object graph instead of importing a
+global:**
+
+```java
+/** Immutable, per-game world-grid metrics. Square tiles only, per this doc's own scope,
+  * but modeled as a real value rather than a bare int so a future non-square need
+  * (unlikely, but cheap to leave room for) isn't a breaking change later. */
+public final class TileMetrics {
+    public final int tileSize;
+    public TileMetrics(int tileSize) { this.tileSize = tileSize; }
+}
+```
+
+- `TileWorld` (§3.1) takes a `TileMetrics` in its constructor alongside `cols`/`rows`/the
+  tiles region, and exposes `tileSize()` — the one, single source of truth for "how big is
+  a tile in this world," readable off the object every other class already receives a
+  reference to.
+- `TileMovement.moveX/moveY` and `containsImpassableArea` already take a `TileWorld`
+  parameter — they read `world.tileSize()` instead of a static import. **Zero new
+  parameters needed**, since the world reference was always there; this alone fixes
+  bucket 1 (the 26-file/71-call-site category) for free.
+- `TileTypeRegistry` handlers (§3.3) receive a `GameContext` — add `int tileSize()` there
+  too, so every actor constructor a handler calls can take tile size as an explicit
+  constructor argument instead of reading a global. This is where buckets 2 and 3 actually
+  get fixed: it's mechanical (thread one more `int` through constructors that don't have
+  it yet) but it *is* real, non-zero work — budget it as part of Phase B (§7), since it
+  touches the exact same call sites that phase already rewrites.
+- The atlas-packer convention (`tools/mario-atlas-packer`, per
+  [MARIO_GAME_MECHANICS.md §13](MARIO_GAME_MECHANICS.md#13-sprite-sheets-and-the-atlas-system))
+  keeps its own `cols × rows` frame-grid metadata independent of pixel size — no change
+  needed there; a new game's packer tool just targets its own chosen `TileMetrics.tileSize
+  × artScale` when slicing.
+
+**What this design deliberately does *not* attempt — and why:** it does not try to make
+an *already-tuned* game's tile size changeable "for free," and it does not make physics
+constants automatically scale with tile size. Two reasons, both important:
+
+- **Feel is not derivable from grid size alone.** `Player`'s `MAX_SPEED=60`,
+  `GRAVITY_STEP=0.42`, `JUMP_BASE=-11` are absolute pixels-per-tick numbers, not
+  expressed as multiples of `TILE_SIZE` — deliberately, since they were carried over
+  unchanged from the original desktop game's own tuned feel
+  ([MARIO_GAME_MECHANICS.md §4.1](MARIO_GAME_MECHANICS.md#41-the-frames-unit)). If a
+  *toolkit* auto-derived "jump height = 1.4× tile height" and re-scaled every constant
+  whenever tile size changed, two different tile sizes for the *same* absolute constants
+  would still produce different-*feeling* jump arcs relative to gaps/enemy heights sized
+  in tiles — there's no formula that makes that automatic and correct, only per-game
+  playtesting can. Trying to auto-solve this would be exactly the kind of premature,
+  wrong abstraction §6.1 already warns about.
+- **This is the same lesson
+  [MARIO_RESKIN_PLAN.md §4.1](MARIO_RESKIN_PLAN.md#41-resolution-architecture-this-is-not-a-pure-content-swap)
+  already learned the hard way** about not conflating two things that happen to be equal
+  today only by coincidence — there, world-space size vs. texture-pixel size; here,
+  grid granularity vs. tuned movement feel.
+
+**So, concretely, what tile-size independence actually buys:**
+
+- **For a *new* game built on the toolkit:** picking `tileSize=48` (say) instead of `32`
+  is a true one-line `TileMetrics` change, with zero hunting for scattered literals —
+  because the game's actors, registry handlers, and physics constants are all being
+  written fresh *against* that chosen size from the start, the same way Mario's own `32`
+  and its constants were chosen together once and never revisited.
+- **For changing an *existing*, already-tuned game's tile size later (e.g. Mario
+  itself):** this design makes it *find-able* (one `TileMetrics` value plus every
+  constructor call site that now explicitly takes `tileSize`, rather than 35-40 scattered
+  literals) but does not make it *free* — re-tuning `MAX_SPEED`/`GRAVITY_STEP`/`JUMP_BASE`
+  and every tile-relative offset against the new grid, then a full
+  [MARIO_LEVEL_ATLAS.md](MARIO_LEVEL_ATLAS.md)-driven regression pass, is still required
+  and still a feel decision a person makes, not a mechanical migration. Document that
+  distinction plainly to whoever picks this up — "tile-size-independent engine" should not
+  be read as "changing tile size has no consequences."
+
 ## 4. The content-layer contract
 
 Once §3 exists, building a new platform game on the toolkit means supplying exactly these
@@ -416,9 +530,10 @@ toolkit design is missing a piece):
    asset list is entirely its own; only the *pattern* (per-theme atlases, magenta masking,
    per-cell flip for the engine's y-down convention) is worth copying deliberately rather
    than reinventing.
-5. **A config object** analogous to `MarioConfiguration` (tile size, viewport, physics
-   tuning) — the toolkit can supply sane defaults, but every real game will override tile
-   size and every physics constant, since feel is inherently game-specific (§6.2).
+5. **A `TileMetrics` (§3.8) plus a config object** analogous to `MarioConfiguration`
+   (viewport, physics tuning) — the toolkit can supply sane defaults, but every real game
+   will pick its own tile size and every physics constant, since feel is inherently
+   game-specific (§6.2).
 6. **Screens/Activity/GamePlay/ResourceManager** — thin, per-game glue following the
    existing `GameActivity`/`GamePlay`/`ScreenAdapter` convention every game in this app
    already uses (see [GAME_ENGINE.md](../GAME_ENGINE.md#the-lifecycle-activity--gameplay--screen))
@@ -485,18 +600,40 @@ itself materializes.** This is the same YAGNI judgment this codebase's own docum
 already applies elsewhere (e.g. [MARIO_PORT_PLAN_PHASE2.md §6](MARIO_PORT_PLAN_PHASE2.md)'s
 save-state note: "resist adding more than [what's] actually needs[ed]").
 
-### 6.4 Sequencing against the reskin
+### 6.4 Sequencing against the reskin — decided
 
-Recommend doing this restructuring **before** the art reskin, not after or interleaved —
-mirroring [MARIO_RESKIN_PLAN.md §5](MARIO_RESKIN_PLAN.md)'s own reasoning for why Phase 2
-ran entirely before reskin work started: verifying a *code* change is behavior-neutral is
-far easier against art and levels you already know intimately than against brand-new art
-at the same time. Concretely: run §7's phases to completion (including the second-consumer
-validation in Phase H) on the *current* placeholder art, confirm the full
-[MARIO_LEVEL_ATLAS.md](MARIO_LEVEL_ATLAS.md) regression checklist still passes, and only
-then start [MARIO_RESKIN_EXECUTION.md](MARIO_RESKIN_EXECUTION.md)'s art/audio work. The
-`ART_SCALE` decoupling that plan's §4.1 already calls for slots in naturally as one of
-this restructuring's own phases (see Phase E below) rather than a separate later effort.
+**Decided (2026-09-08): the full platformer re-architecture (§7's Phases A–G — the
+toolkit extraction plus migrating Mario itself onto it, tile-size independence per §3.8
+included) lands first, in full; the reskin
+([MARIO_RESKIN_EXECUTION.md](MARIO_RESKIN_EXECUTION.md)) starts only once Mario is running
+on the new toolkit end to end.** `TILE_SIZE` itself stays `32` throughout — this
+restructuring is an internal code-organization change, not a resolution change; `ART_SCALE`
+(per [MARIO_RESKIN_PLAN.md §4.1](MARIO_RESKIN_PLAN.md#41-resolution-architecture-this-is-not-a-pure-content-swap))
+remains the actual, separate mechanism the reskin uses for higher-resolution art, and lands
+during the reskin itself, not as part of this restructuring.
+
+This is a firmer commitment than this document's earlier draft of this section proposed
+(which tried to carve out only the minimum slice needed for tile-size independence and
+let the rest of the toolkit extraction happen independently of the reskin's timing) — the
+team's call, recorded here as the decision that actually governs execution order. The
+reasoning it still shares with that earlier draft, and with
+[MARIO_RESKIN_PLAN.md §5](MARIO_RESKIN_PLAN.md)'s own precedent for "finish Phase 2 fully
+before reskinning": verifying a *code* restructuring is behavior-neutral is far easier
+against art and levels already known intimately than against brand-new art at the same
+time, and every call site the reskin's own `ART_SCALE` work would otherwise touch gets
+touched once (during this restructuring, where tile size stops being a scattered literal)
+rather than twice.
+
+**Phase H (§7) — building a small second consumer to validate the abstraction — is *not*
+part of this commitment.** It has no interaction with Mario or the reskin either way
+(§6.1's premature-abstraction risk is about trusting the *design*, not about blocking
+Mario's own migration), so it stays exactly what §7 already scopes it as: something to do
+once a second platform game is actually planned, on no schedule this document sets.
+
+**Concretely: run §7's Phases A–G to completion against the *current* placeholder art,
+confirm the full [MARIO_LEVEL_ATLAS.md](MARIO_LEVEL_ATLAS.md) regression checklist passes
+with zero gameplay/visual change at every phase boundary, then start
+[MARIO_RESKIN_EXECUTION.md](MARIO_RESKIN_EXECUTION.md).**
 
 ### 6.5 Cost this doesn't pay for
 
@@ -518,17 +655,39 @@ every phase's "mechanic" is *itself still being Mario, unchanged*, so the regres
 is simply "nothing about how Mario plays or looks changed"). Don't start a phase until the
 previous one's regression pass is clean.
 
+**For the literal, file-by-file version of every phase below — exact classes, exact call
+sites (grep-verified, not estimated), exact new signatures — see
+[PLATFORMER_ENGINE_IMPLEMENTATION.md](PLATFORMER_ENGINE_IMPLEMENTATION.md).** That
+document also corrects one thing the summary below simplifies: `TileMovement` can't
+actually move to `platformer.core` "verbatim" as Phase A states, since its signature
+names `MarioWorld` directly — a small `TileCollisionSource` interface (detailed there)
+closes that gap without changing this phase's zero-logic-change bar.
+
 **Phase A — Move the zero-coupling utilities.** `TileMovement`, `OscillatorClock`,
 `CameraFollow` (renamed from `CameraController`) move to `platformer.core` verbatim; every
 call site in `activity/mario` updates its import only. Zero logic changes anywhere.
 *Exit: full regression pass, identical to before the move.*
 
-**Phase B — `TileTypeRegistry`.** Introduce the registry + generic `LevelLoader` in
+**Phase B1 — `TileMetrics` threading (tile-size independence).** This is the concrete
+"make it tile-size independent" work, and it's narrower than standing up the full registry
+in B2 below, which is why it's split out and sequenced first: introduce `TileMetrics`
+(§3.8), have `TileWorld` (still `MarioWorld` at this point — no registry rewrite needed
+yet) hold and expose `tileSize()`, point `TileMovement`/`containsImpassableArea` at it
+instead of the static import, and — the real work — thread an explicit `tileSize`
+parameter through every one of §3.8's ~40 audited call sites (the 26-file/71-reference
+`TILE_SIZE`-import category is a mechanical find-and-replace; the 21 `FRAME_WIDTH=32`-style
+classes and the handful of raw-arithmetic spots each need their constructor to actually
+take the value instead of hardcoding it). *Exit: full regression pass, zero
+gameplay/visual change — same bar as Phase A.* Doing this before B2 means B2's own
+constructor rewrites (below) take `tileSize` as a parameter from the start, rather than
+needing a second pass over the same call sites later.
+
+**Phase B2 — `TileTypeRegistry`.** Introduce the registry + generic `LevelLoader` in
 `platformer.level`; write `MarioTileRegistry` reproducing every existing `LevelLoader`
-switch-statement case as a `.register(...)` call, one-for-one. Delete the old switch
-statements only once the new registry-driven path is confirmed to spawn byte-for-byte the
-same actors on a full 8-world playthrough. *This is the highest-value phase — do it early
-and don't rush the verification.*
+switch-statement case as a `.register(...)` call, one-for-one (each now taking `tileSize`
+from B1's `GameContext`/`TileWorld`, already threaded — no second pass over those call
+sites). Delete the old switch statements only once the new registry-driven path is
+confirmed to spawn byte-for-byte the same actors on a full 8-world playthrough.
 
 **Phase C — `GameContext`.** Generalize `MarioContext` per §3.5. Purely mechanical
 (type-parameter introduction); low risk.
@@ -537,14 +696,14 @@ and don't rush the verification.*
 Purely mechanical; `MarioGameScreen.render`'s 8 call lines become one `pipeline.resolveAll(world)`
 call plus a one-time pipeline construction.
 
-**Phase E — `PowerStateActor` + the `ART_SCALE` decoupling together.** These two changes
-touch the same class (`Player`) for related reasons (both are "separate what's tuned feel
-from what's reusable scaffolding/measurement") — doing them in one pass avoids touching
-`Player`'s collision-sizing code twice. Extract the scaffolding per §3.2 into
-`PowerStateActor`, land `MarioConfiguration.ART_SCALE` per
-[MARIO_RESKIN_PLAN.md §4.1](MARIO_RESKIN_PLAN.md#41-resolution-architecture-this-is-not-a-pure-content-swap)
-in the same pass, verify both against the *existing* art (per that plan's own §4.4.2
-isolation step) before any new art exists.
+**Phase E — `PowerStateActor`.** Extract `Player`'s scaffolding (timers, checkpoints,
+morph-transition machinery) into the base class per §3.2, leaving `applyMovement`
+abstract. Note this no longer needs to bundle the `ART_SCALE` change the way an earlier
+draft of this plan suggested — per §6.4's decision, the entire toolkit migration
+(including this phase) now runs to completion *before* the reskin starts, so `ART_SCALE`
+(which is a reskin-time concern, not a toolkit one) simply hasn't landed yet when this
+phase happens; `MARIO_RESKIN_EXECUTION.md`'s Step R.1 lands it afterward, against
+whatever `Player`/`PowerStateActor` looks like once this phase is done.
 
 **Phase F — HUD/menu/save-state/debug panel.** `WorldLevelSelectScreen`, `StatusBar`,
 generalized `PauseOverlay`, `LevelWarpPanel`, `LevelProgressState`. Mostly mechanical

@@ -18,6 +18,11 @@ depends on what you're doing:
   Mario-specific code, so a *future, different* platform game can be built on it the way
   Mario is built on the Guidebee Game Engine. Read this if you're planning new gameplay
   infrastructure, not just new Mario content.
+- **[PLATFORMER_ENGINE_IMPLEMENTATION.md](PLATFORMER_ENGINE_IMPLEMENTATION.md)** — the
+  literal, file-by-file runbook for actually carrying out the above: exact classes, exact
+  call sites (grep-verified against the real codebase), phase by phase. This is what to
+  follow when implementation actually starts — decided to run in full before the reskin,
+  see [MARIO_RESKIN_PLAN.md §5](MARIO_RESKIN_PLAN.md#5-ordering-phase-2--platformer-re-architecture--reskin-as-sequential-passes).
 - **[MARIO_PORT_PLAN.md](MARIO_PORT_PLAN.md)** and
   **[MARIO_PORT_PLAN_PHASE2.md](MARIO_PORT_PLAN_PHASE2.md)** — the historical record of
   how the port was actually built, step by step, with the design rationale behind

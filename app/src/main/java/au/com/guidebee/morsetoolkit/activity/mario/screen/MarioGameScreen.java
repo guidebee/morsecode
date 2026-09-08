@@ -46,8 +46,8 @@ import au.com.guidebee.morsetoolkit.activity.mario.fx.BackgroundBand;
 import au.com.guidebee.morsetoolkit.activity.mario.fx.BossFallingAnim;
 import au.com.guidebee.morsetoolkit.activity.mario.fx.Fireworks;
 import au.com.guidebee.morsetoolkit.activity.mario.fx.PipeEntryAnimation;
-import au.com.guidebee.morsetoolkit.activity.mario.hud.PauseOverlay;
-import au.com.guidebee.morsetoolkit.activity.mario.hud.ScoreHud;
+import au.com.guidebee.morsetoolkit.platformer.hud.PauseOverlay;
+import au.com.guidebee.morsetoolkit.platformer.hud.StatusBar;
 import au.com.guidebee.morsetoolkit.activity.mario.input.MarioInputController;
 import au.com.guidebee.morsetoolkit.activity.mario.input.PlayerCommand;
 import au.com.guidebee.morsetoolkit.activity.mario.level.LevelCatalog;
@@ -242,7 +242,7 @@ public class MarioGameScreen extends ScreenAdapter {
     private final ImageButton backButton;
     /** See the class doc's "Pinch-to-zoom" section for why this is a raw {@code GestureDetector}, not a {@code GestureListener} on an actor. */
     private final GestureDetector zoomDetector;
-    private final ScoreHud scoreHud;
+    private final StatusBar scoreHud;
     private final PauseOverlay pauseOverlay;
     /** Debug-only warp/cheat panel and its opening corner button - null outside a debug build, see {@link #createDebugTools}. */
     private final DebugPanel debugPanel;
@@ -362,10 +362,10 @@ public class MarioGameScreen extends ScreenAdapter {
         gameController = createGameController();
         backButton = createBackButton();
         zoomDetector = createZoomDetector();
-        scoreHud = new ScoreHud(layerManager, MarioResourceManager.uiSkinYDown(),
+        scoreHud = new StatusBar(layerManager, MarioResourceManager.uiSkinYDown(),
                 LevelNumbering.label(level.levelNumber));
         pauseOverlay = new PauseOverlay(layerManager, MarioResourceManager.uiSkinYDown(),
-                this::resumeGame, gamePlay::goToMenu);
+                "PAUSED", "RESUME", "QUIT TO MENU", this::resumeGame, gamePlay::goToMenu);
         MarioInputController input = new MarioInputController(gameController);
 
         // The original engine's per-level "pos" field (BasicLevel.pos) is never

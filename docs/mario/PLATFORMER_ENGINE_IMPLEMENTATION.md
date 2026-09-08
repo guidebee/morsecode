@@ -728,25 +728,84 @@ in `Player.java` after the split, not just left to the compiler to catch.
 
 ## Phase F — HUD / menu / save-state / debug panel generalization
 
-- [ ] `platformer/state/LevelProgressState.java` (generalized `MarioSaveState` — namespace
+- [x] `platformer/state/LevelProgressState.java` (generalized `MarioSaveState` — namespace
   string as a constructor parameter instead of the hardcoded `"mario_save_state"`).
-- [ ] `platformer/state/ScoreLivesState.java` (generalized `GameStateController` —
+  `MarioSaveState` becomes a thin wrapper (composition, not a subclass — no static-hides-
+  instance conflict here the way `MarioContext` had, but consistent with that precedent
+  anyway) around one private `LevelProgressState` instance.
+- [x] `platformer/state/ScoreLivesState.java` (generalized `GameStateController` —
   starting lives / coin-to-life threshold / score-per-coin as constructor parameters
   instead of `STARTING_LIVES=3`/`COINS_PER_LIFE=100`/`SCORE_PER_COIN=200`).
-- [ ] `platformer/hud/StatusBar.java` (generalized `ScoreHud`).
-- [ ] `platformer/hud/PauseOverlay.java` (moved, parameterized by button labels/skin).
-- [ ] `platformer/screen/WorldLevelSelectScreen.java`, per
+  `GameStateController` becomes a thin subclass here (plain inheritance works fine — every
+  method is already an instance method, unlike `MarioContext`'s static-API problem).
+- [x] `platformer/hud/StatusBar.java` (generalized `ScoreHud` — `update` now takes the
+  generic `ScoreLivesState` base instead of the concrete `GameStateController`, so
+  `MarioGamePlay`'s own state object satisfies it for free via inheritance, zero call-site
+  change needed). **Scope note:** left the actual SCORE/COINS/LIVES text formatting
+  hardcoded rather than also parameterizing it — the audit table names this as the
+  Mario-specific part to remove, but with no concrete second consumer and no sketch given,
+  a speculative formatter API would be complexity paid for nothing (see
+  [PLATFORMER_ENGINE_ARCHITECTURE.md §6.1](PLATFORMER_ENGINE_ARCHITECTURE.md#61-premature-abstraction--the-biggest-risk)'s
+  own warning against exactly this).
+- [x] `platformer/hud/PauseOverlay.java` (moved, parameterized by button labels/skin) — this
+  one had no other Mario-specific part at all (never referenced a concrete Mario type), so
+  it genuinely just moved; `MarioGameScreen` now imports and constructs
+  `platformer.hud.PauseOverlay` directly rather than keeping a Mario-side subclass, same as
+  `StatusBar` (old `hud/ScoreHud.java`/`hud/PauseOverlay.java` deleted, not left behind as
+  dead code).
+- [x] `platformer/screen/WorldLevelSelectScreen.java`, per
   [PLATFORMER_ENGINE_ARCHITECTURE.md §3.6](PLATFORMER_ENGINE_ARCHITECTURE.md#36-worldlevelselectscreen).
-  `screen/MarioMenuScreen.java` becomes a thin construction call.
-- [ ] `platformer/debug/LevelWarpPanel.java`, per
+  `screen/MarioMenuScreen.java` becomes a thin construction call (a plain subclass — no
+  static-API collision risk here, `ScreenAdapter`'s own `show`/`resize`/`render` are all
+  instance methods `MarioMenuScreen` never needs to redeclare).
+
+  **Filled in past the architecture doc's own illustrative sketch** (which omits several
+  real construction details): added `viewportWidth`/`viewportHeight` constructor
+  parameters and had the generic screen build its own `LayerManager`/`ExtendViewport`
+  internally, exactly like `MarioGameScreen` already does — the sketch's own constructor
+  signature has no viewport parameter at all, an omission rather than a deliberate design
+  choice (a `ScreenAdapter` needs *some* viewport to exist). Also used `IntFunction<String>`
+  for the level labeler instead of the sketch's `Function<Integer, String>` — an unboxed,
+  slightly better fit for `LevelNumbering::label`'s actual `String label(int)` signature,
+  and a method reference binds to either equally well. Left "SELECT A WORLD"/"BACK"/"EXIT"
+  and the "WORLD "-prefixed button/header text as fixed strings inside the generic class
+  rather than adding constructor parameters for each — the sketch itself only bothers to
+  parameterize one `title` string, treating the rest as generic-enough menu vocabulary; this
+  implementation follows that same judgment rather than expanding it into a half-dozen
+  string parameters nothing asks for.
+- [x] `platformer/debug/LevelWarpPanel.java`, per
   [PLATFORMER_ENGINE_ARCHITECTURE.md §3.7](PLATFORMER_ENGINE_ARCHITECTURE.md#37-levelwarppanel).
   `debug/DebugPanel.java` becomes a thin construction call passing Mario's own
   "interesting tile types" allow-list.
 
+  **One real design gap the architecture doc's own §3.7 paragraph doesn't address:**
+  its text says only "the interesting-tile-types allow-list" is the per-game input, but the
+  actual panel also builds a GOD MODE / INF LIVES / CYCLE POWER / SPEED toggle row — real
+  UI, not level-warp generation, and (per the architecture doc's own audit table entry for
+  `DebugPanel`, elsewhere in the same document) "god mode, power-state cycling are
+  Mario-specific *concepts*, though the *pattern* generalizes." Resolved by adding a
+  `List<RowBuilder>` constructor parameter (`RowBuilder` = `(Table, Skin) -> void`, one
+  functional-interface row-builder per extra row) that a game supplies to insert its own
+  toggle rows between the coordinate readout and the data-driven warp buttons, preserving
+  the exact original visual order. `DebugPanel`'s own row-building logic had to move into a
+  `private static` helper method (not an instance method) since `LevelWarpPanel`'s
+  constructor needs the finished row list *before* `super(...)` returns, at which point Java
+  forbids referencing any of `DebugPanel`'s own instance state — the old constructor-local
+  `timeScaleButton`/`timeScale` mutable state (previously a field, referenced from its own
+  click listener) now lives in a one-element array captured by that row's closure instead.
+  Also added a `protected String coordinateText(int, int)` hook (default: "Player tile:
+  (x,y)") so `DebugPanel` can still say "Mario tile" specifically, matching the original
+  text exactly rather than silently changing debug-panel wording.
+
 **Exit criteria:** full regression pass, **on-device** specifically for
 `WorldLevelSelectScreen` — `MarioMenuScreen`'s own class doc already flags UI-layout
 fragility (non-`setFillParent` positioning quirks) as a real risk here, so code review
-alone isn't sufficient for this one file.
+alone isn't sufficient for this one file. **Compiled successfully** via
+`gradlew :app:compileDebugJavaWithJavac --rerun-tasks` (a full clean rebuild) and grep-
+verified no stray references to the deleted `hud.ScoreHud`/`hud.PauseOverlay` classes
+remain anywhere in the tree — but compilation obviously can't confirm the on-screen layout
+itself is still correct, so the world-select/level-select screens and the debug panel's
+own button layout both need real on-device eyes before this phase is trusted.
 
 ---
 

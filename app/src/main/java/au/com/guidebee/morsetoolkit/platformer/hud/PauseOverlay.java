@@ -1,4 +1,4 @@
-package au.com.guidebee.morsetoolkit.activity.mario.hud;
+package au.com.guidebee.morsetoolkit.platformer.hud;
 
 import com.guidebee.game.microedition.LayerManager;
 import com.guidebee.game.ui.ClickListener;
@@ -9,28 +9,31 @@ import com.guidebee.game.ui.Table;
 import com.guidebee.game.ui.TextButton;
 
 /**
- * A small centered "PAUSED" panel with RESUME/QUIT buttons, shown while
- * {@code GameStateController} is paused (toggled via {@code MarioGameScreen}'s
- * back button - see its class doc) and hidden otherwise. Like
- * {@link ScoreHud}, its {@link #reposition} must be called every frame to
- * stay screen-anchored through the shared, moving/zooming world camera.
+ * A small centered pause panel with resume/quit buttons - moved from Mario's
+ * own {@code hud.PauseOverlay} unchanged except for its three button/title
+ * labels, now constructor parameters instead of the hardcoded "PAUSED"/
+ * "RESUME"/"QUIT TO MENU" strings (see PLATFORMER_ENGINE_ARCHITECTURE.md
+ * §2.2 - this class had no other Mario-specific part to generalize). Like
+ * {@link StatusBar}, {@link #reposition} must be called every frame to stay
+ * screen-anchored through the shared, moving/zooming world camera.
  */
 public class PauseOverlay {
 
     private final Table table;
 
-    public PauseOverlay(LayerManager layerManager, Skin skin, Runnable onResume, Runnable onQuit) {
+    public PauseOverlay(LayerManager layerManager, Skin skin, String titleText, String resumeText,
+                         String quitText, Runnable onResume, Runnable onQuit) {
         table = new Table();
 
-        Label title = new Label("PAUSED", skin);
-        TextButton resumeButton = new TextButton("RESUME", skin);
+        Label title = new Label(titleText, skin);
+        TextButton resumeButton = new TextButton(resumeText, skin);
         resumeButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 onResume.run();
             }
         });
-        TextButton quitButton = new TextButton("QUIT TO MENU", skin);
+        TextButton quitButton = new TextButton(quitText, skin);
         quitButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
@@ -59,7 +62,7 @@ public class PauseOverlay {
         table.setVisible(false);
     }
 
-    /** See the class doc; {@code screenLeft/Top/Width/Height} and {@code zoom} match {@link ScoreHud#reposition}'s. */
+    /** See the class doc; {@code screenLeft/Top/Width/Height} and {@code zoom} match {@link StatusBar#reposition}'s. */
     public void reposition(float screenLeft, float screenTop, float screenWidth, float screenHeight, float zoom) {
         table.setScale(zoom);
         table.setPosition(

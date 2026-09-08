@@ -48,8 +48,8 @@ import au.com.guidebee.morsetoolkit.activity.mario.fx.Fireworks;
 import au.com.guidebee.morsetoolkit.activity.mario.fx.PipeEntryAnimation;
 import au.com.guidebee.morsetoolkit.platformer.hud.PauseOverlay;
 import au.com.guidebee.morsetoolkit.platformer.hud.StatusBar;
-import au.com.guidebee.morsetoolkit.activity.mario.input.MarioInputController;
-import au.com.guidebee.morsetoolkit.activity.mario.input.PlayerCommand;
+import au.com.guidebee.morsetoolkit.platformer.input.PlatformerCommand;
+import au.com.guidebee.morsetoolkit.platformer.input.TouchOrKeyboardInput;
 import au.com.guidebee.morsetoolkit.activity.mario.level.LevelCatalog;
 import au.com.guidebee.morsetoolkit.activity.mario.level.LevelDefinition;
 import au.com.guidebee.morsetoolkit.activity.mario.level.LevelLoader;
@@ -80,7 +80,7 @@ import java.util.Random;
  * <h2>Level completion</h2>
  * {@link #levelState} is a tiny state machine driving what happens once the
  * player touches a checkpoint (see {@code CheckpointResolver}): control is
- * handed to a {@link PlayerCommand} this screen drives directly instead of
+ * handed to a {@link PlatformerCommand} this screen drives directly instead of
  * the real input controller (walking Mario into the level-end flag, or
  * holding him still while "entering" a pipe) for a short, kind-specific
  * delay, after which {@link MarioGamePlay#goToLevel} swaps in the next
@@ -94,7 +94,7 @@ import java.util.Random;
  * {@code CONTROLLER_TEXTURES} and {@code BattleCityGameScene}'s constructor)
  * from this project's {@code assets/controller/} tree - button A is jump,
  * button B is fire, and the touchpad's knob drives left/right/down (see
- * {@code MarioInputController}). A separate small back button, drawn
+ * {@code TouchOrKeyboardInput}). A separate small back button, drawn
  * procedurally via {@code Pixmap} exactly like
  * {@code BattleCityGameScene.createBackIcon}, opens {@link #pauseOverlay}
  * (see "Pause / game over" below) rather than exiting outright - the level
@@ -366,7 +366,7 @@ public class MarioGameScreen extends ScreenAdapter {
                 LevelNumbering.label(level.levelNumber));
         pauseOverlay = new PauseOverlay(layerManager, MarioResourceManager.uiSkinYDown(),
                 "PAUSED", "RESUME", "QUIT TO MENU", this::resumeGame, gamePlay::goToMenu);
-        MarioInputController input = new MarioInputController(gameController);
+        TouchOrKeyboardInput input = new TouchOrKeyboardInput(gameController);
 
         // The original engine's per-level "pos" field (BasicLevel.pos) is never
         // actually read anywhere in Mario.java - the shipped game only reaches a
@@ -437,7 +437,7 @@ public class MarioGameScreen extends ScreenAdapter {
     /**
      * The on-screen joystick + A/B buttons - see the class doc. Button A
      * (the "Shoot" icon) is fire, button B (the "Virgin" icon) is jump;
-     * {@code MarioInputController} polls both plus the touchpad knob.
+     * {@code TouchOrKeyboardInput} polls both plus the touchpad knob.
      */
     private GameController createGameController() {
         Texture background = MarioResourceManager.controllerTexture(CONTROLLER_BACKGROUND);
@@ -806,7 +806,7 @@ public class MarioGameScreen extends ScreenAdapter {
                     // carry him down to this level's own ground line.
                     if (player.isOnGround()) {
                         flagSliding = false;
-                        PlayerCommand walkForward = new PlayerCommand();
+                        PlatformerCommand walkForward = new PlatformerCommand();
                         walkForward.right = true;
                         player.setForcedCommand(walkForward);
                     }
@@ -862,7 +862,7 @@ public class MarioGameScreen extends ScreenAdapter {
         }
         levelState = LevelState.GAME_OVER;
         transitionTimer = GAME_OVER_SECONDS;
-        player.setForcedCommand(new PlayerCommand());
+        player.setForcedCommand(new PlatformerCommand());
         if (currentMusic != null) {
             currentMusic.stop();
         }
@@ -907,7 +907,7 @@ public class MarioGameScreen extends ScreenAdapter {
         pendingCheckpoint = checkpoint;
         levelState = LevelState.ENTERING;
         player.setInvincibleFor(TRANSITION_INVINCIBILITY_SECONDS);
-        player.setForcedCommand(new PlayerCommand());
+        player.setForcedCommand(new PlatformerCommand());
         transitionTimer = PIPE_ENTRY_SECONDS;
 
         if (currentMusic != null) {
@@ -960,7 +960,7 @@ public class MarioGameScreen extends ScreenAdapter {
                 enemy.deactivate();
             }
         }
-        PlayerCommand walkForward = new PlayerCommand();
+        PlatformerCommand walkForward = new PlatformerCommand();
         walkForward.right = true;
         player.setForcedCommand(walkForward);
     }
@@ -990,7 +990,7 @@ public class MarioGameScreen extends ScreenAdapter {
         levelState = LevelState.ENTERING;
         player.setInvincibleFor(TRANSITION_INVINCIBILITY_SECONDS);
         flagSliding = true;
-        player.setForcedCommand(new PlayerCommand());
+        player.setForcedCommand(new PlatformerCommand());
         if (flagPole != null) {
             flagPole.startSliding();
         }
@@ -1013,7 +1013,7 @@ public class MarioGameScreen extends ScreenAdapter {
         pendingCheckpoint = checkpoint;
         levelState = LevelState.ENTERING;
         flagSliding = false;
-        player.setForcedCommand(new PlayerCommand());
+        player.setForcedCommand(new PlatformerCommand());
         player.setVisible(false);
         transitionTimer = CELEBRATION_SECONDS;
         MarioContext.spawn(new FlagWinBanner((float) checkpoint.x, (float) checkpoint.y, world.tileSize()));
@@ -1048,7 +1048,7 @@ public class MarioGameScreen extends ScreenAdapter {
         levelState = LevelState.ENTERING;
         flagSliding = false;
         player.setInvincibleFor(TRANSITION_INVINCIBILITY_SECONDS);
-        player.setForcedCommand(new PlayerCommand());
+        player.setForcedCommand(new PlatformerCommand());
         player.setX((float) checkpoint.x - player.getWidth());
         transitionTimer = CELEBRATION_SECONDS;
         MarioContext.spawn(new Scenery((float) checkpoint.x - 224f, (float) checkpoint.y - 192f,

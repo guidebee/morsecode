@@ -811,16 +811,30 @@ own button layout both need real on-device eyes before this phase is trusted.
 
 ## Phase G — Input generalization
 
-- [ ] `platformer/input/PlatformerCommand.java` (generalized `PlayerCommand` — same
-  fields, generic names where they currently read Mario-specific, e.g. `firePressed`
-  could stay as-is or become `actionPressed`, a naming call to make at implementation
-  time).
-- [ ] `platformer/input/TouchOrKeyboardInput.java` (generalized `MarioInputController`).
-- [ ] `input/PlayerCommand.java`/`MarioInputController.java` either become thin aliases or
-  are deleted with call sites updated directly — implementation-time call, low risk either
-  way.
+- [x] `platformer/input/PlatformerCommand.java` (generalized `PlayerCommand` —
+  `firePressed` becomes neutral `actionPressed`).
+- [x] `platformer/input/TouchOrKeyboardInput.java` (generalized
+  `MarioInputController`).
+- [x] Deleted `input/PlayerCommand.java`/`MarioInputController.java` and updated all
+  Mario call sites to use the generalized classes directly.
 
-**Exit criteria:** full regression pass — purely mechanical, low risk.
+**Follow-up found on review:** the initial generalization pass dropped a genuinely
+non-obvious, on-device-verified comment along with the code it explained —
+`TouchOrKeyboardInput.poll()`'s touchpad-knob Y-axis reads (`down`/`up`) are inverted
+relative to `Touchpad`'s own javadoc, because this engine's Y-down camera convention means
+"physically lower on the touchpad" maps to *increasing* `getKnobPercentY()`. That's
+deliberate, not a bug, and was verified by hand on-device in the original `MarioInputController`
+— but the explanation didn't survive the mechanical rename, which is exactly backwards: a
+generic, reusable class is *more* likely to have someone "fix" this back to the wrong
+behavior without it, not less. Restored (rephrased to drop the Mario-specific
+`MarioGameScreen` reference and note that a Y-up-camera game should swap the two
+comparisons instead), along with two smaller comments the same pass had trimmed (why
+polling beats a listener here; why the controller's buttons need edge-detection) and
+lightweight per-field docs on `PlatformerCommand` distinguishing held vs. edge-triggered
+fields.
+
+**Exit criteria:** full regression pass — purely mechanical, low risk. **Compiled
+successfully** via `gradlew :app:compileDebugJavaWithJavac`.
 
 ---
 

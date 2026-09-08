@@ -8,11 +8,11 @@ import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.Bouncer;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.bricks.InteractiveBrick;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.projectiles.FireBall;
 import au.com.guidebee.morsetoolkit.activity.mario.fx.Bubble;
-import au.com.guidebee.morsetoolkit.activity.mario.input.MarioInputController;
-import au.com.guidebee.morsetoolkit.activity.mario.input.PlayerCommand;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioWorld;
 import au.com.guidebee.morsetoolkit.platformer.actor.PowerStateActor;
+import au.com.guidebee.morsetoolkit.platformer.input.PlatformerCommand;
+import au.com.guidebee.morsetoolkit.platformer.input.TouchOrKeyboardInput;
 
 import java.util.Random;
 
@@ -146,7 +146,7 @@ public class Player extends PowerStateActor<PlayerPowerState> {
     private static final float CHECKPOINT_MIN_DISTANCE_PX = 1000f;
 
     private final MarioWorld world;
-    private final MarioInputController input;
+    private final TouchOrKeyboardInput input;
 
     private TextureRegion[][] frameRegions;
     private int frameCols;
@@ -200,9 +200,9 @@ public class Player extends PowerStateActor<PlayerPowerState> {
     /** Ported from {@code Player_EnemyGroup}/{@code Hammer_Player}'s own {@code p.getY() + 48} threshold. */
     private final float duckOverheadClearancePx;
 
-    /** Set while a level-complete/pipe-entry sequence drives Mario instead of the player - see {@code MarioGameScreen}. Kept here (not in {@link PowerStateActor}) since generalizing it would need this class's own concrete input-command type, and nothing in the shared base ever needs to know what a "command" is - see that class's own doc. */
-    private PlayerCommand forcedCommand;
-    private PlayerCommand lastCommand;
+    /** Set while a level-complete/pipe-entry sequence drives Mario instead of the player - see {@code MarioGameScreen}. Kept here (not in {@link PowerStateActor}) because nothing in the shared base needs to interpret a command. */
+    private PlatformerCommand forcedCommand;
+    private PlatformerCommand lastCommand;
 
     /** Set by {@link #die()}/{@link #beginDeathAnimation()}, cleared by {@link #consumeDeath()} - see that method's doc. */
     private boolean justDied;
@@ -223,7 +223,7 @@ public class Player extends PowerStateActor<PlayerPowerState> {
     private int starColorIndex = 2;
     private float starColorTimer;
 
-    public Player(float x, float y, MarioWorld world, MarioInputController input) {
+    public Player(float x, float y, MarioWorld world, TouchOrKeyboardInput input) {
         super(x, y, PlayerPowerState.SMALL.width, PlayerPowerState.SMALL.height, true, PlayerPowerState.SMALL);
         this.world = world;
         this.input = input;
@@ -373,7 +373,7 @@ public class Player extends PowerStateActor<PlayerPowerState> {
             return;
         }
 
-        PlayerCommand command = forcedCommand != null ? forcedCommand : input.poll();
+        PlatformerCommand command = forcedCommand != null ? forcedCommand : input.poll();
         lastCommand = command;
         keyPressedDown = command.down;
         ducking = keyPressedDown && powerState != PlayerPowerState.SMALL;
@@ -477,8 +477,8 @@ public class Player extends PowerStateActor<PlayerPowerState> {
     }
 
     /** Ported from {@code Player.Fire()} - Fire Mario only, capped at 2 concurrent fireballs. */
-    private void applyFire(PlayerCommand command) {
-        if (!command.firePressed || powerState != PlayerPowerState.FIRE) {
+    private void applyFire(PlatformerCommand command) {
+        if (!command.actionPressed || powerState != PlayerPowerState.FIRE) {
             return;
         }
         long activeFireBalls = 0;
@@ -496,7 +496,7 @@ public class Player extends PowerStateActor<PlayerPowerState> {
         MarioResourceManager.sound("smb_fireball").play();
     }
 
-    private void applyHorizontalInput(PlayerCommand command, float frames) {
+    private void applyHorizontalInput(PlatformerCommand command, float frames) {
         // A scripted auto-walk (forcedCommand != null) uses AutomaticGoRight()'s
         // own slower cap/step instead of GoToRight/Left's - see AUTO_WALK_MAX_SPEED's doc.
         boolean autoWalk = forcedCommand != null;
@@ -550,7 +550,7 @@ public class Player extends PowerStateActor<PlayerPowerState> {
         }
     }
 
-    private void applyJump(PlayerCommand command) {
+    private void applyJump(PlatformerCommand command) {
         if (!command.jumpPressed) {
             return;
         }
@@ -656,7 +656,7 @@ public class Player extends PowerStateActor<PlayerPowerState> {
      * *behavior* (idle/airborne/skid/cadence-proportional-to-speed walk
      * cycle) rather than transcribing its exact accumulator bookkeeping.
      */
-    private void updateAnimation(PlayerCommand command, float frames) {
+    private void updateAnimation(PlatformerCommand command, float frames) {
         // Ported from Player.update()'s own KeyPressedDown block - takes
         // priority over every other pose, matching the original (its
         // equivalent check runs last each tick, so it always wins), and is
@@ -1036,7 +1036,7 @@ public class Player extends PowerStateActor<PlayerPowerState> {
      * standing still while entering a pipe) without the player's own input.
      * Pass {@code null} to release control back to {@code input}.
      */
-    public void setForcedCommand(PlayerCommand command) {
+    public void setForcedCommand(PlatformerCommand command) {
         forcedCommand = command;
     }
 

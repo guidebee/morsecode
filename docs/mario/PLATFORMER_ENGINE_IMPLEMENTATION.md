@@ -31,7 +31,11 @@ satisfied.
   [MARIO_LEVEL_ATLAS.md](MARIO_LEVEL_ATLAS.md) regression pass this ground rule also calls
   for is still the user's own responsibility** — a clean compile proves every call site was
   updated, not that gameplay feel/visual output is unchanged; each phase's own exit-criteria
-  note says explicitly what still needs real playtesting attention.
+  note says explicitly what still needs real playtesting attention. **Confirmed
+  2026-09-08: this on-device pass has been run against the current placeholder art — works
+  as expected.** This satisfies
+  [MARIO_RESKIN_EXECUTION.md Step R.0](MARIO_RESKIN_EXECUTION.md#step-r0--decisions-blocking-everything-else)'s
+  own prerequisite bullet, which was blocking the reskin on exactly this.
   <br>Original wording, kept for context: *no compilation was expected to be available in
   the environment this plan was written in (no Android SDK/NDK, `gradle.properties` targets
   a Windows-only JDK path) — build and run the full MARIO_LEVEL_ATLAS.md regression pass on

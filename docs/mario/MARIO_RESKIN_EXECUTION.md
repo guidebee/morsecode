@@ -178,22 +178,57 @@ next until the current one is checked off.
 
 ### Step R.0 — Decisions (blocking everything else)
 
-- [ ] **Prerequisite, not a decision:** confirm
+- [x] **Prerequisite, not a decision:** confirm
       [PLATFORMER_ENGINE_ARCHITECTURE.md §7](PLATFORMER_ENGINE_ARCHITECTURE.md#7-migration-plan)'s
       Phases A–G are complete and Mario's full regression pass is clean on the current
       placeholder art. Per
       [MARIO_RESKIN_PLAN.md §5](MARIO_RESKIN_PLAN.md#5-ordering-phase-2--platformer-re-architecture--reskin-as-sequential-passes)'s
-      amended ordering, none of the steps below start before this is true.
-- [ ] Finalize the new identity (character/enemy/world names) — starting strawman already
+      amended ordering, none of the steps below start before this is true. **Confirmed
+      2026-09-08: on-device regression pass run against
+      [MARIO_LEVEL_ATLAS.md](MARIO_LEVEL_ATLAS.md), works as expected** — this closes the
+      "still the user's own responsibility" gap
+      [PLATFORMER_ENGINE_IMPLEMENTATION.md §0](PLATFORMER_ENGINE_IMPLEMENTATION.md#0-ground-rules-this-implementation-followed)
+      left open, including Phase B2's z-order risk, Phase E's grow/shrink/Star/flagpole
+      sequences, and Phase F's `WorldLevelSelectScreen` layout.
+- [x] Finalize the new identity (character/enemy/world names) — starting strawman already
       in [MARIO_RESKIN_PLAN.md §2](MARIO_RESKIN_PLAN.md#2-new-identity-starting-proposal--a-creative-decision-for-the-team-to-adjust-not-a-fixed-spec).
-- [ ] Confirm `ART_SCALE` (recommend `2`, i.e. 64px/tile, per that plan's §4.1) — this
-      pins every subsequent asset's target dimensions.
-- [ ] Decide on Path B (LPC/CC-BY-SA) acceptability — yes/no, and if yes, for which
+      **Decided 2026-09-08: accepted as-is.** Title "Ampere's Run." Ampere / Battery cell /
+      Charge coil / Overclock chip / Bolt-gear coin / Spare chassis / Scuttler / Roller /
+      Plater / The Warden / the Signal Core; world themes Surface / Substrate / Fortress /
+      Flooded Sector / Night Shift — the exact §2 table, no changes. Rationale: coherent,
+      clears Nintendo's specific silhouettes/color schemes per §2's hard constraint, and
+      leaves room for a Morse-code tie-in later without forcing one now. **Refined
+      2026-09-08 per [MARIO_RESKIN_PLAN.md §2's update](MARIO_RESKIN_PLAN.md#2-new-identity-starting-proposal--a-creative-decision-for-the-team-to-adjust-not-a-fixed-spec):**
+      the Morse hook is now planned, not speculative, and the Coin→"Bolt/gear" asset is
+      its carrier — see the new §7.5 note below and Step R.3's updated coin bullet.
+- [x] Confirm `ART_SCALE` (recommend `2`, i.e. 64px/tile, per that plan's §4.1) — this
+      pins every subsequent asset's target dimensions. **Decided 2026-09-08: `ART_SCALE=2`**,
+      per the plan's own memory-budget reasoning (pixel area scales with the square of the
+      factor). Filtering stays `Nearest,Nearest` — every asset source lined up in §7 (Robot
+      Master Series, Robot Platform Pack, the CC0 fallbacks) is pixel-art style, not
+      painterly, so smoother filtering would fight the art direction those packs already
+      commit to.
+- [x] Decide on Path B (LPC/CC-BY-SA) acceptability — yes/no, and if yes, for which
       specific asset categories only (§1's table). Record the decision in §6's tracker
       regardless of the answer. **2026-09-08 update:** §7.1 makes this likely moot for the
       player/enemy/boss roster specifically — revisit only if §7's packs don't pan out.
-- [ ] Pick the AI-generation tool (if any) and confirm its commercial license tier is
+      **Decided 2026-09-08: declined entirely, including for Substrate/Flooded Sector**
+      (§7.4's remaining open themes) — use the recolor-a-generic-CC0-tileset fallback
+      instead. Not worth taking on CC-BY-SA/ShareAlike obligations for two background
+      tilesets when every other sourced asset is clean CC0/free-commercial, and a recolor
+      pass gives more palette control to match the mechanical/sci-fi identity than fixed
+      LPC art would anyway. Logged in
+      [MARIO_RESKIN_CREDITS.md](MARIO_RESKIN_CREDITS.md).
+- [x] Pick the AI-generation tool (if any) and confirm its commercial license tier is
       actually purchased/active before any output from it enters the shipped asset tree.
+      **Decided 2026-09-08: Retro Diffusion**, scoped narrowly — §7's packs now cover the
+      player/enemy/boss roster, so this tool's actual job is the long-tail scenery/
+      background dressing and the Substrate/Flooded Sector recolor-and-dress work, not
+      hero assets. Picked over PixelLab for its grid-aligned pixel-art output (matches the
+      `ART_SCALE`/filtering decision above) and per-image credit pricing, which fits a
+      fill-the-gaps workflow better than a subscription. **Commercial tier must still be
+      purchased/activated before Step R.4/R.5 generates anything that ships** — not done
+      yet, tracked in [MARIO_RESKIN_CREDITS.md](MARIO_RESKIN_CREDITS.md).
 
 ### Step R.1 — Land the `ART_SCALE` code decoupling (no new art yet)
 
@@ -243,6 +278,10 @@ tier 1: `Brick`, `stone`/`chocolate` (×5 themes), `EnemyMushroom`-equivalent.
       vs. hand-drawn `bw_*` set).
 - [ ] Design and draw the breakable-brick sprite + its break-fragment art
       (`brick_peaces`, 2×4 grid).
+- [ ] Design the Bolt/gear coin sprite with the future Morse hook in mind (§7.5) — no new
+      art or code for the hook itself yet, just don't design the coin/HUD layout in a way
+      that would need reworking once a `letterOfMorseCode`-style tag and a
+      `ChallengeLetter`-style top-left HUD dock are added.
 - [ ] Design and draw the most common enemy's replacement (walk cycle, matching
       whatever frame count the new design needs — not required to match the original's
       2×4 grid exactly, since this is new character art, not a literal reskin of the same
@@ -379,3 +418,35 @@ as "free, commercial-use-permitted, no-redistribution" rather than CC0.
   specifically rather than continuing to search for a perfect thematic hit.
 - Update §6's tracker with all of 7.1–7.3's entries once actually downloaded, noting the
   two non-CC0-but-free-commercial packs' no-redistribution clause explicitly.
+
+### 7.5 Morse-code training hook (forward-compatibility note, 2026-09-08)
+
+The Morse hook is a planned future addition, not part of this reskin's own scope — but
+the reskin's art/HUD decisions should leave room for it now rather than need reworking
+later, per the precedent already proven in this app's other two mini-games:
+
+- **`flappybird`**: `hud/ChallengeLetter.java` docks a queue of up to 5 target letters at
+  top-left, drawn from a shared `morsecode.atlas` (`letterA-Z`/`number0-9`/`dot`/`dash`
+  regions). `actor/Playground.java` tags each tube gate with a letter
+  (`TubePosition.letterOfMorseCode`); matching the front of the queue scores bonus and
+  advances it. A `gameEncode` user setting toggles between showing the plain letter and
+  showing its dot/dash breakdown (via `helper/MorseHelper.morseCodeData`).
+- **`battlecity`**: `LedLetters.java` renders a random letter as an LED dot-matrix out of
+  destructible level bricks, with its Morse pattern rendered as a second brick pattern
+  underneath (`actors/BattleField.java`), reusing the same `MorseHelper` table.
+
+**What this means for the reskin now:**
+- The Coin→"Bolt/gear" mapping (§2 of the plan) is the natural carrier — give it a
+  `letterOfMorseCode`-style tag when the hook is actually built, the same role
+  `TubePosition` plays in `flappybird`.
+- Reserve HUD space for a `ChallengeLetter`-style dock (top-left) in whatever HUD layout
+  Step R.5 settles on, so it doesn't get squeezed in awkwardly later.
+- **Zero new art or licensing work**: `morsecode.atlas`/`MorseHelper` already exist
+  in-house, CC-free, and are shared across two games today — reusing them a third time
+  for Mario needs no sourcing, no AI-gen, no Path B consideration at all.
+- **No `ART_SCALE`/`TileMetrics` interaction**: these glyphs are HUD-scale assets, not
+  world-tile assets — same reasoning already applied to `ScoreHud` in Phase F of
+  [PLATFORMER_ENGINE_IMPLEMENTATION.md](PLATFORMER_ENGINE_IMPLEMENTATION.md#phase-f--hud--menu--save-state--debug-panel-generalization).
+  Don't thread `tileSize` through them.
+- Actually wiring the tag/HUD/scoring logic into Mario is deferred, real engine work —
+  not scheduled here, just protected against by this note.

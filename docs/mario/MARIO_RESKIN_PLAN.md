@@ -113,6 +113,24 @@ specific character silhouettes/color schemes** (no red-overalls plumber, no
 spiky-shelled dragon-turtle, no mushroom-with-eyebrows) — a reskin that's just a
 recolored trace of the same character design doesn't actually solve the problem.
 
+**2026-09-08 update — the Morse hook is now a planned requirement, not a maybe, and it
+changes the Coin entry specifically.** The app already has a working, proven pattern for
+this in its other two mini-games: `flappybird`'s `hud/ChallengeLetter.java` shows a
+queue of target letters (backed by the shared `morsecode.atlas`'s `letterA-Z`/`number0-9`/
+`dot`/`dash` regions and `helper/MorseHelper.morseCodeData`), and `Playground.java` tags
+each tube gate with a letter (`TubePosition.letterOfMorseCode`) — flying through the gate
+matching the front of the queue scores bonus and advances it, with a `gameEncode` toggle
+switching between "match the letter" and "match its dot/dash breakdown." `battlecity`
+reuses the same atlas/table to render a letter (`LedLetters`'s dot-matrix) plus its Morse
+pattern as level-terrain bricks. **The Coin→"Bolt/gear" mapping is the natural place to
+carry this into Mario/Ampere's Run**: give the bolt collectible the same
+`letterOfMorseCode`-style tag `TubePosition` carries, and reserve a `ChallengeLetter`-style
+HUD dock (top-left, same as `flappybird`) from the start, so
+[MARIO_RESKIN_EXECUTION.md](MARIO_RESKIN_EXECUTION.md)'s coin/HUD work doesn't need
+retrofitting once the Morse hook actually lands. This needs **zero new art or licensing
+exposure** — `morsecode.atlas`/`MorseHelper` already exist in-house and are shared across
+two games today; a third reuse is free.
+
 **Resolution note:** since every one of these is being (re)authored from scratch anyway
 (§5), author them directly at the §4.1 target resolution — there's no "draw it once at
 low-res, upscale later" step to sequence in; low-res-then-upscale is strictly wasted

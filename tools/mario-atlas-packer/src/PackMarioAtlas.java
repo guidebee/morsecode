@@ -416,17 +416,33 @@ public class PackMarioAtlas {
     public static void main(String[] args) throws Exception {
         File sourceDir = new File(args.length > 0 ? args[0] : "C:/workspace/Mario/SandBox");
         File outDir = new File(args.length > 1 ? args[1] : "app/src/main/assets");
+        // Reskin overlay (docs/mario/MARIO_RESKIN_EXECUTION.md Step R.2+): checked
+        // first, per-asset, falling back to sourceDir for anything not yet
+        // reskinned. This lets the reskin land incrementally (one asset category
+        // at a time, re-packing after each) instead of needing every one of
+        // ASSETS' ~130 entries replaced before the packer can run at all - the
+        // original Nintendo-derived sourceDir stays the fallback for whatever
+        // hasn't been reskinned yet.
+        File reskinDir = new File(args.length > 2 ? args[2] : "docs/assets/mario-sprites/reskin-source");
         outDir.mkdirs();
 
         List<LoadedAsset> loaded = new ArrayList<>();
+        int reskinned = 0;
         for (AssetSpec spec : ASSETS) {
-            File f = new File(sourceDir, spec.sourcePath());
+            File f = new File(reskinDir, spec.sourcePath());
+            if (f.isFile()) {
+                reskinned++;
+            } else {
+                f = new File(sourceDir, spec.sourcePath());
+            }
             BufferedImage img = ImageIO.read(f);
             if (img == null) {
                 throw new IllegalStateException("Failed to read " + f);
             }
             loaded.add(new LoadedAsset(spec, applyMagentaMask(img)));
         }
+        System.out.println(reskinned + " / " + ASSETS.size() + " assets sourced from reskin overlay ("
+                + reskinDir + "), the rest from " + sourceDir);
         for (TerrainTile tile : TERRAIN_TILES) {
             loaded.add(new LoadedAsset(
                     new AssetSpec(tile.theme(), tile.regionName(), null, TILE_SHEET_COLS, 1),

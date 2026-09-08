@@ -271,11 +271,12 @@ next until the current one is checked off.
       Verified via `gradlew :app:compileDebugJavaWithJavac --rerun-tasks` (full clean
       rebuild) after every group of files, per this doc set's own discipline — compile
       only proves call sites are correct, not gameplay/visual output.
-- [ ] Re-pack the *existing* placeholder art unchanged, confirm all 8 worlds still
+- [x] Re-pack the *existing* placeholder art unchanged, confirm all 8 worlds still
       render/collide identically (this is [MARIO_RESKIN_PLAN.md §4.4.2](MARIO_RESKIN_PLAN.md)'s
       own isolation step — verify the code change before any art changes, so a bug is
-      unambiguously attributable to one or the other). **Still open — on-device regression
-      pass, the user's own next step**, same as every other phase in this doc set.
+      unambiguously attributable to one or the other). **Confirmed 2026-09-08: on-device
+      regression pass run with `ART_SCALE=1` and the existing placeholder art, works as
+      expected** — Step R.1 is fully closed (commit `862fab1`), Step R.2 can start.
 
 ### Step R.2 — Player character (Path A, priority 1)
 

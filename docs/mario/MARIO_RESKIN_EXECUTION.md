@@ -438,7 +438,7 @@ tier 1: `Brick`, `stone`/`chocolate` (×5 themes), `EnemyMushroom`-equivalent.
       the existing 2×4 grid (`EnemyMashroom.java`'s own Sea/Ground/UnderGround/Castle row
       convention, kept as-is rather than redesigned, since the frame count itself isn't
       Nintendo-specific).
-- [ ] Re-pack and playtest one full world (World 1, per the level atlas) before scaling
+- [x] Re-pack and playtest one full world (World 1, per the level atlas) before scaling
       up to the rest — this is the same "prove the pipeline on a vertical slice" discipline
       the original port used. **Packed and compiled clean 2026-09-08** (same page/region
       counts as before this step — 34/122 assets now sourced from the reskin overlay, up
@@ -469,8 +469,9 @@ tier 1: `Brick`, `stone`/`chocolate` (×5 themes), `EnemyMushroom`-equivalent.
          fills 27×25px of its 32×32 cell.
 
       Re-packed and recompiled clean after both fixes (same 34/122 overlay count, same
-      page/region layout). **Still needs the user's own on-device playtest of World 1**
-      before this step is fully closed - not yet re-verified as of this write-up.
+      page/region layout). **Confirmed 2026-09-08 on-device: both fixes tested and work
+      fine.** Combined with the terrain-swap confirmation above (also 2026-09-08),
+      **Step R.3 is fully closed.**
 
       **2026-09-08 addendum:** the procedural terrain/brick tiles work but read as
       programmer art next to the sourced player/enemy sprites. A local

@@ -57,9 +57,15 @@ Expansion's girder/panel pieces first (highest visible improvement, matches its 
 theme perfectly already). For Substrate, use Tiny Dungeon's stone/door tiles as the base
 with a circuit-accent recolor. For Flooded Sector, use Roguelike Dungeon Pack's
 already-blue palette reframed as flooded tunnels — this closes the one theme gap the
-original research never solved. Ground/UnderGround can stay on the procedural tiles or
-get the same Pixel Platformer Blocks treatment — lower priority since they already read
+original research never solved. Ground (Surface) can stay on the procedural tile or get
+the same Pixel Platformer Blocks treatment — lower priority since it already reads
 acceptably.
+
+**DONE 2026-09-08**: Fortress/Substrate/Flooded Sector all swapped per this
+recommendation (script + exact tile indices in §12.1), packed, and **confirmed on-device
+— looks fine**. Ground stays procedural, per the "lower priority" call above. See
+[MARIO_RESKIN_EXECUTION.md Step R.3](MARIO_RESKIN_EXECUTION.md#step-r3--priority-1-world-assets-highest-on-screen-frequency)
+for the closing write-up.
 
 ## 2. Power-up items — 3 of 4 solved directly from Robot Master Series' own `other/` folder
 

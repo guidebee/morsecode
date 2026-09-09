@@ -520,6 +520,31 @@ tier 1: `Brick`, `stone`/`chocolate` (×5 themes), `EnemyMushroom`-equivalent.
       Platform Pack"'s coin/HP-heart assets specifically (missing from Robot Master
       Series) for the Bolt/gear coin and Spare-chassis 1-Up.
 
+      **2026-09-09: Phase 1 done** (`docs/assets/mario-sprites/ampere-staging/build_r4_phase1.py`)
+      — Battery cell (`mashroom`/`mashrooms`), Overclock chip (`star`), Charge coil
+      (`flower`), and Roller/`EnemyTurtle` (`turtle`/`turtle_dark`, 128×48 = 4 frames of
+      32×48 — confirmed *taller than a tile* by reading `EnemyTurtle.java`'s own
+      `super()` call rather than assuming, since Robot Master Series' `enemy2` source
+      frames are natively wide-squat (48×32), the opposite aspect — fixed with
+      anchor-bottom fill-height scaling, the same technique already validated for
+      Ampere's Big/Fire in R.2) plus `turtle_shell`/`turtle_shell_dark` (32×32 static,
+      reusing the most compact walk frame). Every crop is verified via `getbbox()` at
+      generation time (printed, asserted non-empty) — this closes out a real false start:
+      an earlier attempt on a throwaway `reskin-byteplus` branch got these exact same
+      assets wrong (mushroom/flower unrecognizable) from *guessed* crop coordinates that
+      were never checked against the source image, plus a compositing-order bug on the
+      coil's glow effect and a wide/height mix-up on the turtle frame size. That branch
+      was abandoned rather than fixed in place — this phase was rebuilt from scratch on
+      clean `reskin` with verification built into the script itself, not bolted on after
+      a bug report. Packed (39/122 overlay) and compiled clean; **not yet on-device
+      verified.**
+
+      **Still open for R.4** (tier-3/4 per §16.4, not yet started): `turtle_shell_red`/
+      `_flip` variants and `enemy_turtle_patrol` (not reached by World 1's own data, per
+      `TurtleShell.java`'s doc — lower priority); Plater/`FlyingTurtle`/`Helmet` family;
+      `Iron`; `QuestionMark`/`Bank` family; The Warden/`Boss`; and tier-4's long tail of
+      one-off enemies/mechanisms.
+
 ### Step R.5 — Scenery, backdrops, HUD, UI text
 
 - [ ] Parallax backgrounds (Mountain/Clouds/CloudsNight/Fence/Sea) — reference §2.3's

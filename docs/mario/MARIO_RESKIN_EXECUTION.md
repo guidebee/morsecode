@@ -547,11 +547,129 @@ closes.
       a bug report. Packed (39/122 overlay) and compiled clean; **not yet on-device
       verified.**
 
-      **Still open for R.4** (tier-3/4 per §16.4, not yet started): `turtle_shell_red`/
+      **2026-09-09: Phase 2 tasks 1-2 done** (`docs/assets/mario-sprites/ampere-staging/build_r4_phase2.py`)
+      — `Iron.png` rebuilt as a 4×1, 32×32-per-frame strip in the exact order
+      `Iron.java` expects: Sea, Ground, UnderGround, Castle (confirmed by reading that
+      class's own `frameFor()` mapping first, not assuming the row order from any other
+      asset). Rather than inventing a fifth unrelated material, the script reuses the
+      already-shipped themed stone tiles from R.3 (`stone_Sea.png`, `stone.png`,
+      `stone_UnderGround.png`, `stone_Castle.png`) and overlays a consistent
+      "spent/armored plate" motif (inner panel, center brace, rivets), so the block reads
+      as the same world material family while still clearly distinct from plain terrain.
+
+      `QuestionMark.png` and `QuestionMarkGrey.png` were then rebuilt as 3×1, 32×32-per-frame
+      idle strips matching `QuestionMark.java`'s own `IDLE_FRAMES = {0,0,1,2,1,0}` loop.
+      The normal sheet uses a bright amber/yellow tech-block palette for Ground/Sea; the
+      grey sheet uses the muted metallic palette `QuestionMark.java#regionFor()` selects for
+      UnderGround/Castle. Each frame deliberately changes slightly (panel lift/highlight
+      pulse + the glyph rising upward) so the bob loop is readable as animation, not three
+      identical copies. Generated to `docs/assets/mario-sprites/reskin-source/Iron.png`,
+      `QuestionMark.png`, and `QuestionMarkGrey.png`; **not yet packed or on-device
+      verified.**
+
+      **2026-09-09: Task 3 Plater / Helmet — BLOCKED, not implemented.**
+      Re-read the latest junior guide, the source index, `Helmet.java`,
+      `HelmetShell.java`, the packer's AssetSpecs/overlay loader, `pack.sh`, and
+      `sprite_tools.py`. Confirmed the exact targets below, all relative to
+      `docs/assets/mario-sprites/reskin-source/`:
+
+      | Region | Exact output path | Sheet size | Pose contract |
+      |---|---|---|---|
+      | `helmet` | `Helmet.png` | 128×32 | 0–1 left walk pair; 2–3 right walk pair |
+      | `helmet_dark` | `Helmetdark.png` | 128×32 | Same walk contract, dark palette |
+      | `helmet_white` | `Helmetwhite.png` | 128×32 | Same walk contract, white palette |
+      | `helmet_shell` | `HelmetShell.png` | 32×32 | Single retracted pose |
+      | `helmet_shell_dark` | `HelmetShelldark.png` | 32×32 | Same retracted pose, dark palette |
+      | `helmet_shell_white` | `HelmetShellwhite.png` | 32×32 | Same retracted pose, white palette |
+
+      Both actors pass `tileSize, tileSize` to `super`; Helmet selects
+      `(movingRight ? 2 : 0) + (showingFirstFrame ? 0 : 1)`. HelmetShell has no
+      directional/animation frame selection: stationary and kicked states share its
+      single frame, and projectile defeat extracts `[0][0]` at tile size × ART_SCALE.
+      No actor, gameplay, or ART_SCALE changes were made.
+
+      **Blockers:** the IDE file-discovery tool denied access to
+      `C:/workspace/robot_series_base_pack/enemy3` under AI exclude policies. Its
+      existence is user-confirmed, but actual filenames, image dimensions, animation
+      layout, facing, and a convincing retracted pose remain unverified. No source
+      image was read and no crop or source-frame mapping was guessed. Access was not
+      retried through a shell or another route. Separately, the latest guide mandates
+      importing and using the Python helpers for every asset, while this session
+      prohibits authoring/extending Python programs or inline image-generation Python.
+      The existing Java packer loads and packs finished overlay PNGs; it does not
+      provide an enemy3 authoring pipeline. A new Java generator would not reuse the
+      mandatory Python helpers, so none was written as a workaround. Resume only with
+      approved source access and a compliant existing helper-based generator or an
+      explicit guide exception permitting a Java authoring pipeline; the Python-script
+      prohibition itself remains in force. Retracted-pose suitability is an open
+      inspection gap, not a finding that the pack lacks the pose.
+
+      **Verification/status correction:** the preceding tasks 1–2 “done” heading means
+      generated only, not accepted: `Iron.png`, `QuestionMark.png`, and
+      `QuestionMarkGrey.png` have NOT been visually verified, packed, compiled, or
+      device-tested for those changes. Their untracked files, `build_r4_phase2.py`,
+      `__pycache__`, and existing documentation edits were preserved. No Helmet overlays
+      existed in the overlay discovery result and none were created. No PNG visual
+      verification, pack, Java compile, or device test was performed in this blocked
+      attempt; all remain pending. Historical 39/122 is not a fresh measured baseline.
+      If the prior three overlays and all six Helmet files are subsequently accepted,
+      the expected overlay count is 48/122 (39 + 3 + 6), not a measured result here;
+      fresh per-atlas page/region counts must also be captured and compared when packing.
+      Only this status addendum was added; Task 3 stays unchecked and no boss or other
+      task was started.
+
+      **2026-09-09: Task 3 continuation — staged source access resolved; authoring and
+      visual review still blocked.** Confirmed branch `reskin-azure` and captured
+      `git status --short` before edits. Read only the approved copy at
+      `docs/mario/assets/mario-sprites/ampere-staging/enemy3-source/` (note the
+      `docs/mario/assets` prefix); the excluded external original was not accessed.
+      Added the read-only Java metadata inspector
+      `tools/mario-atlas-packer/src/InspectEnemy3.java` using the IDE write API and ran
+      `java tools/mario-atlas-packer/src/InspectEnemy3.java` successfully on Java 21.
+      It decodes PNGs with ImageIO, reports nontransparent-pixel bounds/components,
+      and writes no images. Measured dimensions, not filename-derived dimensions:
+
+      | Staged source | Actual canvas | Alpha content bounds [x0,y0,x1,y1) |
+      |---|---|---|
+      | `enemy3all.png` | 256×96 | [7,14,244,96) |
+      | `enemy3attack-Sheet[32height32wide].png` | 352×32 | [7,14,345,32) |
+      | `enemy3_attacking-Sheet[80height32wide].png` | 256×80 | [14,19,244,32) |
+      | `enemy3bullet.png` | 32×32 | [14,7,18,24) |
+
+      All four have alpha with no partially transparent pixels. The attack strip has
+      eleven separate alpha components at 32px horizontal intervals, each 18px wide,
+      with heights 7, 9, 10, 12, 10, 12, 15, 18, 17, 7, 7. The 256×80 sheet has
+      eight components at 32px intervals, confined to y=19–31 inclusive; the remainder
+      is transparent. `enemy3all.png` has occupied row bands [14,21), [39,56), and
+      [83,96). These establish pixel layout only, NOT pose semantics, facing, or a
+      verified walk/retracted-shell pairing. The prior image-tool reads returned byte
+      descriptions rather than rendered images; no redundant image reads were made
+      and no visual acceptance is claimed.
+
+      Inspected all discovered Python generator entry-point/configuration matches,
+      the phase-1/phase-2 generators, and the full shared helper module. No existing
+      configurable enemy3 generator was found. `sprite_tools` has no CLI or file-path
+      pipeline: crop/place/tint/mirror functions require live Pillow objects, and
+      `build_sheet` requires assembled image frames. Available IDE tools expose no
+      persistent Python evaluator or direct helper-call bridge. A shell `python -c`
+      program, a newly authored Python script, or a wrapper hiding that program is
+      not a compliant way to construct this pipeline. Existing hard-coded generators
+      were not run, extended, or redirected; prior assets remain preserved.
+
+      **Decision needed:** approve a narrowly scoped Java asset-generator exception
+      to the guide's mandatory `sprite_tools` pipeline, plus provide rendered source
+      images for pose/facing review; alternatively supply an existing configurable
+      helper-based generator and rendered source images. A Java exception alone does
+      not establish pose suitability. No Helmet overlay, atlas, gameplay, or ART_SCALE
+      change was made. Pack, app compile, and device review remain pending; running the
+      metadata inspector is not an app compile or an art visual verification. Task 3
+      remains blocked/unchecked and the historical overlay count is still unmeasured.
+
+      **Still open for R.4** (tier-3/4 per §16.4): `turtle_shell_red`/
       `_flip` variants and `enemy_turtle_patrol` (not reached by World 1's own data, per
       `TurtleShell.java`'s doc — lower priority); Plater/`FlyingTurtle`/`Helmet` family;
-      `Iron`; `QuestionMark`/`Bank` family; The Warden/`Boss`; and tier-4's long tail of
-      one-off enemies/mechanisms.
+      The Warden/`Boss`; Spare chassis/`one_up`; and tier-4's long tail of one-off
+      enemies/mechanisms.
 
 ### Step R.5 — Scenery, backdrops, HUD, UI text
 

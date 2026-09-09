@@ -507,6 +507,14 @@ tier 1: `Brick`, `stone`/`chocolate` (×5 themes), `EnemyMushroom`-equivalent.
 
 ### Step R.4 — Remaining enemies, bricks, items, hazards, lifts
 
+**2026-09-09: this step is being handed off task-by-task — see
+[MARIO_RESKIN_JUNIOR_DEV_GUIDE.md](MARIO_RESKIN_JUNIOR_DEV_GUIDE.md)** for the hands-on
+recipe, a shared `sprite_tools.py` helper module (extracted from the fixes below, so the
+same bugs can't recur through copy-paste), a mistakes-hall-of-fame table, and a concrete
+task list (Iron → QuestionMark/Bank → Plater/Helmet → The Warden → Spare chassis, then
+the rest of tier-3/4 as a checklist). Progress continues to be logged here as each task
+closes.
+
 - [ ] Work down [MARIO_GAME_MECHANICS.md §16.4](MARIO_GAME_MECHANICS.md#164-reskin-priority-by-on-screen-frequency)'s
       tiers 3 and 4 in order.
 - [ ] For each, decide Path A vs. Path C (§1) individually rather than batching — a

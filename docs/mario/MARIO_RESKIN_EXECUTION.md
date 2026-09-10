@@ -651,6 +651,32 @@ closes.
       (`67 / 122` overlay) and compile-checked (`:app:compileDebugJavaWithJavac`
       successful).
 
+      **2026-09-10: Task 12 (`lava`/`lava_ball`/`water`) done**
+      (`docs/assets/mario-sprites/ampere-staging/build_r4_task12_lava_water_family.py`) —
+      rebuilt `Lava.png` (1x1), `LavaBall.png` (2x1), and `Water.png` (1x1), matching
+      `PackMarioAtlas` filenames and `LavaBall.java`'s 2-frame 32x32 contract. Preserved
+      the fallback source geometry for scenery columns (`Lava`/`Water` as 32x128), while
+      re-theming the surface/foam colors; `LavaBall` reuses the already-reskinned
+      `FireBall` concept with a larger haloed two-frame burst. Packed clean
+      (`70 / 122` overlay) and compile-checked (`:app:compileDebugJavaWithJavac`
+      successful).
+
+      **2026-09-10: Task 13 (`axe`) done**
+      (`docs/assets/mario-sprites/ampere-staging/build_r4_task13_axe.py`) — rebuilt
+      `Axe.png` (4x1, 32x32) matching `Axe.java`'s 6-step frame sequence
+      (`0,1,2,3,2,1`) with per-frame core shimmer so the loop reads as active.
+      Packed clean (`71 / 122` overlay) and compile-checked
+      (`:app:compileDebugJavaWithJavac` successful).
+
+      **2026-09-10: Task 14 (`wall`/`rocket_launcher`/`bouncer`/`spring`) done**
+      (`docs/assets/mario-sprites/ampere-staging/build_r4_task14_wall_launcher_bouncer_spring.py`) —
+      rebuilt `Wall.png` (2x1), `RocketLauncher.png` (1x4), `Bouncer.png` (1x1), and
+      `Spring.png` (3x1 with 32x64 frames), matching `LevelLoader.spawnWall(...)`'s top/body
+      split, `spawnRocketLauncher(...)`'s row-mapped launcher/body segments, `Bouncer.java`'s
+      static pad usage, and `Spring.java`'s 3-frame squish strip. Packed clean
+      (`75 / 122` overlay) and compile-checked (`:app:compileDebugJavaWithJavac`
+      successful).
+
       **Still open for R.4** (tier-3/4 per §16.4, not yet started): tier-4's long tail of
       one-off enemies/mechanisms.
 

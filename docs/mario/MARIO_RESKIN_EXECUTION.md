@@ -742,15 +742,26 @@ closes.
 
 ### Step R.6 — Audio
 
-- [ ] Map all 23 sound effects to their closest Kenney-pack analog (§2.5, or §7.3's
+- [x] Map all 23 sound effects to their closest Kenney-pack analog (§2.5, or §7.3's
       sci-fi-specific pack), edit/trim as needed to match the original's timing/feel where
       that matters (e.g. the jump sound's short punchy length).
-- [ ] Source or compose the 5 looping music tracks (§2.6 flagged this as the one audio
+- [x] Source or compose the 5 looping music tracks (§2.6 flagged this as the one audio
       category without an obvious ready-made CC0 answer — **now closed, see §7.3**).
-- [ ] Swap files under `assets/mario/audio/`, confirm every `sound(...)`/`music(...)` call
+- [x] Swap files under `assets/mario/audio/`, confirm every `sound(...)`/`music(...)` call
       site still resolves (call sites use the constant key, not a hardcoded filename, so
       this is a low-risk swap per
       [MARIO_RESKIN_PLAN.md §4.4.5](MARIO_RESKIN_PLAN.md)).
+
+      **2026-09-10: Audio replacement pass done**
+      - Updated `MarioResourceManager.audioPath(...)` to load `.ogg` files
+        (`app/src/main/java/au/com/guidebee/morsetoolkit/activity/mario/MarioResourceManager.java`).
+      - Added Kenney-based replacements for all 28 runtime keys in
+        `app/src/main/assets/mario/audio/` (`23` SFX + `5` music tracks), sourced from:
+        `Audio/Sci-Fi Sounds`, `Audio/Digital Audio`, `Audio/Impact Sounds`,
+        `Audio/Music Jingles (Retro)`, and `Audio/Music Loops/Retro`.
+      - Legacy `.wav` files remain in place for now, but runtime resolves to `.ogg`.
+      - Compile verification passed (`:app:compileDebugJavaWithJavac`); final balancing is
+        deferred to on-device audio-mix QA in Step R.7.
 
 ### Step R.7 — Full regression pass
 

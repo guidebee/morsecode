@@ -246,7 +246,7 @@ public final class MarioResourceManager {
     }
 
     private static String audioPath(String name) {
-        return "mario/audio/" + name + ".wav";
+        return "mario/audio/" + name + ".ogg";
     }
 
     public static TextureRegion region(String name) {

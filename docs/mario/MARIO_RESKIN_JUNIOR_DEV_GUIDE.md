@@ -9,7 +9,7 @@ either of those, written after two real false starts so you don't repeat them.
 
 ## 0. Before you touch anything
 
-1. **You're on the `reskin` branch.** Confirm with `git status` — don't create new art on
+1. **You're on the `reskin-codex` branch.** Confirm with `git status` — don't create new art on
    `main`.
 2. **Every generated asset lives in exactly one place**: source scripts in
    `docs/assets/mario-sprites/ampere-staging/`, their output in

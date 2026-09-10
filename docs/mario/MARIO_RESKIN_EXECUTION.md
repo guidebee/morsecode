@@ -547,11 +547,27 @@ closes.
       a bug report. Packed (39/122 overlay) and compiled clean; **not yet on-device
       verified.**
 
+      **2026-09-10: Task 1 (Iron) done** (`docs/assets/mario-sprites/ampere-staging/build_r4_task1_iron.py`)
+      — `Iron.png` rebuilt as a 4x1 strip (Sea/Ground/UnderGround/Castle frame order,
+      matching `actors/bricks/Iron.java`'s own frame constants), sourced from the same
+      Kenney tile families already adopted in R.3's terrain pass (Roguelike Dungeon Pack,
+      Pixel Platformer Industrial Expansion, Tiny Dungeon with the same Substrate tint).
+      Crops are verified with `verified_crop(...)`, packed clean (`40 / 122` overlay), and
+      compile-checked (`:app:compileDebugJavaWithJavac` successful).
+
+      **2026-09-10: Task 2 (QuestionMark/QuestionMarkGrey) done**
+      (`docs/assets/mario-sprites/ampere-staging/build_r4_task2_question_mark_bank.py`) —
+      rebuilt `QuestionMark.png` and `QuestionMarkGrey.png` as 3x1 animated sheets matching
+      `actors/bricks/QuestionMark.java`'s `IDLE_FRAMES = {0,0,1,2,1,0}` convention
+      (subtle bob/highlight progression across frames). Confirmed by grep that
+      `Bank`/`BankWithItem` still use themed `brick` regions (not `question_mark*`), so no
+      Bank asset swap was needed for this task. Packed clean (`42 / 122` overlay) and
+      compile-checked (`:app:compileDebugJavaWithJavac` successful).
+
       **Still open for R.4** (tier-3/4 per §16.4, not yet started): `turtle_shell_red`/
       `_flip` variants and `enemy_turtle_patrol` (not reached by World 1's own data, per
       `TurtleShell.java`'s doc — lower priority); Plater/`FlyingTurtle`/`Helmet` family;
-      `Iron`; `QuestionMark`/`Bank` family; The Warden/`Boss`; and tier-4's long tail of
-      one-off enemies/mechanisms.
+      The Warden/`Boss`; and tier-4's long tail of one-off enemies/mechanisms.
 
 ### Step R.5 — Scenery, backdrops, HUD, UI text
 

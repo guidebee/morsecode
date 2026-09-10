@@ -765,6 +765,12 @@ closes.
 
 ### Step R.7 — Full regression pass
 
+**2026-09-10 session wrap-up / handoff**
+- Atlas replacement coverage reached `122 / 122` overlay files; compile checks clean.
+- Audio replacement pass is complete and runtime now resolves `.ogg` keys.
+- Next session should start with on-device full-world QA (visual + audio balancing),
+  then capture any polish fixes as focused follow-up tasks instead of broad asset churn.
+
 - [ ] Run [MARIO_RESKIN_PLAN.md §4.4.7](MARIO_RESKIN_PLAN.md)'s full regression pass
       across **all 8 worlds** (use [MARIO_LEVEL_ATLAS.md](MARIO_LEVEL_ATLAS.md) as the
       checklist of what to visit — one level per row) — every region/sound key resolves,

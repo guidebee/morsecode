@@ -177,107 +177,93 @@ boss
   orig: 192, 128
   offset: 0, 0
   index: -1
-lava
+rocket_launcher
   rotate: false
   xy: 1990, 902
   size: 32, 128
   orig: 32, 128
   offset: 0, 0
   index: -1
-water
+bw_rocket_launcher
   rotate: false
   xy: 2, 1352
   size: 32, 128
   orig: 32, 128
   offset: 0, 0
   index: -1
-rocket_launcher
-  rotate: false
-  xy: 36, 1352
-  size: 32, 128
-  orig: 32, 128
-  offset: 0, 0
-  index: -1
-bw_rocket_launcher
-  rotate: false
-  xy: 70, 1352
-  size: 32, 128
-  orig: 32, 128
-  offset: 0, 0
-  index: -1
 another_castle_message
   rotate: false
-  xy: 104, 1352
+  xy: 36, 1352
   size: 384, 128
   orig: 384, 128
   offset: 0, 0
   index: -1
 quest_complete
   rotate: false
-  xy: 490, 1352
+  xy: 422, 1352
   size: 384, 128
   orig: 384, 128
   offset: 0, 0
   index: -1
 monkey
   rotate: false
-  xy: 876, 1352
+  xy: 808, 1352
   size: 96, 96
   orig: 96, 96
   offset: 0, 0
   index: -1
 sea_background
   rotate: false
-  xy: 974, 1352
+  xy: 906, 1352
   size: 32, 96
   orig: 32, 96
   offset: 0, 0
   index: -1
 pump_top
   rotate: false
-  xy: 1008, 1352
+  xy: 940, 1352
   size: 64, 64
   orig: 64, 64
   offset: 0, 0
   index: -1
 hori_image
   rotate: false
-  xy: 1074, 1352
+  xy: 1006, 1352
   size: 128, 64
   orig: 128, 64
   offset: 0, 0
   index: -1
 brick_peaces
   rotate: false
-  xy: 1204, 1352
+  xy: 1136, 1352
   size: 32, 64
   orig: 32, 64
   offset: 0, 0
   index: -1
 spring
   rotate: false
-  xy: 1238, 1352
+  xy: 1170, 1352
   size: 96, 64
   orig: 96, 64
   offset: 0, 0
   index: -1
 tree
   rotate: false
-  xy: 1336, 1352
+  xy: 1268, 1352
   size: 160, 64
   orig: 160, 64
   offset: 0, 0
   index: -1
 bw_tree
   rotate: false
-  xy: 1498, 1352
+  xy: 1430, 1352
   size: 160, 64
   orig: 160, 64
   offset: 0, 0
   index: -1
 small_to_big_mario
   rotate: false
-  xy: 1660, 1352
+  xy: 1592, 1352
   size: 384, 64
   orig: 384, 64
   offset: 0, 0
@@ -590,163 +576,177 @@ fish_red
   orig: 64, 32
   offset: 0, 0
   index: -1
-lava_ball
+lava
   rotate: false
   xy: 822, 1598
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+lava_ball
+  rotate: false
+  xy: 856, 1598
   size: 64, 32
   orig: 64, 32
   offset: 0, 0
   index: -1
+water
+  rotate: false
+  xy: 922, 1598
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
 axe
   rotate: false
-  xy: 888, 1598
+  xy: 956, 1598
   size: 128, 32
   orig: 128, 32
   offset: 0, 0
   index: -1
 wall
   rotate: false
-  xy: 1018, 1598
+  xy: 1086, 1598
   size: 64, 32
   orig: 64, 32
   offset: 0, 0
   index: -1
 bouncer
   rotate: false
-  xy: 1084, 1598
+  xy: 1152, 1598
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
 wooden_bridge
   rotate: false
-  xy: 1118, 1598
+  xy: 1186, 1598
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
 white_line
   rotate: false
-  xy: 1152, 1598
+  xy: 1220, 1598
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
 chain
   rotate: false
-  xy: 1186, 1598
+  xy: 1254, 1598
   size: 128, 32
   orig: 128, 32
   offset: 0, 0
   index: -1
 rope
   rotate: false
-  xy: 1316, 1598
+  xy: 1384, 1598
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
 bw_stone
   rotate: false
-  xy: 1350, 1598
+  xy: 1418, 1598
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
 bw_chocolate
   rotate: false
-  xy: 1384, 1598
+  xy: 1452, 1598
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
 bw_bouncer
   rotate: false
-  xy: 1418, 1598
+  xy: 1486, 1598
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
 stone_clowd
   rotate: false
-  xy: 1452, 1598
+  xy: 1520, 1598
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
 flag_top
   rotate: false
-  xy: 1486, 1598
+  xy: 1554, 1598
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
 flag_sphere
   rotate: false
-  xy: 1520, 1598
+  xy: 1588, 1598
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
 flag_sphere_fence
   rotate: false
-  xy: 1554, 1598
+  xy: 1622, 1598
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
 flag_win
   rotate: false
-  xy: 1588, 1598
+  xy: 1656, 1598
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
 small_dead_mario
   rotate: false
-  xy: 1622, 1598
+  xy: 1690, 1598
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
 tiles_cloudsnight
   rotate: false
-  xy: 1656, 1598
+  xy: 1724, 1598
   size: 64, 32
   orig: 64, 32
   offset: 0, 0
   index: -1
 tiles_clowd
   rotate: false
-  xy: 1722, 1598
+  xy: 1790, 1598
   size: 64, 32
   orig: 64, 32
   offset: 0, 0
   index: -1
 bw_hammer
   rotate: false
-  xy: 1788, 1598
+  xy: 1856, 1598
   size: 112, 28
   orig: 112, 28
   offset: 0, 0
   index: -1
 boss_fire
   rotate: false
-  xy: 1902, 1598
+  xy: 2, 1632
   size: 96, 16
   orig: 96, 16
   offset: 0, 0
   index: -1
 fire_ball
   rotate: false
-  xy: 2, 1632
+  xy: 100, 1632
   size: 64, 16
   orig: 64, 16
   offset: 0, 0
   index: -1
 lift
   rotate: false
-  xy: 68, 1632
+  xy: 166, 1632
   size: 16, 16
   orig: 16, 16
   offset: 0, 0

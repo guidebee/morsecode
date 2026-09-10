@@ -1,34 +1,30 @@
-from PIL import Image, ImageDraw
+from PIL import Image
+import sys
 
+sys.path.insert(0, "C:/workspace/morsecode/docs/assets/mario-sprites/ampere-staging")
+from sprite_tools import build_sheet, mirror, place_content, tint, verified_crop
+
+PACK = "C:/workspace/Kenney_Game_Assets_All/2D assets/Pixel Platformer Industrial Expansion/Tiles"
 OUT = "C:/workspace/morsecode/docs/assets/mario-sprites/reskin-source"
 
 
-def axe_frame(phase):
-    im = Image.new("RGBA", (32, 32), (0, 0, 0, 0))
-    d = ImageDraw.Draw(im)
-
-    blade = [
-        (5, 7), (13, 3), (19, 5), (25, 11), (23, 17), (17, 19),
-        (15, 16), (18, 12), (14, 10), (10, 14), (6, 13),
-    ]
-    d.polygon(blade, fill=(188, 206, 224, 255))
-    d.polygon([(8, 9), (13, 6), (16, 7), (12, 11), (8, 11)], fill=(236, 246, 255, 235))
-
-    # Core pulse gives a 4-frame shimmer for Axe.java's animation strip.
-    pulse = [(255, 170, 96, 210), (255, 186, 108, 240), (255, 152, 90, 220), (255, 138, 82, 200)][phase]
-    d.ellipse((11, 10, 16, 15), fill=pulse)
-
-    d.rectangle((14, 15, 17, 31), fill=(106, 64, 42, 255))
-    d.rectangle((15, 16, 16, 31), fill=(156, 100, 64, 220))
-    d.rectangle((12, 21, 19, 24), fill=(188, 106, 58, 255))
-    d.rectangle((13, 22, 18, 23), fill=(230, 150, 92, 220))
-    return im
-
-
 if __name__ == "__main__":
-    sheet = Image.new("RGBA", (128, 32), (0, 0, 0, 0))
-    for i in range(4):
-        fr = axe_frame(i)
-        sheet.paste(fr, (i * 32, 0), fr)
-    sheet.save(f"{OUT}/Axe.png")
+    # Use Industrial Expansion tool/arm tiles as the source family, then map
+    # into Axe.java's 4-frame shimmer loop.
+    tool0 = Image.open(f"{PACK}/tile_0080.png").convert("RGBA")
+    tool1 = Image.open(f"{PACK}/tile_0081.png").convert("RGBA")
+    tool2 = Image.open(f"{PACK}/tile_0082.png").convert("RGBA")
+
+    f0 = place_content(verified_crop(tool0, (0, 0, 18, 18), "axe src 0"), 32, 32, fill=0.92, anchor="center")
+    f1 = place_content(verified_crop(tool1, (0, 0, 18, 18), "axe src 1"), 32, 32, fill=0.92, anchor="center")
+    f2 = place_content(verified_crop(tool2, (0, 0, 18, 18), "axe src 2"), 32, 32, fill=0.92, anchor="center")
+    f3 = mirror(f1)
+
+    frames = [
+        tint(f0, (255, 146, 88), 0.10),
+        tint(f1, (255, 166, 98), 0.16),
+        tint(f2, (255, 136, 82), 0.14),
+        tint(f3, (255, 126, 76), 0.12),
+    ]
+    build_sheet(32, 32, frames, 4, 1, f"{OUT}/Axe.png")
     print("wrote Axe.png")

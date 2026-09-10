@@ -664,7 +664,8 @@ closes.
       **2026-09-10: Task 13 (`axe`) done**
       (`docs/assets/mario-sprites/ampere-staging/build_r4_task13_axe.py`) — rebuilt
       `Axe.png` (4x1, 32x32) matching `Axe.java`'s 6-step frame sequence
-      (`0,1,2,3,2,1`) with per-frame core shimmer so the loop reads as active.
+      (`0,1,2,3,2,1`) from Kenney Pixel Platformer Industrial Expansion tool-arm tiles
+      (`tile_0080/0081/0082`), with light frame-to-frame tint variation for readability.
       Packed clean (`71 / 122` overlay) and compile-checked
       (`:app:compileDebugJavaWithJavac` successful).
 
@@ -673,9 +674,37 @@ closes.
       rebuilt `Wall.png` (2x1), `RocketLauncher.png` (1x4), `Bouncer.png` (1x1), and
       `Spring.png` (3x1 with 32x64 frames), matching `LevelLoader.spawnWall(...)`'s top/body
       split, `spawnRocketLauncher(...)`'s row-mapped launcher/body segments, `Bouncer.java`'s
-      static pad usage, and `Spring.java`'s 3-frame squish strip. Packed clean
+      static pad usage, and `Spring.java`'s 3-frame squish strip. **Reworked to use only
+      sourced sprites (no procedural drawing):** RTS Sci-fi turret/building tiles for
+      `rocket_launcher`, Industrial Expansion wall panels for `wall`, and Robot Master
+      `gate.png` coil motif + Industrial Expansion base tile for `bouncer`/`spring`.
+      Follow-up alignment pass adjusted rocket row fill/centering plus bouncer/spring
+      occupancy to better match original in-game proportions.
+      Packed clean
       (`75 / 122` overlay) and compile-checked (`:app:compileDebugJavaWithJavac`
       successful).
+
+      **2026-09-10 follow-up QA note (deferred revisit):** on-device validation still
+      reports `RocketLauncher`/spring/shell visuals reading "off" (scale/alignment/readability)
+      despite atlas rebuild and install. Keep these assets in the "needs revisit" bucket and
+      return with a focused source-frame/anchor pass later rather than continuing churn in
+      this batch.
+
+      **2026-09-10: Task 15 (`bridge_blocks`/`wooden_bridge`/`white_line`/`chain`/`rope`) done**
+      (`docs/assets/mario-sprites/ampere-staging/build_r4_task15_structural_connective.py`) —
+      rebuilt all five structural/connective assets from Kenney Pixel Platformer Industrial
+      Expansion source tiles (`tile_0004`, `tile_0020`, `tile_0075`, `tile_0071/0072`,
+      `tile_0074`), matching their static usage in `MarioTileRegistry`/`LevelLoader`.
+      Packed clean (`80 / 122` overlay) and compile-checked
+      (`:app:compileDebugJavaWithJavac` successful).
+
+      **2026-09-10: Task 16 (pump family: ground/castle/sea) done**
+      (`docs/assets/mario-sprites/ampere-staging/build_r4_task16_pump_family.py`) —
+      rebuilt `pump.png`, `pump top.png`, `pump Castle.png`, `pump top Castle.png`,
+      `pump Sea.png`, and `pump top Sea.png` from RTS Sci-fi conduit tilesheet crops,
+      matching `Pump.java`'s per-attribute region mapping and preserving required source
+      geometry (`pump` 64x32, `pump_top` 64x64). Packed clean (`86 / 122` overlay) and
+      compile-checked (`:app:compileDebugJavaWithJavac` successful).
 
       **Still open for R.4** (tier-3/4 per §16.4, not yet started): tier-4's long tail of
       one-off enemies/mechanisms.

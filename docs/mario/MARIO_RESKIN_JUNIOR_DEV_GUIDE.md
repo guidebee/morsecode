@@ -22,6 +22,11 @@ either of those, written after two real false starts so you don't repeat them.
    `MarioConfiguration.ART_SCALE`. All new art is native 32px/tile.
 4. **`import sprite_tools`** in every new build script — don't re-write crop/scale/tint
    logic inline. See §2.
+5. **Use `KENNEY_ALL_IN_ONE_INDEX.md` as the sprite mapping authority.** Treat it as the
+   first reference for pack/path/source choice before inventing anything new.
+6. **Do not use procedural drawing for sprite replacement work.** Use sourced sprites from
+   the mapped packs (Kenney/Robot). If no acceptable source exists, flag the gap and move
+   on; do not substitute hand/procedural placeholder art in R.4.
 
 ## 1. The Golden Rule
 
@@ -71,8 +76,9 @@ inline crop math, slightly different each time, verified none of the times).
    know which column/row means what (left vs right facing, which theme, etc.) — don't
    assume from another asset's convention.
 3. **Pick a source.** Check `KENNEY_ALL_IN_ONE_INDEX.md` first — it's already surveyed
-   Robot Master Series, Robot Platform Pack, and the Kenney bundle. If nothing fits, that's
-   a real gap — flag it (see §6) rather than forcing a bad match.
+   Robot Master Series, Robot Platform Pack, and the Kenney bundle and should be treated
+   as the mapping reference. If nothing fits, that's a real gap — flag it (see §6)
+   rather than forcing a bad match or drawing a procedural substitute.
 4. **Check whether the source is a discrete icon or a tileable texture** (Mistake #2) —
    `is_tileable_texture()` before you crop anything from a new source file for the first
    time.
@@ -121,10 +127,9 @@ need to check."
   a 3-frame bob loop (rest → mid → peak). `question_mark_grey` is used on
   UnderGround/Castle levels, `question_mark` everywhere else (Ground/Sea) — confirm `Bank`
   shares this by grepping it yourself (it wasn't fully traced in this guide).
-- **Source suggestion**: keep the procedural beveled-block-with-glyph style already used
-  for this in an earlier (abandoned) attempt — it actually looked fine, just needs
-  redoing on a clean base. Or pull a "switch/button block" tile from Industrial Expansion
-  if one fits better.
+- **Source suggestion**: pull a "switch/button block" tile from Industrial Expansion (or
+  another mapped source in `KENNEY_ALL_IN_ONE_INDEX.md`) and animate from that source.
+  Do not use procedural block drawing for this pass.
 - **Test**: 4 files total (2 regions × the animation frames), each 3-frame sheet should
   show a subtle bounce/highlight change across its 3 frames, not 3 identical copies.
 

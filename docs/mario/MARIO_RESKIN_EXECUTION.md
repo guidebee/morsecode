@@ -576,10 +576,20 @@ closes.
       (`48 / 122` overlay) and compile-checked (`:app:compileDebugJavaWithJavac`
       successful).
 
+      **2026-09-10: Task 4 (The Warden / Boss) done**
+      (`docs/assets/mario-sprites/ampere-staging/build_r4_task4_boss.py`) — rebuilt
+      `Boss.png` (3x2, 64x64 per frame) and `BossFire.png` (2x1, 48x16 per frame),
+      explicitly matching `actors/enemies/Boss.java` / `actors/projectiles/BossFire.java`'s
+      frame geometry and frame-index contract (`Boss` indices 0/1 left idle, 2 spit pose,
+      4/5 right idle). Source was Robot Master Series `miniboss1` (verified crop bounds
+      from `miniboss1_base[80height144wide].png` and `miniboss1_laser.png` before layout);
+      this closes the highest-priority open enemy in Task 4. Packed clean (`50 / 122`
+      overlay) and compile-checked (`:app:compileDebugJavaWithJavac` successful).
+
       **Still open for R.4** (tier-3/4 per §16.4, not yet started): `turtle_shell_red`/
       `_flip` variants and `enemy_turtle_patrol` (not reached by World 1's own data, per
-      `TurtleShell.java`'s doc — lower priority); `FlyingTurtle` family;
-      The Warden/`Boss`; and tier-4's long tail of one-off enemies/mechanisms.
+      `TurtleShell.java`'s doc — lower priority); `FlyingTurtle` family; and tier-4's long
+      tail of one-off enemies/mechanisms.
 
 ### Step R.5 — Scenery, backdrops, HUD, UI text
 

@@ -706,8 +706,26 @@ closes.
       geometry (`pump` 64x32, `pump_top` 64x64). Packed clean (`86 / 122` overlay) and
       compile-checked (`:app:compileDebugJavaWithJavac` successful).
 
-      **Still open for R.4** (tier-3/4 per §16.4, not yet started): tier-4's long tail of
-      one-off enemies/mechanisms.
+      **2026-09-10: Task 17 (remaining overlay closure pass) done**
+      (`docs/assets/mario-sprites/ampere-staging/build_r4_task17_remaining_sources.py`) —
+      replaced all previously missing overlay files from source-mapped Kenney/Robot assets,
+      including `Bubble.png`, `plant*.png`, `HoriImage.png`, `Explosion.png`,
+      alias-name shell/turtle files (`turtledark`, `TurtelShell*`), CloudsNight-only
+      variants (`CloudsNight/Hammer.png`, `CloudsNight/tree.png`,
+      `CloudsNight/SmallCastle.png`, `CloudsNight/BigCastle.png`,
+      `CloudsNight/Bouncer.png`, `CloudsNight/RocketLauncher.png`), structural/scenery
+      holdouts (`SmallCastle.png`, `BigCastle.png`, `tree.png`, `Lift.png`,
+      `Mountain.png`, `Clouds.png`, `CloudsNight.png`, `Fence*.png`, `Sea.png`,
+      `stone_Clowd.png`), end-of-level UI/scenery (`Flag*.png`,
+      `AnotherCastleMessage.png`, `QuestComplete.png`), and HUD placeholders
+      (`Font.png`, `Info.png`, `Info2.png`) using Kenney Blocks + Background Elements
+      sources. Atlas now packs fully from overlay (`122 / 122`) and compile-check remains
+      clean (`:app:compileDebugJavaWithJavac` successful).
+
+      **Still open for R.4:** no unreplaced atlas files remain (overlay closure reached
+      `122 / 122`). Remaining work is QA/polish: on-device visual tuning for known
+      "needs revisit" assets (`rocket_launcher`/spring/shell family) and any additional
+      readability fixes discovered during full-world test passes.
 
 ### Step R.5 — Scenery, backdrops, HUD, UI text
 

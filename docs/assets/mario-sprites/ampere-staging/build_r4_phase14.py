@@ -44,13 +44,10 @@ def build_lift():
     print("wrote", f"{OUT}/Lift.png")
 
 
-def build_castle(name, base_color):
-    frame = new_cell()
-    draw = ImageDraw.Draw(frame, "RGBA")
-    draw.rectangle((4, 10, 27, 27), fill=base_color + (255,), outline=(40, 50, 70, 255))
-    draw.rectangle((10, 6, 14, 10), fill=base_color + (255,))
-    draw.rectangle((18, 6, 22, 10), fill=base_color + (255,))
-    draw.rectangle((14, 14, 18, 20), fill=(30, 40, 50, 255))
+def build_castle(name, col, row):
+    tilesheet = Image.open("C:/workspace/Kenney_Game_Assets_All/2D assets/RTS Sci-fi/Tilesheet/scifi_tilesheet.png").convert("RGBA")
+    cell = 32
+    frame = tilesheet.crop((col * cell, row * cell, (col + 1) * cell, (row + 1) * cell))
     frame.save(f"{OUT}/{name}.png")
     print("wrote", f"{OUT}/{name}.png")
     return frame
@@ -99,7 +96,7 @@ if __name__ == "__main__":
     os.makedirs(OUT, exist_ok=True)
     build_wall()
     build_lift()
-    small_castle = build_castle("SmallCastle", (90, 110, 130))
-    big_castle = build_castle("BigCastle", (70, 90, 120))
+    small_castle = build_castle("SmallCastle", 32, 0)
+    big_castle = build_castle("BigCastle", 33, 0)
     tree_sheet = build_tree()
     build_bw_variants(tree_sheet, small_castle, big_castle)

@@ -626,9 +626,12 @@ closes.
 
       **2026-09-10: Phase 13 done** (`docs/assets/mario-sprites/ampere-staging/build_r4_phase13.py`)
       — `BridgeBloks.png`, `Axe.png`, `RocketLauncher.png`, `Bouncer.png`, `Spring.png`,
-      `WoodenBridge.png`, `WhiteLine.png`, `Chain.png`, and `Rope.png` generated as
-      procedural sci-fi props/mechanisms. Packed successfully: **77 / 122 assets** now
-      sourced from the reskin overlay. On-device verification still pending.
+      `WoodenBridge.png`, `WhiteLine.png`, `Chain.png`, and `Rope.png` generated. Initial
+      pass used procedural placeholders for most props; later mapping audit updated
+      `Bouncer.png`/`Spring.png` to Robot Master Series `other/gate.png` coil crops
+      (per [KENNEY_ALL_IN_ONE_INDEX.md §3](KENNEY_ALL_IN_ONE_INDEX.md#3-bricksworld-mechanism-candidates)).
+      Packed successfully: **77 / 122 assets** now sourced from the reskin overlay.
+      On-device verification still pending.
 
       **2026-09-10: Phase 14 done** (`docs/assets/mario-sprites/ampere-staging/build_r4_phase14.py`)
       — `Wall.png`, `Lift.png`, `SmallCastle.png`, `BigCastle.png`, `tree.png`, plus
@@ -637,15 +640,39 @@ closes.
       Packed successfully: **87 / 122 assets** now sourced from the reskin overlay. On-device
       verification still pending.
 
+      **2026-09-10: Phase 15 done** (`docs/assets/mario-sprites/ampere-staging/build_r4_phase15.py`)
+      — backdrops `Mountain.png`, `Clouds.png`, `CloudsNight.png`, `Fence.png`, `Fence2.png`,
+      and `SeaBackground.png` generated. Initial pass was procedural; mapping audit updated
+      these to sourced art from Kenney "Background Elements" (`piramid`, `cloud6`,
+      `fence`, `fence_piece`) plus Robot Master Series `other/platform.png` for
+      `SeaBackground.png`, matching
+      [KENNEY_ALL_IN_ONE_INDEX.md §4](KENNEY_ALL_IN_ONE_INDEX.md#4-sceneryparallax-background-candidates).
+      Packed successfully: **92 / 122 assets** now sourced from the reskin overlay.
+      On-device verification still pending.
+
+      **2026-09-10: Phase 14/15 tweak** (`docs/assets/mario-sprites/ampere-staging/build_r4_phase14.py`,
+      `docs/assets/mario-sprites/ampere-staging/build_r4_phase15.py`)
+      — Enlarged `BigCastle.png` and reworked `Clouds.png`/`CloudsNight.png` to read more
+      clearly at 32×32. Packed successfully: **92 / 122 assets** now sourced from the reskin
+      overlay. On-device verification still pending.
+
       **2026-09-10: Phase 12 plant fix** (`docs/assets/mario-sprites/ampere-staging/build_r4_phase12.py`)
       — `plant.png`/`plantdark.png` resized to 32×48 per frame (64×48 sheet) to match
       `PiranhaPlant`'s `tileSize × 1.5` frame height and avoid Sprite constructor
       errors. Packed successfully: **77 / 122 assets** now sourced from the reskin overlay.
       On-device verification still pending.
 
-      **Blockers:** the IDE file-discovery tool denied access to
-      `C:/workspace/robot_series_base_pack/enemy3` under AI exclude policies. Its
-      existence is user-confirmed, but actual filenames, image dimensions, animation
+      **2026-09-10: mapping audit (R.4 Phases 12-15)**
+      — inventory split between procedural placeholders vs mapped-source art completed.
+      Procedural by design/accepted for now: odd-shape enemies with no clean sourced match
+      (`SonOfABuitch`, `SpikeyEgg`, `Spikey`, `OctoPussy`, `plant`, `plantdark`),
+      low-risk mechanisms (`BridgeBloks`, `Axe`, `WoodenBridge`, `WhiteLine`, `Chain`, `Rope`),
+      and no-match scenery (`tree`, `Wall`, `Lift`). Mapped-source replacements now wired:
+      `RocketLauncher`, `SmallCastle`, `BigCastle`, CloudsNight castle/launcher variants,
+      `Bouncer`, `Spring`, and all Phase 15 backdrops. Source-pack path check: all mapped
+      packs needed for this pass are present locally (`RTS Sci-fi`, `Background Elements`,
+      Robot Master Series `other/`), so no additional path request was needed.
+
 ### Step R.5 — Scenery, backdrops, HUD, UI text
 
 - [ ] Parallax backgrounds (Mountain/Clouds/CloudsNight/Fence/Sea) — reference §2.3's

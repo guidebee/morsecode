@@ -11,11 +11,21 @@ Covers:
 - white_line (WhiteLine.png) - 1x1
 - chain (Chain.png) - 4x1
 - rope (Rope.png) - 1x1
+
+Mapped-source update (2026-09-10):
+- Bouncer/Spring now use Robot Master Series `other/gate.png` coil segments
+  (per KENNEY_ALL_IN_ONE_INDEX.md §3) instead of purely procedural drawing.
 """
 from PIL import Image, ImageDraw
 import os
+import sys
+
+sys.path.insert(0, "C:/workspace/morsecode/docs/assets/mario-sprites/ampere-staging")
+from sprite_tools import build_sheet, place_content, verified_crop
 
 OUT = "C:/workspace/morsecode/docs/assets/mario-sprites/reskin-source"
+RTS_TILESET = "C:/workspace/Kenney_Game_Assets_All/2D assets/RTS Sci-fi/Tilesheet/scifi_tilesheet.png"
+ROBOT_GATE = "C:/workspace/robot_series_base_pack/other/gate.png"
 
 
 def new_cell(w=32, h=32):
@@ -56,25 +66,20 @@ def build_axe():
 
 
 def draw_launcher_frame(kind):
-    frame = new_cell()
-    draw = ImageDraw.Draw(frame, "RGBA")
-    draw.rectangle((6, 4, 26, 28), fill=(60, 80, 100, 255), outline=(30, 45, 60, 255))
-    if kind == "head":
-        draw.rectangle((2, 10, 14, 16), fill=(80, 110, 130, 255), outline=(30, 45, 60, 255))
-        draw.rectangle((10, 13, 14, 13), fill=(255, 90, 70, 255))
-    elif kind == "mid":
-        draw.rectangle((8, 8, 24, 24), fill=(70, 95, 120, 255))
-    elif kind == "base":
-        draw.rectangle((8, 18, 24, 26), fill=(90, 120, 150, 255))
-    return frame
+    return None
 
 
 def build_rocket_launcher():
+    tilesheet = Image.open(RTS_TILESET).convert("RGBA")
+    cell = 32
+    def tile(col, row):
+        return tilesheet.crop((col * cell, row * cell, (col + 1) * cell, (row + 1) * cell))
+
     frames = [
-        draw_launcher_frame("head"),
-        draw_launcher_frame("mid"),
-        draw_launcher_frame("mid"),
-        draw_launcher_frame("base"),
+        tile(30, 0),
+        tile(30, 1),
+        tile(31, 1),
+        tile(32, 1),
     ]
     sheet = Image.new("RGBA", (32, 32 * 4), (0, 0, 0, 0))
     for i, frame in enumerate(frames):
@@ -84,33 +89,30 @@ def build_rocket_launcher():
 
 
 def build_bouncer():
-    frame = new_cell()
-    draw = ImageDraw.Draw(frame, "RGBA")
-    draw.rectangle((4, 12, 27, 27), fill=(80, 120, 140, 255), outline=(40, 60, 80, 255))
-    draw.rectangle((6, 16, 25, 24), fill=(120, 180, 200, 255))
+    gate = Image.open(ROBOT_GATE).convert("RGBA")
+    coil = verified_crop(gate, (88, 0, 120, 32), "bouncer_coil")
+    frame = place_content(coil, 32, 32, fill=0.95, anchor="center")
     frame.save(f"{OUT}/Bouncer.png")
     print("wrote", f"{OUT}/Bouncer.png")
 
 
 def draw_spring_frame(height):
+    gate = Image.open(ROBOT_GATE).convert("RGBA")
+    coil = verified_crop(gate, (88, 0, 120, 32), f"spring_coil_h{height}")
     frame = new_cell(32, 64)
-    draw = ImageDraw.Draw(frame, "RGBA")
-    top = 8 + (24 - height)
-    bottom = top + height
-    draw.rectangle((8, top, 24, bottom), outline=(50, 80, 90, 255))
-    for y in range(top + 2, bottom - 1, 4):
-        draw.line((10, y, 22, y), fill=(120, 170, 190, 255), width=2)
-    draw.rectangle((6, bottom, 26, bottom + 6), fill=(70, 100, 120, 255))
+    scaled = coil.resize((20, max(8, height)), Image.NEAREST)
+    x = (32 - scaled.width) // 2
+    y = 58 - scaled.height
+    frame.paste(scaled, (x, y), scaled)
+    base = coil.resize((24, 6), Image.NEAREST)
+    frame.paste(base, (4, 58), base)
     return frame
 
 
 def build_spring():
     heights = [24, 14, 18]
     frames = [draw_spring_frame(h) for h in heights]
-    sheet = Image.new("RGBA", (32 * 3, 64), (0, 0, 0, 0))
-    for i, frame in enumerate(frames):
-        sheet.paste(frame, (i * 32, 0), frame)
-    sheet.save(f"{OUT}/Spring.png")
+    build_sheet(32, 64, frames, 3, 1, f"{OUT}/Spring.png")
     print("wrote", f"{OUT}/Spring.png")
 
 

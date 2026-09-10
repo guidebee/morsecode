@@ -604,9 +604,17 @@ closes.
       family. Packed clean (`55 / 122` overlay) and compile-checked
       (`:app:compileDebugJavaWithJavac` successful).
 
-      **Still open for R.4** (tier-3/4 per §16.4, not yet started): `turtle_shell_red`/
-      `_flip` variants (not reached by World 1's own data, per `TurtleShell.java`'s doc —
-      lower priority); and tier-4's long tail of one-off enemies/mechanisms.
+      **2026-09-10: Task 7 (turtle shell red/flip variants) done**
+      (`docs/assets/mario-sprites/ampere-staging/build_r4_task7_shell_variants.py`) —
+      rebuilt `TurtelShellRed.png`, `TurtelShellFilp.png`, `TurtelShellFilpdark.png`, and
+      `TurtelShellFilpRed.png` from the already-reskinned shell bases to satisfy the
+      remaining `turtle_shell_red`/`_flip*` entries in `PackMarioAtlas.ASSETS` (including
+      the original filename typo `Filp`, intentionally preserved). Packed clean
+      (`59 / 122` overlay) and compile-checked (`:app:compileDebugJavaWithJavac`
+      successful).
+
+      **Still open for R.4** (tier-3/4 per §16.4, not yet started): tier-4's long tail of
+      one-off enemies/mechanisms.
 
 ### Step R.5 — Scenery, backdrops, HUD, UI text
 

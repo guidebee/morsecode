@@ -564,9 +564,21 @@ closes.
       Bank asset swap was needed for this task. Packed clean (`42 / 122` overlay) and
       compile-checked (`:app:compileDebugJavaWithJavac` successful).
 
+      **2026-09-10: Task 3 (Plater/Helmet family) done**
+      (`docs/assets/mario-sprites/ampere-staging/build_r4_task3_helmet_family.py`) —
+      rebuilt `Helmet.png`/`Helmetdark.png`/`Helmetwhite.png` (4x1 walk layout:
+      cols 0-1 left, 2-3 right, matching `actors/enemies/Helmet.java`) plus
+      `HelmetShell.png`/`HelmetShelldark.png`/`HelmetShellwhite.png` (1x1 static,
+      matching `actors/enemies/HelmetShell.java`). Source gap noted while executing: Robot
+      Master Series has no dedicated enemy3 walk strip; used verified enemy3 attack-sheet
+      body frames as the base and mirrored them for facing, with dark/white palette
+      variants matching `LevelLoader.helmetColor(...)`'s mapping. Packed clean
+      (`48 / 122` overlay) and compile-checked (`:app:compileDebugJavaWithJavac`
+      successful).
+
       **Still open for R.4** (tier-3/4 per §16.4, not yet started): `turtle_shell_red`/
       `_flip` variants and `enemy_turtle_patrol` (not reached by World 1's own data, per
-      `TurtleShell.java`'s doc — lower priority); Plater/`FlyingTurtle`/`Helmet` family;
+      `TurtleShell.java`'s doc — lower priority); `FlyingTurtle` family;
       The Warden/`Boss`; and tier-4's long tail of one-off enemies/mechanisms.
 
 ### Step R.5 — Scenery, backdrops, HUD, UI text

@@ -93,661 +93,661 @@ big_red_mario
   orig: 128, 448
   offset: 0, 0
   index: -1
-big_castle
-  rotate: false
-  xy: 262, 902
-  size: 304, 352
-  orig: 304, 352
-  offset: 0, 0
-  index: -1
-bw_big_castle
-  rotate: false
-  xy: 568, 902
-  size: 304, 352
-  orig: 304, 352
-  offset: 0, 0
-  index: -1
 flag
   rotate: false
-  xy: 874, 902
+  xy: 262, 902
   size: 4, 288
   orig: 4, 288
   offset: 0, 0
   index: -1
 flag_fence
   rotate: false
-  xy: 880, 902
+  xy: 268, 902
   size: 4, 288
   orig: 4, 288
   offset: 0, 0
   index: -1
 player
   rotate: false
-  xy: 886, 902
+  xy: 274, 902
   size: 128, 224
   orig: 128, 224
   offset: 0, 0
   index: -1
 small_black_mario
   rotate: false
-  xy: 1016, 902
+  xy: 404, 902
   size: 128, 224
   orig: 128, 224
   offset: 0, 0
   index: -1
 small_green_mario
   rotate: false
-  xy: 1146, 902
+  xy: 534, 902
   size: 128, 224
   orig: 128, 224
   offset: 0, 0
   index: -1
 small_red_mario
   rotate: false
-  xy: 1276, 902
+  xy: 664, 902
   size: 128, 224
   orig: 128, 224
   offset: 0, 0
   index: -1
-small_castle
-  rotate: false
-  xy: 1406, 902
-  size: 160, 160
-  orig: 160, 160
-  offset: 0, 0
-  index: -1
-bw_small_castle
-  rotate: false
-  xy: 1568, 902
-  size: 160, 160
-  orig: 160, 160
-  offset: 0, 0
-  index: -1
 enemy
   rotate: false
-  xy: 1730, 902
+  xy: 794, 902
   size: 64, 128
   orig: 64, 128
   offset: 0, 0
   index: -1
 boss
   rotate: false
-  xy: 1796, 902
+  xy: 860, 902
   size: 192, 128
   orig: 192, 128
   offset: 0, 0
   index: -1
 rocket_launcher
   rotate: false
-  xy: 1990, 902
+  xy: 1054, 902
   size: 32, 128
   orig: 32, 128
   offset: 0, 0
   index: -1
 bw_rocket_launcher
   rotate: false
-  xy: 2, 1352
+  xy: 1088, 902
   size: 32, 128
   orig: 32, 128
   offset: 0, 0
   index: -1
 another_castle_message
   rotate: false
-  xy: 36, 1352
+  xy: 1122, 902
   size: 384, 128
   orig: 384, 128
   offset: 0, 0
   index: -1
 quest_complete
   rotate: false
-  xy: 422, 1352
+  xy: 1508, 902
   size: 384, 128
   orig: 384, 128
   offset: 0, 0
   index: -1
 monkey
   rotate: false
-  xy: 808, 1352
+  xy: 1894, 902
   size: 96, 96
   orig: 96, 96
   offset: 0, 0
   index: -1
 sea_background
   rotate: false
-  xy: 906, 1352
+  xy: 1992, 902
   size: 32, 96
   orig: 32, 96
   offset: 0, 0
   index: -1
 pump_top
   rotate: false
-  xy: 940, 1352
+  xy: 2, 1352
   size: 64, 64
   orig: 64, 64
   offset: 0, 0
   index: -1
 hori_image
   rotate: false
-  xy: 1006, 1352
+  xy: 68, 1352
   size: 128, 64
   orig: 128, 64
   offset: 0, 0
   index: -1
 brick_peaces
   rotate: false
-  xy: 1136, 1352
+  xy: 198, 1352
   size: 32, 64
   orig: 32, 64
   offset: 0, 0
   index: -1
 spring
   rotate: false
-  xy: 1170, 1352
+  xy: 232, 1352
   size: 96, 64
   orig: 96, 64
   offset: 0, 0
   index: -1
 tree
   rotate: false
-  xy: 1268, 1352
+  xy: 330, 1352
   size: 160, 64
   orig: 160, 64
   offset: 0, 0
   index: -1
 bw_tree
   rotate: false
-  xy: 1430, 1352
+  xy: 492, 1352
   size: 160, 64
   orig: 160, 64
   offset: 0, 0
   index: -1
 small_to_big_mario
   rotate: false
-  xy: 1592, 1352
+  xy: 654, 1352
   size: 384, 64
   orig: 384, 64
   offset: 0, 0
   index: -1
 big_to_fire_mario
   rotate: false
-  xy: 2, 1482
+  xy: 1040, 1352
   size: 320, 64
   orig: 320, 64
   offset: 0, 0
   index: -1
 big_to_small_mario
   rotate: false
-  xy: 324, 1482
+  xy: 1362, 1352
   size: 320, 64
   orig: 320, 64
   offset: 0, 0
   index: -1
 fire_to_small_mario
   rotate: false
-  xy: 646, 1482
+  xy: 1684, 1352
   size: 320, 64
   orig: 320, 64
   offset: 0, 0
   index: -1
 small_to_big_star_mario
   rotate: false
-  xy: 968, 1482
+  xy: 2, 1418
   size: 384, 64
   orig: 384, 64
   offset: 0, 0
   index: -1
 plant
   rotate: false
-  xy: 1354, 1482
+  xy: 388, 1418
   size: 64, 48
   orig: 64, 48
   offset: 0, 0
   index: -1
 plant_dark
   rotate: false
-  xy: 1420, 1482
+  xy: 454, 1418
   size: 64, 48
   orig: 64, 48
   offset: 0, 0
   index: -1
 turtle
   rotate: false
-  xy: 1486, 1482
+  xy: 520, 1418
   size: 128, 48
   orig: 128, 48
   offset: 0, 0
   index: -1
 turtle_dark
   rotate: false
-  xy: 1616, 1482
+  xy: 650, 1418
   size: 128, 48
   orig: 128, 48
   offset: 0, 0
   index: -1
 enemy_turtle_patrol
   rotate: false
-  xy: 1746, 1482
+  xy: 780, 1418
   size: 128, 48
   orig: 128, 48
   offset: 0, 0
   index: -1
 flying_turtle_patrol
   rotate: false
-  xy: 1876, 1482
+  xy: 910, 1418
   size: 128, 48
   orig: 128, 48
   offset: 0, 0
   index: -1
 flying_turtle
   rotate: false
-  xy: 2, 1548
+  xy: 1040, 1418
   size: 128, 48
   orig: 128, 48
   offset: 0, 0
   index: -1
 flying_turtle_dark
   rotate: false
-  xy: 132, 1548
+  xy: 1170, 1418
   size: 128, 48
   orig: 128, 48
   offset: 0, 0
   index: -1
-son_of_a_buitch
-  rotate: false
-  xy: 262, 1548
-  size: 64, 48
-  orig: 64, 48
-  offset: 0, 0
-  index: -1
-octopussy
-  rotate: false
-  xy: 328, 1548
-  size: 64, 48
-  orig: 64, 48
-  offset: 0, 0
-  index: -1
 font
   rotate: false
-  xy: 394, 1548
+  xy: 1300, 1418
   size: 256, 48
   orig: 256, 48
   offset: 0, 0
   index: -1
 pump
   rotate: false
-  xy: 652, 1548
+  xy: 1558, 1418
   size: 64, 32
   orig: 64, 32
   offset: 0, 0
   index: -1
 question_mark
   rotate: false
-  xy: 718, 1548
+  xy: 1624, 1418
   size: 96, 32
   orig: 96, 32
   offset: 0, 0
   index: -1
 mashroom
   rotate: false
-  xy: 816, 1548
+  xy: 1722, 1418
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
 mashrooms
   rotate: false
-  xy: 850, 1548
+  xy: 1756, 1418
   size: 64, 32
   orig: 64, 32
   offset: 0, 0
   index: -1
 flower
   rotate: false
-  xy: 916, 1548
+  xy: 1822, 1418
   size: 128, 32
   orig: 128, 32
   offset: 0, 0
   index: -1
 coin_anim
   rotate: false
-  xy: 1046, 1548
+  xy: 2, 1484
   size: 128, 32
   orig: 128, 32
   offset: 0, 0
   index: -1
 star
   rotate: false
-  xy: 1176, 1548
+  xy: 132, 1484
   size: 128, 32
   orig: 128, 32
   offset: 0, 0
   index: -1
 one_up
   rotate: false
-  xy: 1306, 1548
+  xy: 262, 1484
   size: 64, 32
   orig: 64, 32
   offset: 0, 0
   index: -1
 coin
   rotate: false
-  xy: 1372, 1548
+  xy: 328, 1484
   size: 96, 32
   orig: 96, 32
   offset: 0, 0
   index: -1
 iron
   rotate: false
-  xy: 1470, 1548
+  xy: 426, 1484
   size: 128, 32
   orig: 128, 32
   offset: 0, 0
   index: -1
 bridge_blocks
   rotate: false
-  xy: 1600, 1548
+  xy: 556, 1484
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
 question_mark_grey
   rotate: false
-  xy: 1634, 1548
+  xy: 590, 1484
   size: 96, 32
   orig: 96, 32
   offset: 0, 0
   index: -1
 explosion
   rotate: false
-  xy: 1732, 1548
+  xy: 688, 1484
   size: 96, 32
   orig: 96, 32
   offset: 0, 0
   index: -1
 turtle_shell
   rotate: false
-  xy: 1830, 1548
+  xy: 786, 1484
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
 turtle_shell_dark
   rotate: false
-  xy: 1864, 1548
+  xy: 820, 1484
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
 turtle_shell_red
   rotate: false
-  xy: 1898, 1548
+  xy: 854, 1484
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
 turtle_shell_flip
   rotate: false
-  xy: 1932, 1548
+  xy: 888, 1484
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
 turtle_shell_flip_dark
   rotate: false
-  xy: 1966, 1548
+  xy: 922, 1484
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
 turtle_shell_flip_red
   rotate: false
-  xy: 2000, 1548
+  xy: 956, 1484
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
 helmet
   rotate: false
-  xy: 2, 1598
+  xy: 990, 1484
   size: 128, 32
   orig: 128, 32
   offset: 0, 0
   index: -1
 helmet_dark
   rotate: false
-  xy: 132, 1598
+  xy: 1120, 1484
   size: 128, 32
   orig: 128, 32
   offset: 0, 0
   index: -1
 helmet_white
   rotate: false
-  xy: 262, 1598
+  xy: 1250, 1484
   size: 128, 32
   orig: 128, 32
   offset: 0, 0
   index: -1
 helmet_shell
   rotate: false
-  xy: 392, 1598
+  xy: 1380, 1484
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
 helmet_shell_dark
   rotate: false
-  xy: 426, 1598
+  xy: 1414, 1484
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
 helmet_shell_white
   rotate: false
-  xy: 460, 1598
+  xy: 1448, 1484
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
+son_of_a_buitch
+  rotate: false
+  xy: 1482, 1484
+  size: 64, 32
+  orig: 64, 32
+  offset: 0, 0
+  index: -1
 spikey_egg
   rotate: false
-  xy: 494, 1598
+  xy: 1548, 1484
   size: 64, 32
   orig: 64, 32
   offset: 0, 0
   index: -1
 spikey
   rotate: false
-  xy: 560, 1598
+  xy: 1614, 1484
   size: 128, 32
   orig: 128, 32
   offset: 0, 0
   index: -1
 fish_grey
   rotate: false
-  xy: 690, 1598
+  xy: 1744, 1484
   size: 64, 32
   orig: 64, 32
   offset: 0, 0
   index: -1
 fish_red
   rotate: false
-  xy: 756, 1598
+  xy: 1810, 1484
+  size: 64, 32
+  orig: 64, 32
+  offset: 0, 0
+  index: -1
+octopussy
+  rotate: false
+  xy: 1876, 1484
   size: 64, 32
   orig: 64, 32
   offset: 0, 0
   index: -1
 lava
   rotate: false
-  xy: 822, 1598
+  xy: 1942, 1484
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
 lava_ball
   rotate: false
-  xy: 856, 1598
+  xy: 1976, 1484
   size: 64, 32
   orig: 64, 32
   offset: 0, 0
   index: -1
 water
   rotate: false
-  xy: 922, 1598
+  xy: 2, 1518
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
 axe
   rotate: false
-  xy: 956, 1598
+  xy: 36, 1518
   size: 128, 32
   orig: 128, 32
   offset: 0, 0
   index: -1
 wall
   rotate: false
-  xy: 1086, 1598
+  xy: 166, 1518
   size: 64, 32
   orig: 64, 32
   offset: 0, 0
   index: -1
 bouncer
   rotate: false
-  xy: 1152, 1598
+  xy: 232, 1518
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
 wooden_bridge
   rotate: false
-  xy: 1186, 1598
+  xy: 266, 1518
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
 white_line
   rotate: false
-  xy: 1220, 1598
+  xy: 300, 1518
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
 chain
   rotate: false
-  xy: 1254, 1598
+  xy: 334, 1518
   size: 128, 32
   orig: 128, 32
   offset: 0, 0
   index: -1
 rope
   rotate: false
-  xy: 1384, 1598
+  xy: 464, 1518
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+small_castle
+  rotate: false
+  xy: 498, 1518
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+big_castle
+  rotate: false
+  xy: 532, 1518
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+lift
+  rotate: false
+  xy: 566, 1518
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
 bw_stone
   rotate: false
-  xy: 1418, 1598
+  xy: 600, 1518
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
 bw_chocolate
   rotate: false
-  xy: 1452, 1598
+  xy: 634, 1518
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+bw_small_castle
+  rotate: false
+  xy: 668, 1518
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+bw_big_castle
+  rotate: false
+  xy: 702, 1518
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
 bw_bouncer
   rotate: false
-  xy: 1486, 1598
+  xy: 736, 1518
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
 stone_clowd
   rotate: false
-  xy: 1520, 1598
+  xy: 770, 1518
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
 flag_top
   rotate: false
-  xy: 1554, 1598
+  xy: 804, 1518
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
 flag_sphere
   rotate: false
-  xy: 1588, 1598
+  xy: 838, 1518
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
 flag_sphere_fence
   rotate: false
-  xy: 1622, 1598
+  xy: 872, 1518
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
 flag_win
   rotate: false
-  xy: 1656, 1598
+  xy: 906, 1518
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
 small_dead_mario
   rotate: false
-  xy: 1690, 1598
+  xy: 940, 1518
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
 tiles_cloudsnight
   rotate: false
-  xy: 1724, 1598
+  xy: 974, 1518
   size: 64, 32
   orig: 64, 32
   offset: 0, 0
   index: -1
 tiles_clowd
   rotate: false
-  xy: 1790, 1598
+  xy: 1040, 1518
   size: 64, 32
   orig: 64, 32
   offset: 0, 0
   index: -1
 bw_hammer
   rotate: false
-  xy: 1856, 1598
+  xy: 1106, 1518
   size: 112, 28
   orig: 112, 28
   offset: 0, 0
   index: -1
 boss_fire
   rotate: false
-  xy: 2, 1632
+  xy: 1220, 1518
   size: 96, 16
   orig: 96, 16
   offset: 0, 0
   index: -1
 fire_ball
   rotate: false
-  xy: 100, 1632
+  xy: 1318, 1518
   size: 64, 16
   orig: 64, 16
-  offset: 0, 0
-  index: -1
-lift
-  rotate: false
-  xy: 166, 1632
-  size: 16, 16
-  orig: 16, 16
   offset: 0, 0
   index: -1

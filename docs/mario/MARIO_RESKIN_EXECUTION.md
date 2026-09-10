@@ -619,6 +619,30 @@ closes.
       with a red tint for the faster variant. Packed successfully: **62 / 122 assets** now
       sourced from the reskin overlay. On-device verification still pending.
 
+      **2026-09-10: Phase 12 done** (`docs/assets/mario-sprites/ampere-staging/build_r4_phase12.py`)
+      — procedural replacements for `SonOfABuitch.png`, `SpikeyEgg.png`, `Spikey.png`,
+      `OctoPussy.png`, `plant.png`, and `plantdark.png`. Packed successfully: **68 / 122
+      assets** now sourced from the reskin overlay. On-device verification still pending.
+
+      **2026-09-10: Phase 13 done** (`docs/assets/mario-sprites/ampere-staging/build_r4_phase13.py`)
+      — `BridgeBloks.png`, `Axe.png`, `RocketLauncher.png`, `Bouncer.png`, `Spring.png`,
+      `WoodenBridge.png`, `WhiteLine.png`, `Chain.png`, and `Rope.png` generated as
+      procedural sci-fi props/mechanisms. Packed successfully: **77 / 122 assets** now
+      sourced from the reskin overlay. On-device verification still pending.
+
+      **2026-09-10: Phase 14 done** (`docs/assets/mario-sprites/ampere-staging/build_r4_phase14.py`)
+      — `Wall.png`, `Lift.png`, `SmallCastle.png`, `BigCastle.png`, `tree.png`, plus
+      CloudsNight variants (`CloudsNight/tree.png`, `CloudsNight/SmallCastle.png`,
+      `CloudsNight/BigCastle.png`, `CloudsNight/Bouncer.png`, `CloudsNight/RocketLauncher.png`).
+      Packed successfully: **87 / 122 assets** now sourced from the reskin overlay. On-device
+      verification still pending.
+
+      **2026-09-10: Phase 12 plant fix** (`docs/assets/mario-sprites/ampere-staging/build_r4_phase12.py`)
+      — `plant.png`/`plantdark.png` resized to 32×48 per frame (64×48 sheet) to match
+      `PiranhaPlant`'s `tileSize × 1.5` frame height and avoid Sprite constructor
+      errors. Packed successfully: **77 / 122 assets** now sourced from the reskin overlay.
+      On-device verification still pending.
+
       **Blockers:** the IDE file-discovery tool denied access to
       `C:/workspace/robot_series_base_pack/enemy3` under AI exclude policies. Its
       existence is user-confirmed, but actual filenames, image dimensions, animation

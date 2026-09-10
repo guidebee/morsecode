@@ -547,7 +547,7 @@ closes.
       a bug report. Packed (39/122 overlay) and compiled clean; **not yet on-device
       verified.**
 
-      **2026-09-09: Phase 2 tasks 1-2 done** (`docs/assets/mario-sprites/ampere-staging/build_r4_phase2.py`)
+      **2026-09-10: Phase 2 tasks 1-2 done** (`docs/assets/mario-sprites/ampere-staging/build_r4_phase2.py`)
       — `Iron.png` rebuilt as a 4×1, 32×32-per-frame strip in the exact order
       `Iron.java` expects: Sea, Ground, UnderGround, Castle (confirmed by reading that
       class's own `frameFor()` mapping first, not assuming the row order from any other
@@ -564,29 +564,16 @@ closes.
       UnderGround/Castle. Each frame deliberately changes slightly (panel lift/highlight
       pulse + the glyph rising upward) so the bob loop is readable as animation, not three
       identical copies. Generated to `docs/assets/mario-sprites/reskin-source/Iron.png`,
-      `QuestionMark.png`, and `QuestionMarkGrey.png`; **not yet packed or on-device
-      verified.**
+      `QuestionMark.png`, and `QuestionMarkGrey.png`; **packed clean, compile and on-device
+      verification still pending.**
 
-      **2026-09-09: Task 3 Plater / Helmet — BLOCKED, not implemented.**
-      Re-read the latest junior guide, the source index, `Helmet.java`,
-      `HelmetShell.java`, the packer's AssetSpecs/overlay loader, `pack.sh`, and
-      `sprite_tools.py`. Confirmed the exact targets below, all relative to
-      `docs/assets/mario-sprites/reskin-source/`:
-
-      | Region | Exact output path | Sheet size | Pose contract |
-      |---|---|---|---|
-      | `helmet` | `Helmet.png` | 128×32 | 0–1 left walk pair; 2–3 right walk pair |
-      | `helmet_dark` | `Helmetdark.png` | 128×32 | Same walk contract, dark palette |
-      | `helmet_white` | `Helmetwhite.png` | 128×32 | Same walk contract, white palette |
-      | `helmet_shell` | `HelmetShell.png` | 32×32 | Single retracted pose |
-      | `helmet_shell_dark` | `HelmetShelldark.png` | 32×32 | Same retracted pose, dark palette |
-      | `helmet_shell_white` | `HelmetShellwhite.png` | 32×32 | Same retracted pose, white palette |
-
-      Both actors pass `tileSize, tileSize` to `super`; Helmet selects
-      `(movingRight ? 2 : 0) + (showingFirstFrame ? 0 : 1)`. HelmetShell has no
-      directional/animation frame selection: stationary and kicked states share its
-      single frame, and projectile defeat extracts `[0][0]` at tile size × ART_SCALE.
-      No actor, gameplay, or ART_SCALE changes were made.
+      **2026-09-10: Phase 3 tasks 3-5 done** (`docs/assets/mario-sprites/ampere-staging/build_r4_phase3.py`)
+      — Helmet/Plater family (`helmet*` + `helmet_shell*`) generated from Robot Master
+      Series `enemy3all.png`, The Warden (`Boss.png`) from `miniboss1_base`, `BossFire.png`
+      from `miniboss1_laser.png`, and `1UP.png` auto-selected from the Robot Platform Pack
+      tileset by red-pixel detection. Packed successfully: **46 / 122 assets** now sourced
+      from the reskin overlay. `./gradlew :app:compileDebugJavaWithJavac` passes; on-device
+      verification still pending.
 
       **Blockers:** the IDE file-discovery tool denied access to
       `C:/workspace/robot_series_base_pack/enemy3` under AI exclude policies. Its

@@ -613,6 +613,44 @@ closes.
       (`59 / 122` overlay) and compile-checked (`:app:compileDebugJavaWithJavac`
       successful).
 
+      **2026-09-10: Task 8 (`monkey`) done**
+      (`docs/assets/mario-sprites/ampere-staging/build_r4_task8_monkey.py`) — rebuilt
+      `Monkey.png` (3x2, 32x48 frames) from Kenney Toon Characters robot pose sprites
+      (`character_robot_walk0`, `character_robot_walk1`, `character_robot_attack1`),
+      mirrored into the expected left/right grid contract used by `Monkey.java`
+      (`0/1` left idle cycle, `2` left throw, `3` right throw, `4/5` right idle cycle).
+      Packed clean (`60 / 122` overlay) and compile-checked
+      (`:app:compileDebugJavaWithJavac` successful).
+
+      **2026-09-10: Task 9 (`son_of_a_buitch`/`spikey_egg`/`spikey`) done**
+      (`docs/assets/mario-sprites/ampere-staging/build_r4_task9_spikey_family.py`) —
+      rebuilt `SonOfABuitch.png` (2x1, 32x48), `SpikeyEgg.png` (2x1, 32x32), and
+      `Spikey.png` (4x1, 32x32) to match `SonOfABuitch.java`, `SpikeyEgg.java`, and
+      `Spikey.java` frame contracts (including `spikey` left/right walk pairs by index).
+      `SonOfABuitch` uses Kenney Toon Characters robot poses with a hover-pad pass for the
+      airborne silhouette; `spikey`/`spikey_egg` reuse the already-reskinned turtle family
+      as a base plus added spike/egg treatment for family consistency. Packed clean
+      (`63 / 122` overlay) and compile-checked (`:app:compileDebugJavaWithJavac`
+      successful).
+
+      **2026-09-10: Task 10 (`fish_grey`/`fish_red`/`octopussy`) done**
+      (`docs/assets/mario-sprites/ampere-staging/build_r4_task10_sea_enemies.py`) —
+      rebuilt `FishGrey.png` (2x1, 32x32), `FishRed.png` (2x1, 32x32), and
+      `Octopussy.png` (2x1, 32x48) to match `FishyWater.java` and `OctoPussy.java`
+      frame sizes/animation contracts. Source uses Kenney New Platformer Pack enemy fish
+      silhouettes (`fish_blue_swim_*`, `fish_yellow_swim_*`, `fish_purple_*`) with palette
+      adjustments to preserve the existing grey-vs-red enemy distinction. Packed clean
+      (`66 / 122` overlay) and compile-checked (`:app:compileDebugJavaWithJavac`
+      successful).
+
+      **2026-09-10: Task 11 (`fire_ball`) done**
+      (`docs/assets/mario-sprites/ampere-staging/build_r4_task11_fire_ball.py`) — rebuilt
+      `FireBall.png` (4x1, 16x16) from Robot Series projectile-effect frames
+      (`enemy1_attack_effect[32height32wide].png`), resized to FireBall/OrbitingFireball's
+      16x16 contract and tinted per-frame for a readable spin/pulse cycle. Packed clean
+      (`67 / 122` overlay) and compile-checked (`:app:compileDebugJavaWithJavac`
+      successful).
+
       **Still open for R.4** (tier-3/4 per §16.4, not yet started): tier-4's long tail of
       one-off enemies/mechanisms.
 

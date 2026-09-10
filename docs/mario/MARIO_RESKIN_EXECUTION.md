@@ -586,10 +586,27 @@ closes.
       this closes the highest-priority open enemy in Task 4. Packed clean (`50 / 122`
       overlay) and compile-checked (`:app:compileDebugJavaWithJavac` successful).
 
+      **2026-09-10: Task 5 (Spare chassis / 1-Up) done**
+      (`docs/assets/mario-sprites/ampere-staging/build_r4_task5_one_up.py`) — rebuilt
+      `1UP.png` (2x1) from Robot Platform Pack's documented heart fallback
+      (`Tileset&Items.png`), with both source crops verified and then placed into 32x32
+      frames for `actors/items/Life.java`'s existing 2-frame animation path (`nextFrame()`
+      cycling). Packed clean (`51 / 122` overlay) and compile-checked
+      (`:app:compileDebugJavaWithJavac` successful).
+
+      **2026-09-10: Task 6 (FlyingTurtle family) done**
+      (`docs/assets/mario-sprites/ampere-staging/build_r4_task6_flying_turtle_family.py`) —
+      rebuilt `FlyingTurtle.png`/`FlyingTurtledark.png`/`FlyingTurtlePatrol.png`/
+      `EnemyTurtlePatrol.png` as 4x1 strips (32x48 frames), matching consuming classes
+      `FlyingTurtle.java`, `FlyingTurtlePatrol.java`, and `EnemyTurtlePatrol.java`.
+      Per the junior guide's recommendation, this reuses Roller/turtle base art and adds a
+      small winged variant for the flying types rather than sourcing a wholly new enemy
+      family. Packed clean (`55 / 122` overlay) and compile-checked
+      (`:app:compileDebugJavaWithJavac` successful).
+
       **Still open for R.4** (tier-3/4 per §16.4, not yet started): `turtle_shell_red`/
-      `_flip` variants and `enemy_turtle_patrol` (not reached by World 1's own data, per
-      `TurtleShell.java`'s doc — lower priority); `FlyingTurtle` family; and tier-4's long
-      tail of one-off enemies/mechanisms.
+      `_flip` variants (not reached by World 1's own data, per `TurtleShell.java`'s doc —
+      lower priority); and tier-4's long tail of one-off enemies/mechanisms.
 
 ### Step R.5 — Scenery, backdrops, HUD, UI text
 

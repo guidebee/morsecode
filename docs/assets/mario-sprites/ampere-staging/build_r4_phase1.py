@@ -154,18 +154,27 @@ def build_roller():
         tinted_left = [tint(f, color, 0.3) for f in left_frames]
         # Layout per EnemyTurtle.java: cols 0-1 = left-facing, cols 2-3 = right-facing.
         frames = [tinted_left[0], tinted_left[1], tinted_right[0], tinted_right[1]]
-        suffix = "" if theme == "Ground" else f"_{theme}"
-        out_name = "turtle_dark.png" if theme == "UnderGround" else f"turtle{suffix}.png"
+        # NOTE (bug found/fixed 2026-09-11): AssetSpec's actual source
+        # filenames are "turtledark.png" (no underscore) and
+        # "TurtelShelldark.png" (misspelled "Turtel", no underscore) - this
+        # script originally wrote "turtle_dark.png"/"turtle_shell_dark.png",
+        # which the packer silently never matched (falling back to the
+        # UNRESKINNED original art for UnderGround turtles this whole time).
+        # Match AssetSpec's exact filenames, not a readable-looking guess.
+        out_name = "turtledark.png" if theme == "UnderGround" else "turtle.png"
         build_sheet(cell_w, cell_h, frames, f"{OUT}/{out_name}")
 
     # turtle_shell / turtle_shell_dark - single 32x32 static pose, using the
     # most compact/rounded walk frame (index 0) rather than a dedicated
     # "curled up" pose (none exists in the source material).
     shell_base = place_content(raw[0], 32, 32, fill=0.85, anchor="bottom")
-    tint(shell_base, THEMES["Ground"], 0.3).save(f"{OUT}/turtle_shell.png")
-    print("wrote", f"{OUT}/turtle_shell.png")
-    tint(shell_base, THEMES["UnderGround"], 0.3).save(f"{OUT}/turtle_shell_dark.png")
-    print("wrote", f"{OUT}/turtle_shell_dark.png")
+    tint(shell_base, THEMES["Ground"], 0.3).save(f"{OUT}/TurtelShell.png")
+    print("wrote", f"{OUT}/TurtelShell.png")
+    # See the "turtledark.png" note above - AssetSpec's exact filename is
+    # "TurtelShelldark.png" (misspelled, no underscore), not
+    # "turtle_shell_dark.png".
+    tint(shell_base, THEMES["UnderGround"], 0.3).save(f"{OUT}/TurtelShelldark.png")
+    print("wrote", f"{OUT}/TurtelShelldark.png")
 
 
 if __name__ == "__main__":

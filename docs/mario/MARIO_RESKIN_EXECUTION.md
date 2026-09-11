@@ -621,18 +621,426 @@ closes.
       Warden/`Boss`; Spare chassis/`one_up`; and tier-4's long tail of one-off
       enemies/mechanisms.
 
+      **2026-09-11: Task 4 (The Warden / Boss) done**
+      (`docs/assets/mario-sprites/ampere-staging/build_r4_boss.py`) — `boss`
+      (`Boss.png`, 3×2 = 6 frames, 64×64 each) and `boss_fire` (`BossFire.png`, 2×1,
+      48×16 each). **Re-verified the frame-index meaning the guide explicitly flagged
+      as unconfirmed**: read `Boss.java`'s `updateLookAtMarioFrame()` directly —
+      confirmed idx0/1 (row0 col0/1) = look-left idle, idx2 (row0 col2) = fixed
+      "spitting fire" pose (no left/right variant, matches `setFrame(2)` regardless of
+      facing), idx4/5 (row1 col1/2) = look-right idle, idx3 (row1 col0) unused by any
+      code path (filled with a duplicate frame to avoid a blank cell). Source is Robot
+      Master Series' `miniboss1` folder (the R.0-decided source), specifically
+      `miniboss1_base[80height144wide].png` (11 frames × 144×80, confirmed via
+      `getbbox()` that all 11 share an identical content bbox — this sheet is a subtle
+      idle-detail loop, not a walk/pose cycle, so "idle A"/"idle B" are two frames from
+      that loop rather than two different poses). The fire pose composites a red spark
+      (verified-cropped from `miniboss1_laser_attacking[32height112wide].png`) onto a
+      copy of the base pose near its head, via `alpha_composite(base, overlay)` — base
+      first, matching the Hall of Fame's Mistake #3 fix, not the reversed order that
+      caused that original bug. `place_content(fill=0.85, anchor="bottom")` fit the
+      wide-squat 144×80 source into the 64×64 cell; left-facing frames are `mirror()`
+      of the right-facing source (which faces right natively). `boss_fire` is built
+      procedurally (a red/orange energy bolt, matching the visual language already
+      established by `fire_ball`/`lava_ball`) rather than forced from the source
+      pack's own laser material, which was either a flat health-bar icon or too small
+      an abstract streak to read clearly at 48×16. Viewed both generated sheets before
+      packing — all 6 `boss` frames read as coherent poses (not misaligned slices),
+      matching the guide's own Task 4 test. Packed (44/122 overlay, up from 42 — same
+      page counts) and compiled clean. **Not yet on-device verified** — no test device
+      available in this session; this is the highest-value asset left per the guide,
+      so the next on-device pass should prioritize confirming the boss reads correctly
+      at actual gameplay scale, in both facing directions, and during the fire pose.
+
+      **2026-09-11: Task 5 (Spare chassis / 1-Up) done**
+      (`docs/assets/mario-sprites/ampere-staging/build_r4_onefup.py`) — `one_up`
+      (`1UP.png`, 2×1, 32×32 each). Confirmed via `Life.java` that this is a plain
+      2-frame wobble with no left/right split (only `nextFrame()`, no directional
+      `setFrame()` calls). Per the guide's own recommendation, **hand-pixeled a small
+      chassis/head icon instead of the documented heart-icon fallback** — a domed
+      robot-head housing with a glowing green "spare life" core, built procedurally
+      (same `rect()`/`ImageDraw` technique as the terrain and QuestionMark art), with
+      `sprite_tools.glow_pulse` giving the 2 frames a subtle brightness difference
+      rather than being identical copies. Viewed the generated sheet before packing —
+      reads clearly as a small detached chassis, not a heart. Packed (45/122 overlay,
+      up from 44 — same page counts) and compiled clean. **Not yet on-device
+      verified** — no test device available in this session.
+
+      **This closes every task in [MARIO_RESKIN_JUNIOR_DEV_GUIDE.md](MARIO_RESKIN_JUNIOR_DEV_GUIDE.md)'s
+      §4 "ready-to-execute tasks" list** (Iron, QuestionMark/Bank, Plater/Helmet [flagged
+      as an open gap, not completed], The Warden, Spare chassis). Remaining R.4 work
+      moves to that guide's §5 "rest of tier-3/4" checklist table, plus closing the
+      Plater/Helmet gap above.
+
+      **2026-09-11: §5 checklist batch — Bouncer/Spring, Explosion, FireBall,
+      Lava/LavaBall/Water, Axe, structural pieces done.** Read every consuming class
+      first (`Bouncer`/`Spring`/`Explosion`/`Fireworks`/`FireBall`/`OrbitingFireball`/
+      `LavaBall`/`Axe`/`WoodenBridge`/`Monkey` + `LevelLoader.spawnWall`/
+      `MarioTileRegistry`'s Lava/Water/BridgeBloks/WhiteLine scenery cases) before
+      building anything, per the guide's Golden Rule:
+      - **Bouncer + Spring** (`build_r4_bouncer_spring.py`) — `other/gate.png` (the same
+        208×32 sheet the Charge coil already uses one window of) turned out to be
+        built from thirteen 16×32 segments: segments 0-5 are a dense 6-ring stacked-disc
+        coil, segments 6-12 progressively lose rings from the top — i.e. the source art
+        is *already* a bottom-anchored spring-compression sequence, not just a texture
+        to slice arbitrarily. Mapped segment 5 (rest/tallest) → `spring` frame 0,
+        segment 9 (mid) → frame 1, segment 12 (max compressed) → frame 2, each a plain
+        2× NEAREST upscale (16×32 → 32×64, an exact fit). `bouncer` reuses segment 5 as
+        a static 32×32 pad so the two read as one consistent piece of hardware. Viewed
+        both sheets — a clean, readable squish-and-recover cycle.
+      - **Explosion** (`build_r4_explosion.py`) — `other/explode-Sheet[64height64wide].png`
+        (512×64, 8 frames), a real bespoke explosion animation from the same Robot
+        Master Series pack `Boss`/`BossFire` already draw from. A per-frame `getbbox()`
+        scan confirmed frames 0/3/6 give a clean small→medium→large 3-stage burst
+        (frame 7 is fully empty/faded) — matches `Explosion.java`'s plain
+        "`nextFrame()` 3 times then remove" behavior exactly (no custom
+        `setFrameSequence`, unlike `Axe`).
+      - **FireBall + LavaBall** (`build_r4_hazards.py`) — no existing reskin art fits a
+        16×16 "spinning projectile" cell, so built procedurally: a small glowing
+        plasma orb whose highlight rotates between the 4 `fire_ball` frames to read as
+        spinning; `lava_ball`'s 2 frames (32×32, confirmed against `LavaBall.java`)
+        reuse the same orb language at 2× size, with frame 1 (falling) adding a short
+        motion streak frame 0 (rising) doesn't have.
+      - **Lava + Water** (`build_r4_hazards.py`) — `MarioTileRegistry` spawns both as a
+        single *whole, unsliced* 32×128 `Scenery` image (not a themed terrain tile, not
+        per-cell sliced), so each was built as a vertically repeating hazard column
+        (checked with `is_tileable_texture` for top/bottom seam continuity) rather than
+        a discrete icon.
+      - **Axe** (`build_r4_axe.py`) — confirmed via `Axe.java`'s own
+        `setFrameSequence({0,1,2,3,2,1})` that this is a back-and-forth sweep, not a
+        one-way strip; built as a mechanical lever/switch icon (4 frames sweeping the
+        handle left→right) rather than a literal axe blade, fitting both the
+        "chop the rope"/bridge-collapse trigger and this reskin's existing
+        console/switch visual language (`QuestionMark`'s beveled panel).
+      - **WoodenBridge / Wall / BridgeBloks / WhiteLine** (`build_r4_structural.py`) —
+        all four are plain static metal-panel textures (no animation, no per-theme
+        attribute variant — confirmed `BridgeBloks`' region name is NOT
+        attribute-suffixed, unlike `brick`/`stone`/`chocolate`), built to match the
+        Iron/Bouncer riveted-panel language. `Wall`'s 2 frames (cap + repeating body)
+        were built to the exact split `LevelLoader.spawnWall`'s own
+        `frames[0][dy == 0 ? 0 : 1]` expects. `WhiteLine` was kept deliberately plain
+        (a single glowing vertical stripe) since `Scenery`'s own doc confirms it's
+        stretched 13× vertically by a plain `draw()` call (not tiled/sliced) — a busier
+        texture would streak/blur at that stretch factor.
+      - **`chain`/`rope` intentionally skipped** — grepped every actor/registry class
+        for both region names; the only hit is `MarioTileRegistry`'s own class doc
+        listing them among assets "packed ahead of the actor code that will read
+        them," and `LevelLoader.sceneryRegion`'s switch (the one place a generic
+        scenery type name could map to them) only ever handles `"SmallCastle"`/
+        `"BigCastle"`. **No reachable spawn path exists in this port** — confirmed dead
+        weight in the atlas, same category as `font`/`info`/`info2`. Not reskinned;
+        flagged here instead of silently skipped so this doesn't get "rediscovered" as
+        a bug later.
+      Viewed every generated sheet before packing (all read as coherent, non-garbled
+      art). Packed (57/122 overlay, up from 45 — 12 new files, same page/region counts
+      across all 5 atlases) and compiled clean. **Not yet on-device verified** — no
+      test device available in this session; these are lower on-screen-frequency
+      assets than the player/enemies/boss, but the same verification gap applies.
+
+      **2026-09-11: Monkey done** (`build_r4_monkey.py`) — `monkey` (`Monkey.png`,
+      3×2, 32×48 per cell). Re-verified (per the guide's explicit warning not to
+      assume this grid's meaning) via `Monkey.java`'s own `updateLookAtMarioFrame()`:
+      idx0/1 = look-left idle pair, idx4/5 = look-right idle pair — the exact same
+      layout convention as `Boss`, just a different per-frame pixel size; idx2/idx3
+      are unused by any code path, same situation as `Boss`'s own idx3. Source:
+      Robot Master Series' `robot2` folder — deliberately not enemy1/enemy2 (already
+      used for Scuttler/turtle_shell_dark) or enemy3 (rejected for Plater/Helmet), and
+      not robot1/robot3 (already the two player skins); robot2 is a distinct, still-
+      unused purple trooper biped. `robo2jump-Sheet[48height32wide].png` is already
+      32×48 per frame — no rescale-shape mismatch. Frames 0 and 3 (upright vs.
+      leaping) used as an idle-A/idle-B pair, mirrored for left-facing, matching
+      Boss's own 2-distinct-frames-from-one-loop approach. Viewed the generated sheet
+      — 6 coherent poses. Packed (58/122 overlay, up from 57 — same page/region
+      counts) and compiled clean. **Not yet on-device verified.**
+
+      **2026-09-11: Sea enemies done** (`build_r5_sea_enemies.py`) — `octopussy`
+      (`OctoPussy.png`, 2×1, 32×48), `fish_grey`/`fish_red` (`FishGrey.png`/
+      `FishRed.png`, 2×1, 32×32 each). Confirmed via `OctoPussy.java`/`FishyWater.java`
+      that both are plain 2-frame idle/blink or swim-wobble strips, no directional
+      split. `octopussy` reuses Robot Master Series' `enemy3` (the same sheet rejected
+      for Plater/Helmet in Task 3) — that rejection was specifically "not a walker,"
+      which doesn't apply here since `OctoPussy` never walks either (drifts/darts
+      toward target points); a `getbbox()` scan picked frame 0 (fully closed) as idle
+      and frame 7 (fully open, red eye visible) as the blink frame. No comparably
+      fitting small aquatic sprite existed elsewhere in the pack for fish_grey/red, so
+      those were built procedurally as a small torpedo-shaped probe/drone with a
+      2-frame fin wobble, grey/red tinted per this reskin's existing enemy-tint
+      convention. Viewed all three sheets — clear, coherent art. Packed (61/122
+      overlay, up from 58) and compiled clean. **Not yet on-device verified.**
+
+      **2026-09-11: Turtle variants done, PLUS a real filename bug found and fixed.**
+      While sourcing this batch, a full case-sensitive diff of every file in
+      `reskin-source/` against `PackMarioAtlas.java`'s own `AssetSpec` table (exact
+      `sourcePath` strings, not the human-readable region names) turned up **three
+      silently-broken reskin files from earlier in this session**: Step R.4 Phase 1's
+      `build_r4_phase1.py` had saved the UnderGround turtle/shell art as
+      `turtle_dark.png`/`turtle_shell_dark.png`, but `AssetSpec` actually expects
+      `turtledark.png` (no underscore) and `TurtelShelldark.png` (the pack's own
+      "Turtel" misspelling, no underscore) — and the plain shell was saved as
+      `turtle_shell.png` instead of `TurtelShell.png`. The packer only matches an
+      overlay file by *exact* filename, so **all three had been silently falling back
+      to the original, unreskinned art this whole session** — the overlay counts
+      logged for every earlier task were correct for the files that *did* match, but
+      this trio was dead weight the whole time, never caught because nothing had
+      previously verified filenames against the AssetSpec table directly (only
+      against pack/compile success, which doesn't catch a wrong-but-present filename).
+      **Fixed**: renamed the 3 files on disk, corrected `build_r4_phase1.py`'s own
+      `.save()` calls to match, and re-ran the diff to confirm zero mismatches remain
+      across the entire `reskin-source/` directory. Recommend re-checking this
+      diff after any future filename-sensitive save if a similar mistake is made again.
+
+      With that fixed, then built (`build_r5_turtles.py`): `enemy_turtle_patrol`
+      (`EnemyTurtlePatrol.png`, 4×1) — confirmed via its own class doc this is
+      pixel-identical to `turtle.png`'s Ground tint, just under its own region name,
+      so it's a direct copy, not new art. `flying_turtle`/`flying_turtle_dark`
+      (`FlyingTurtle.png`/`FlyingTurtledark.png`, 4×1 each) — reuse `turtle.png`'s own
+      4 cells (same idx0/1=left, idx2/3=right convention) plus a small added
+      wing/thruster fin, retinted per theme — matches the guide's own "reuse Roller
+      art + wing addition" suggestion exactly. `flying_turtle_patrol`
+      (`FlyingTurtlePatrol.png`) — AssetSpec declares this 4×1 even though
+      `FlyingTurtlePatrol.java` only ever calls `setFrame(0 or 1)`; built all 4 cells
+      (2 used + 2 duplicate fills) to avoid a blank-cell surprise, matching Boss/
+      Monkey's own precedent for declared-but-unused cells. Lowest-priority per the
+      guide: `turtle_shell_red`/`turtle_shell_flip`/`_flip_dark`/`_flip_red` — plain
+      red tint + horizontal mirrors of the already-built shells (`TurtelShellRed.png`,
+      `TurtelShellFilp.png`, `TurtelShellFilpdark.png`, `TurtelShellFilpRed.png`).
+      Viewed every generated sheet — coherent, readable poses; the two theme tints
+      are subtle (matching `turtle.png`/`turtledark.png`'s own existing subtlety, not
+      a new problem). Packed (72/122 overlay, up from 61 — the jump of 11 includes 8
+      new files plus the 3 filename-bug fixes newly being recognized; page/region
+      counts stable) and compiled clean. **Not yet on-device verified.**
+
+      **2026-09-11: Pump/pipes + Plant done** (`build_r5_pump_plant.py`).
+      `Pump.java` confirmed purely-decorative, no animation; Ground/UnderGround
+      share plain `pump`/`pump_top`, Castle/Sea each get their own recolor of the
+      same silhouette (`Pump.regionFor()`'s attribute switch). Source dimensions
+      confirmed from the original art: `pump`/`pump Castle`/`pump Sea` are 64×32
+      (straight body segment), `pump top*` are 64×64 (rounded cap) — all six are
+      AssetSpec 1×1 (whole image = one region), no sub-grid needed. The guide's
+      own "documented candidate", RTS Sci-fi's `scifi_tilesheet.png`, was opened
+      and visually surveyed directly: its pipe/conduit art is topdown-perspective
+      winding terrain paths with no straight rectangular segment, so cropping it
+      into a side-view 64×32 vertical pipe body would visibly break its own
+      perspective — not a good fit despite the guide flagging it as worth
+      checking. Built procedurally instead, in the same riveted-metal-panel
+      language as Wall/BridgeBloks/WoodenBridge (Step R.5 structural batch) for
+      visual consistency: Ground/UnderGround gets a cyan glow accent (matching
+      Wall's own accent), Castle gets a warm orange glow (matching
+      BridgeBloks/lava's palette), Sea gets a cool blue glow (matching Water's
+      palette) — same "themed accent, one base silhouette" pattern already used
+      elsewhere.
+
+      `plant`/`plant_dark`: confirmed via `PiranhaPlant.java` this is a 2-frame
+      open/closed biting-mouth animation (`showingFirstFrame` toggling every
+      0.3s), rising out of its own pipe on a fixed travel range; AssetSpec
+      declares both as 2×1 (64×48). Guide flags this "no pack match found... AI-gen
+      candidate", with no AI-gen tool available in this environment — built
+      procedurally instead as a small mechanical sentry head (glowing red eye +
+      a pair of articulated claw pincers that splay open/closed for the 2
+      frames), keeping the "hostile thing rising out of a pipe to bite" read the
+      class requires, in Ampere's robot-enemy visual language rather than an
+      organic plant. `plant_dark` is the same art with a cooler blue-shifted
+      tint (same "same silhouette, per-theme tint" pattern as every other _dark
+      variant this session). Viewed every generated sheet — coherent, readable.
+      Packed (80/122 overlay, up from 72 — the jump of 8 matches the 8 new
+      files exactly; page/region counts stable) and compiled clean. **Not yet
+      on-device verified.**
+
+      **2026-09-11: hori_image, son_of_a_buitch, spikey/spikey_egg,
+      rocket_launcher (+bw_ variant), bw_hammer done**
+      (`build_r5_misc_common.py`). All confirmed by reading each consuming
+      class first: `hori_image` (`MarioTileRegistry`'s "HoriImage" case, 2×1,
+      Pump's plain decoration, drawn as a horizontal metal conduit — end-cap
+      + continuing-body pair, matching Pump's own riveted-panel language but
+      laid flat); `son_of_a_buitch` (`SonOfABuitch.java`, 2×1, a Lakitu-analog
+      — built as a small hovering claw-drone, idle-holding-pod vs
+      cocked-back-windup for its 2 read frames); `spikey`/`spikey_egg`
+      (`Spikey.java`/`SpikeyEgg.java`, 4×1/2×1 — spike-backed ground bot
+      2-frame-per-direction walk cycle + a sealed glowing spawn-pod); `rocket_
+      launcher`/`bw_rocket_launcher` (`RocketLauncher.java`/`Rocket.java`, 1×4
+      each — confirmed idx0=static turret head, idx3=flying missile Rocket.java
+      reuses directly and flips per-direction; idx1/2 declared-but-unread,
+      built as two turret-idle glow states between them, matching Boss/
+      Monkey's own "declared wider than used" precedent rather than leaving
+      dead cells; bw_ variant is the CloudsNight-only palette recolor Rocket's
+      own `blackAndWhite` branch reads); `bw_hammer` (`Hammer.java`, 4×1,
+      28×28/cell — a tumbling wrench rotated across all 4 frames for a
+      thrown-tool spin, reused unconditionally regardless of level theme per
+      Hammer.java's own doc on the "BW" path name being legacy naming, not an
+      actual theme gate).
+
+      **Bug caught before packing**: `build_sheet`'s own docstring states a
+      flat list only maps to a *single row* (`{(i, 0): frame}`) — the
+      rocket_launcher pair's AssetSpec is 1 col × 4 ROWS (a vertical strip),
+      so passing a flat list silently placed all 4 frames stacked into
+      column 0 of row 0, overlapping each other and leaving rows 1-3 fully
+      transparent (confirmed via `getbbox()` returning `None` for cells 1-3
+      before the fix). Fixed by passing an explicit `{(col, row): frame}`
+      dict instead of a list for that one call, then re-verified every
+      cell's bbox is non-empty and re-viewed the sheet before packing — a
+      good reminder to always call `getbbox()`/view multi-row sheets
+      specifically, not just trust a successful script run.
+
+      Viewed every generated sheet — coherent, readable. Packed (87/122
+      overlay, up from 80 — the jump of 7 matches the 7 new files exactly;
+      page/region counts stable) and compiled clean. **Not yet on-device
+      verified.**
+
+      **2026-09-11: small_castle/big_castle, tree, lift, bw_bouncer done**
+      (`build_r5_scenery.py`). `LevelLoader.sceneryRegion` confirmed
+      SmallCastle/BigCastle are each a single whole-image region (1×1,
+      160×160/304×352 native), not a tile grid. The guide/Kenney index flag
+      RTS Sci-fi's small tech/factory buildings as the candidate — opened
+      and grid-surveyed directly (not just visually skimmed this time):
+      several probe crops at guessed 96×96 boundaries pulled unrelated
+      truck/vehicle icons instead of the buildings seen in a full-sheet
+      view, confirming the guide's own caveat that this pack "needs its own
+      grid-index mapping pass... not yet done" is a real blocker, not just
+      caution. Rather than keep guessing crop boundaries, built procedurally
+      instead in the riveted-panel language already established
+      (Iron/Wall/Bouncer), keeping each facade's original silhouette
+      structure (SmallCastle = one tier + archway; BigCastle = three
+      progressively-narrower stacked tiers, each with its own archway/
+      window row) so level geometry reads the same, just reskinned as a
+      fortress/installation per the guide's own framing. Both got a
+      CloudsNight recolor (cooler/dimmer palette, same silhouette).
+
+      `tree`/`bw_tree` (`Tree.java`, 5×2, only idx0-3 reachable per its own
+      doc — "OrangeAndMushroom" row has no spawn path) rebuilt as a small
+      solar-array replacing the canopy: angled panel-wing caps (idx0/2),
+      flat panel middle (idx1), support-column trunk (idx3); idx4-9 filled
+      with a coherent duplicate rather than left blank, matching the
+      "declared wider than used" precedent. `lift` (`Lift.java`/
+      `BalanceLiftPlatform.java`, single 16×16 tile, tiled edge-to-edge per
+      `BalanceLiftPlatform`'s own "stretching would blur it" doc) built as a
+      small riveted grating tile. `bw_bouncer` (`Bouncer.java`'s CloudsNight
+      branch) reuses the exact same `gate.png` coil segment (segment 5) the
+      regular Bouncer/Spring already source from (see
+      `build_r4_bouncer_spring.py`), just re-tinted cooler/dimmer — same
+      "same silhouette, different palette" pattern as every other bw_
+      variant.
+
+      Viewed every generated sheet — coherent, readable; the procedural
+      castle facades read clearly as sci-fi installation walls with glowing
+      window slits and an archway, matching the original's own window/door
+      placement role. Packed (95/122 overlay, up from 87 — the jump of 8
+      matches the 8 new files exactly; page/region counts stable) and
+      compiled clean. **Not yet on-device verified.**
+
+      **2026-09-11: flags/bubble/end-of-level text done, plus the 3 user-
+      facing strings** (`build_r5_ui_flags.py`). Read `MarioTileRegistry`'s
+      "Flag" case, `FlagPole.java`, `FlagWinBanner.java`, `Bubble.java`, and
+      `MarioGameScreen.beginAnotherCastleMessage` to confirm exact dims:
+      `flag`/`flag_fence` (4×288 never-moving rod), `flag_sphere`/
+      `flag_sphere_fence` (32×32 static ornament), `flag_top` (32×32, the
+      one part that actually slides), `flag_win` (32×32, rises at the *true*
+      end checkpoint — given a visually distinct ringed-beacon-pulse design
+      from `flag_sphere` so the two don't read as the same asset when both
+      are on screen), `bubble` (4×1 sheet of 8×14 frames, confirmed
+      `FRAME_SEQUENCE = {0,1,2,3,2,1,0}` is a grow/shrink pulse — built as a
+      simple expanding circle outline). No plausible pack match for either
+      the thin flag rod or a baked dialogue-screen image in the Kenney
+      bundle or RTS Sci-fi (scanned both), so all built procedurally in the
+      established riveted-panel/glow language; `_fence` variants get the
+      warmer orange palette already used for CloudsNight/Fence elsewhere.
+
+      `another_castle_message`/`quest_complete` (384×128 baked text images,
+      confirmed via `MarioGameScreen`'s own doc that these are pre-rendered
+      whole-image `Scenery`, not runtime font draws) rewritten to match the
+      "Ampere's Run" identity's "Signal Core" objective
+      (`MARIO_RESKIN_PLAN.md` §2): "SIGNAL LOST / TRY ANOTHER SECTOR." for
+      the fake-out ("WhyYouDOThis") checkpoint, "SIGNAL RESTORED / MISSION
+      COMPLETE." for the real ending ("Princess"). Text rendered with PIL's
+      `ImageFont.load_default(size=...)` onto a black canvas, matching the
+      original's own white-text-on-black baked-screen convention. This also
+      covers half of the R.5 checklist's "Rewrite the 3 user-facing
+      strings" item — the other half (code, not art) was done alongside it
+      since it's a 3-line change explicitly pre-approved by
+      `MARIO_RESKIN_PLAN.md` §1.3: `strings.xml`'s `mario` string,
+      `AndroidManifest.xml`'s activity label, and `MarioMenuScreen.java`'s
+      hardcoded title text all changed from "Mario"/"SUPER MARIO BROS" to
+      "Ampere's Run"/"AMPERE'S RUN".
+
+      Viewed every generated sheet — coherent: the pennant/ornament/beacon
+      read as distinct sci-fi silhouettes, the bubble pulses cleanly, both
+      text screens are legible and on-identity. Packed (104/122 overlay, up
+      from 95 — the jump of 9 matches the 9 new files exactly; page/region
+      counts stable), compiled clean (both the atlas-only recompile and the
+      full project recompile after the 3-string code change). **Not yet
+      on-device verified.**
+
+      **2026-09-11: `font`/`info`/`info2` confirmed dead code — no art
+      work needed.** Grepped the whole Mario module for
+      `region("font")`/`region("info")`/`region("info2")` and any
+      string-built equivalent: zero consumers. `ScoreHud` (and every other
+      HUD text path) goes through the shared engine `uiSkin()` bitmap font
+      instead, matching the earlier finding this guide references from
+      `KENNEY_ALL_IN_ONE_INDEX.md` §8. This is the same "declared in the
+      AssetSpec table, never actually read" pattern as `chain`/`rope`
+      (confirmed dead pre-compaction) — no build script written, no
+      overlay files added; the 3 AssetSpecs stay pointed at the original
+      `Font.png`/`Info.png`/`Info2.png` since nothing ever renders them.
+
 ### Step R.5 — Scenery, backdrops, HUD, UI text
 
 - [ ] Parallax backgrounds (Mountain/Clouds/CloudsNight/Fence/Sea) — reference §2.3's
       environment packs for composition ideas, plus
       [§7.2](#72-world-theme-tilesbackgrounds)'s Night Shift pick.
-- [ ] Castles, flags, end-of-level banners.
-- [ ] Decide on the `font`/`info`/`info2` question from §2.4 (swap for a CC0 font vs. the
+
+      **2026-09-11: done** (`build_r5_backgrounds.py`). Read
+      `MarioGameScreen.backgroundBandRegion`/`BackgroundBand.java`: confirmed
+      `mountain`/`clouds`/`cloudsnight`/`fence`/`fence2` are each a single
+      1536×448 whole image, tiled 10× side by side starting at (0,32) —
+      matches source dims exactly; `sea_background` is a separate 32×96
+      image, tiled edge-to-edge every 32px (not the 1536px repeat the others
+      use) starting at (0,0), confirmed by its own dedicated `BackgroundBand`
+      constructor doc. Rather than hand-guess replacement layouts, each
+      source's small opaque silhouette blobs (mostly transparent PNGs) were
+      found programmatically — a plain BFS flood-fill connected-component
+      scan over the alpha channel (no scipy available in this environment) —
+      and every bounding box redrawn in place with a themed shape, keeping
+      the exact same footprint/position rhythm the originals had (important
+      since these tile 10×; a shifted silhouette would visibly seam). This
+      surfaced a real classification bug worth flagging for future batches:
+      a first color-only heuristic (green→mountain, bluish→cloud, else→post)
+      mis-sorted `Fence.png`'s woven wood-lattice panel as a plain post
+      (wrong shape, lost the fence structure entirely) because it only had
+      cloud/post buckets — a quick component dump (bbox + avg RGB) showed
+      the lattice panel is brown/orange and squarish while real posts are
+      shape-distinct (28–32px wide, 124–156px tall regardless of palette).
+      Fixed by classifying posts by aspect ratio (tall+narrow) instead of
+      color, and adding a 4th "lattice" bucket (brown/orange, r>g>b) drawn
+      as a dark energy-barrier panel with a diagonal orange crosshatch
+      instead of a plain rectangle. Final mapping: mountain fill → angular
+      tech ridge with lit-window dots; small cloud puffs → drifting
+      drone/probe silhouettes (cyan glow for Clouds/Mountain, red for
+      CloudsNight — reusing the original's own day/night color split); fence
+      post+ball → panel post with a glowing beacon orb (same orb language as
+      `flag_sphere`); the wood lattice → the energy-barrier panel above.
+      `sea_background` rebuilt as a teal-to-navy vertical gradient with a
+      jagged cyan "circuit-ripple" surface line at the same height the
+      original's wave crest sat. No plausible pack match for tileable
+      1536×448 parallax strips in Kenney or RTS Sci-fi (both ship fixed-size
+      scene compositions, not seamless repeat art), so all six built
+      procedurally, consistent with the established fallback pattern.
+
+      Viewed every rebuilt background at full width plus a zoomed sea/fence
+      crop — silhouette rhythm and position match the originals, new shapes
+      read coherently as sci-fi drones/ridge/barrier-fence/circuit-water.
+      Packed (110/122 overlay, up from 104 — the jump of 6 matches the 6 new
+      files exactly; page/region counts stable) and compiled clean. **Not
+      yet on-device verified.**
+- [x] Castles, flags, end-of-level banners. **Done 2026-09-11** — see the scenery
+      (`build_r5_scenery.py`) and flags/UI (`build_r5_ui_flags.py`) entries above.
+- [x] Decide on the `font`/`info`/`info2` question from §2.4 (swap for a CC0 font vs. the
       already-bundled engine skin font) rather than commissioning new glyph art — or the
-      sci-fi UI pack in [§7.3](#73-ui-fonts-sfx-music).
-- [ ] Rewrite the 3 user-facing strings
+      sci-fi UI pack in [§7.3](#73-ui-fonts-sfx-music). **Confirmed 2026-09-11: dead
+      code, no art needed** — see the dedicated entry above.
+- [x] Rewrite the 3 user-facing strings
       ([MARIO_RESKIN_PLAN.md §1.3](MARIO_RESKIN_PLAN.md)) to match the finalized identity
-      from Step R.0.
+      from Step R.0. **Done 2026-09-11** — see the flags/UI text entry above
+      (`strings.xml`, `AndroidManifest.xml`, `MarioMenuScreen.java`'s title, all now
+      "Ampere's Run"/"AMPERE'S RUN").
 
 ### Step R.6 — Audio
 

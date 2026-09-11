@@ -33,7 +33,7 @@ public class MarioMenuScreen extends WorldLevelSelectScreen {
 
     public MarioMenuScreen(MarioGamePlay gamePlay) {
         super(LevelNumbering.WORLD_LEVELS, MarioMenuScreen::isUnlocked, LevelNumbering::label,
-                "SUPER MARIO BROS", MarioConfiguration.VIEWPORT_WIDTH, MarioConfiguration.VIEWPORT_HEIGHT,
+                "AMPERE'S RUN", MarioConfiguration.VIEWPORT_WIDTH, MarioConfiguration.VIEWPORT_HEIGHT,
                 MarioResourceManager.uiSkin(), gamePlay::startLevel, gamePlay::finish, BuildConfig.DEBUG);
     }
 

@@ -45,7 +45,7 @@
 
         <activity
             android:name=".mario.MarioGameActivity"
-            android:label="Mario"
+            android:label="Ampere's Run"
             android:screenOrientation="landscape"
             android:theme="@style/AppTheme.NoActionBar"
             android:configChanges="keyboard|keyboardHidden|orientation">

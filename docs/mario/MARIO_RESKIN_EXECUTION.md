@@ -547,6 +547,25 @@ closes.
       a bug report. Packed (39/122 overlay) and compiled clean; **not yet on-device
       verified.**
 
+      **2026-09-11: Task 1 (Iron) done** (`docs/assets/mario-sprites/ampere-staging/build_r4_iron.py`)
+      — `iron` (`Iron.png`, 4×1: Sea/Ground/UnderGround/Castle, per `Iron.java`'s own
+      `frameFor(attribute)`). Source is the same Pixel Platformer Industrial Expansion
+      riveted block (tile index 0) already used for `stone_Castle`/`chocolate_Castle`
+      terrain in `build_terrain_from_kenney.py`, so Iron reads as "part of this world"
+      rather than a mismatched fifth material, per the junior guide's Task 1 suggestion.
+      Recolored per-theme with `sprite_tools.tint()` using the same theme accent colors
+      as `build_terrain_and_common.py`'s `THEMES` dict (Sea=cyan, Ground=neutral,
+      UnderGround=teal, Castle=amber). Crop verified via `verified_crop()`
+      (content_bbox=(0,0,18,18), non-empty), scaled to fill the full 32×32 cell via
+      `place_content(fill=1.0)` since the source tile is a full-bleed block, not an
+      icon with padding. Packed (40/122 overlay, up from 39 — common atlas stayed at
+      106 regions/2 pages, no new page) and compiled clean
+      (`:app:compileDebugJavaWithJavac` → `BUILD SUCCESSFUL`). **Not yet on-device
+      verified** — no test device available in this session; next person to pick this up
+      should exhaust a QuestionMark/Bank in each of Ground/UnderGround/Castle and check
+      a direct Iron placement in a castle level (e.g. Level 14) before marking this
+      fully done.
+
       **Still open for R.4** (tier-3/4 per §16.4, not yet started): `turtle_shell_red`/
       `_flip` variants and `enemy_turtle_patrol` (not reached by World 1's own data, per
       `TurtleShell.java`'s doc — lower priority); Plater/`FlyingTurtle`/`Helmet` family;

@@ -1044,15 +1044,56 @@ closes.
 
 ### Step R.6 — Audio
 
-- [ ] Map all 23 sound effects to their closest Kenney-pack analog (§2.5, or §7.3's
+- [x] Map all 23 sound effects to their closest Kenney-pack analog (§2.5, or §7.3's
       sci-fi-specific pack), edit/trim as needed to match the original's timing/feel where
-      that matters (e.g. the jump sound's short punchy length).
-- [ ] Source or compose the 5 looping music tracks (§2.6 flagged this as the one audio
+      that matters (e.g. the jump sound's short punchy length). **Done 2026-09-11** — 21
+      of 23 keys replaced (`smb_vine`/`smb_warning` skipped: confirmed dead code, loaded
+      but never `.play()`-ed anywhere, matching the guide's own note). Source: local
+      `C:\workspace\Kenney_Game_Assets_All\Audio\` bundle (not in repo), per the mapping
+      table in `KENNEY_ALL_IN_ONE_INDEX.md` §9. Final file-level picks (all `.ogg` →
+      `.wav`, PCM16, via `docs/assets/mario-audio-staging/convert_r6_audio.py`):
+      - `smb_1-up` ← Music Jingles (Retro) `jingles-retro_08`
+      - `smb_bowserfalls` ← Sci-Fi Sounds `explosionCrunch_002`
+      - `smb_bowserfire` ← Sci-Fi Sounds `laserLarge_001`
+      - `smb_breakblock` ← Sci-Fi Sounds `impactMetal_003`
+      - `smb_bump` ← Sci-Fi Sounds `impactMetal_000`
+      - `smb_coin` ← Digital Audio `highUp`
+      - `smb_fireball` ← Sci-Fi Sounds `laserRetro_000`
+      - `smb_fireworks` ← Music Jingles (Retro) `jingles-retro_00`
+      - `smb_flagpole` ← Digital Audio `phaserDown1`
+      - `smb_gameover` ← Music Jingles (Retro) `jingles-retro_09`
+      - `smb_jump-small` ← Digital Audio `phaseJump1`
+      - `smb_jump-super` ← Digital Audio `phaseJump4`
+      - `smb_kick` ← Sci-Fi Sounds `impactMetal_004`
+      - `smb_mariodie` ← Music Jingles (Retro) `jingles-retro_12`
+      - `smb_pause` ← UI Audio `switch1`
+      - `smb_pipe` ← Sci-Fi Sounds `doorOpen_000`
+      - `smb_powerup` ← Digital Audio `powerUp5`
+      - `smb_powerup_appears` ← Sci-Fi Sounds `forceField_002`
+      - `smb_stage_clear` ← Music Jingles (Retro) `jingles-retro_11`
+      - `smb_stomp` ← Impact Sounds `impactGeneric_light_002`
+      - `smb_world_clear` ← Music Jingles (Retro) `jingles-retro_16`
+      **Not yet listened to / on-device verified** — no audio playback tool was
+      available in this environment; picks are a best-effort reading of Kenney's
+      filenames/pack themes only.
+- [x] Source or compose the 5 looping music tracks (§2.6 flagged this as the one audio
       category without an obvious ready-made CC0 answer — **now closed, see §7.3**).
-- [ ] Swap files under `assets/mario/audio/`, confirm every `sound(...)`/`music(...)` call
+      **Done 2026-09-11** — all 5 slots filled from Kenney's `Music Loops\Retro\` pack
+      (also converted `.ogg` → `.wav` PCM16): `Ground` ← *Retro Beat*, `UnderGround` ←
+      *Retro Mystic*, `Castle` ← *Retro Polka*, `Star` ← *Retro Comedy*, `Sea` ← *Retro
+      Reggae*. Chosen by mood-word match only (energetic/mysterious/marchy/frantic/chill)
+      since none could be auditioned in this environment.
+- [x] Swap files under `assets/mario/audio/`, confirm every `sound(...)`/`music(...)` call
       site still resolves (call sites use the constant key, not a hardcoded filename, so
       this is a low-risk swap per
-      [MARIO_RESKIN_PLAN.md §4.4.5](MARIO_RESKIN_PLAN.md)).
+      [MARIO_RESKIN_PLAN.md §4.4.5](MARIO_RESKIN_PLAN.md)). **Done 2026-09-11** — 26 of 28
+      files under `app/src/main/assets/mario/audio/` overwritten in place (same filenames,
+      `git status` shows exactly 26 `M` entries); `smb_vine.wav`/`smb_warning.wav` left
+      untouched. `MarioResourceManager.audioPath()` still hardcodes `"mario/audio/" +
+      name + ".wav"` — no Java touched, this was a pure asset swap.
+      `:app:compileDebugJavaWithJavac` → `BUILD SUCCESSFUL`. **On-device audio playback
+      verified 2026-09-11 by the user — confirmed sound is fine.** All 21 replaced SFX
+      keys + 5 music loops play correctly; no further audio work required for R.6.
 
 ### Step R.7 — Full regression pass
 

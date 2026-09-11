@@ -29,18 +29,18 @@ depends on what you're doing:
   how the port was actually built, step by step, with the design rationale behind
   decisions the mechanics doc now just states as fact. Read these for *why*, not *what*.
 
-## I'm considering Unity / planning more platformer games
-- **[MARIO_UNITY_PORT_FEASIBILITY.md](MARIO_UNITY_PORT_FEASIBILITY.md)** — source-audited
-  Unity migration research: sprite-sheet and level conversion, gameplay fidelity,
-  Android embedding constraints, effort estimates, and a reusable C# platformer
-  architecture with a second-game validation plan. Includes current Unity documentation
-  sources and corrections where older planning documents differ from the implemented code.
-
 ## I'm working on the visual reskin
 - **[MARIO_RESKIN_PLAN.md](MARIO_RESKIN_PLAN.md)** — the decisions and rationale: new
   identity direction, the `ART_SCALE` resolution architecture, ordering, risks.
 - **[MARIO_RESKIN_EXECUTION.md](MARIO_RESKIN_EXECUTION.md)** — the actionable companion:
   real, license-checked asset/tool resources and an ordered step-by-step task list.
+- **[KENNEY_ALL_IN_ONE_INDEX.md](KENNEY_ALL_IN_ONE_INDEX.md)** — the detailed resource
+  mapping: which local pack/file/tile-index supplies which game asset, plus a §12
+  integration playbook (exact crop coordinates, target filenames, code-change notes).
+- **[MARIO_RESKIN_JUNIOR_DEV_GUIDE.md](MARIO_RESKIN_JUNIOR_DEV_GUIDE.md)** — **start here
+  if you're picking up Step R.4 onward as a task list.** The hands-on recipe, a shared
+  Python helper module, a "mistakes hall of fame" from real bugs already hit, and
+  ready-to-execute tasks.
 
 ## Generated assets
 

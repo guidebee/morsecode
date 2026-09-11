@@ -15,6 +15,14 @@ immediately before bulk-importing anything, per
 
 ## 1. The resolution reality check (read this before picking any asset source)
 
+**Superseded 2026-09-08 (see Step R.0's own update): `ART_SCALE` stays `1` — the
+resolution-upgrade track described in this section and in
+[MARIO_RESKIN_PLAN.md §4.1](MARIO_RESKIN_PLAN.md#41-resolution-architecture-this-is-not-a-pure-content-swap)
+was dropped, not deferred.** Source new art at native 32px/tile, matching `TILE_SIZE`
+directly. The §1-§4 resolution-fit analysis below is kept for historical context (it's
+still what led to picking the Robot Master Series pack in §7) but its own 64px target
+framing no longer applies — read "target resolution" below as "native 32px," not 64px.
+
 [MARIO_RESKIN_PLAN.md §4.1](MARIO_RESKIN_PLAN.md#41-resolution-architecture-this-is-not-a-pure-content-swap)
 targets `ART_SCALE=2` — 64px-per-tile source art. Checking actual CC0 packs against that
 target (not assumed, fetched from Kenney's own pages) confirms §3's own warning was
@@ -208,6 +216,17 @@ next until the current one is checked off.
       Master Series, Robot Platform Pack, the CC0 fallbacks) is pixel-art style, not
       painterly, so smoother filtering would fight the art direction those packs already
       commit to.
+      **Reversed 2026-09-08, after Step R.2's own on-device test: `ART_SCALE` stays `1`
+      permanently for this reskin — the resolution-upgrade track is dropped, not deferred.**
+      User's own call, made explicitly to keep the process simple, on top of a real
+      technical cost the R.2 work surfaced: `ART_SCALE` is a single *global* multiplier
+      (confirmed while implementing R.2 — see that step's own write-up), so actually using
+      `2` requires every one of ~130 assets reskinned at 64px before it's safe to flip, a
+      much bigger lift than a per-step resolution bump. Reskin art from here on is authored
+      at native 32px/tile, matching `TILE_SIZE` directly — no `ART_SCALE` multiplier in the
+      pixel-slice math, ever. The `ART_SCALE` constant and the Step R.1 code that threads it
+      through stay in place (harmless at a permanent `1`, not worth reverting), they just
+      never get exercised at a value other than `1`.
 - [x] Decide on Path B (LPC/CC-BY-SA) acceptability — yes/no, and if yes, for which
       specific asset categories only (§1's table). Record the decision in §6's tracker
       regardless of the answer. **2026-09-08 update:** §7.1 makes this likely moot for the
@@ -232,75 +251,307 @@ next until the current one is checked off.
 
 ### Step R.1 — Land the `ART_SCALE` code decoupling (no new art yet)
 
-- [ ] Implement [MARIO_RESKIN_PLAN.md §4.1](MARIO_RESKIN_PLAN.md#41-resolution-architecture-this-is-not-a-pure-content-swap)'s
+- [x] Implement [MARIO_RESKIN_PLAN.md §4.1](MARIO_RESKIN_PLAN.md#41-resolution-architecture-this-is-not-a-pure-content-swap)'s
       `MarioConfiguration.ART_SCALE` constant + the matching `/ART_SCALE` division at
       every call site that treats a texture region's pixel size as a world size — by this
       point, R.0's prerequisite means those call sites already take `tileSize` as an
       explicit parameter (not a hardcoded literal) per
       [PLATFORMER_ENGINE_ARCHITECTURE.md §3.8](PLATFORMER_ENGINE_ARCHITECTURE.md#38-tilemetrics-making-tile-size-a-first-class-non-global-value)'s
       full ~40-call-site list, not just the `PlayerPowerState`/`Scenery`/`Lift` trio this
-      step originally scoped.
-- [ ] Re-pack the *existing* placeholder art unchanged, confirm all 8 worlds still
+      step originally scoped. **Done 2026-09-08: `ART_SCALE` added at `1`** (a literal
+      no-op, per this step's own "no new art yet" scope — becomes `2` only once Step R.2's
+      real 64px art is packed).
+
+      **Technical finding made while implementing, not anticipated by this doc's own
+      scoping paragraph:** `com.guidebee.game.microedition.Sprite`'s two-arg constructor
+      uses the *same* `frameWidth`/`frameHeight` value both to set the actor's world-space
+      bounds and to slice the atlas region — the engine has no way to decouple those two
+      roles internally. Every Mario call site that constructs through it now passes
+      `worldSize * ART_SCALE` to `super(...)` for correct pixel slicing, then immediately
+      calls `setSize(worldSize, ...)` to put the actor's own bounds back in world space —
+      documented inline at each fix site. Fixing the three shared bases
+      (`actors/enemies/Enemy.java`, `actors/items/CollectibleItem.java`,
+      `actors/bricks/InteractiveBrick.java`) covered most concrete subclasses at once;
+      each subclass's own *separate* manual `.split(...)` calls (death-frame extraction,
+      item-reveal previews, `LevelLoader`/`MarioTileRegistry`'s tile-dispatch handlers)
+      still needed individual fixes since they don't go through those bases. Two more
+      one-off cases found by re-grepping `getRegionWidth()`/`getRegionHeight()` after the
+      mechanical pass: `fx/BackgroundBand.java` and `actors/scenery/Scenery.java`'s
+      single-arg constructor both derived world size directly from a region's raw pixel
+      dimensions (no `.split()` involved), and all four lift classes'
+      (`Lift`/`LiftCar`/`LiftFall`/`BalanceLiftPlatform`) `paint()` methods tile the "lift"
+      texture at its *native pixel width* — all needed the same `/ART_SCALE` correction.
+      `actors/bricks/InvisibleBrck.java`/`TemporaryInvisibleBrick.java`'s synthetically
+      generated (not atlas-sourced) blank/transparent placeholder textures needed the
+      opposite fix — generated *at* `tileSize * ART_SCALE` pixels instead of bare
+      `tileSize`, so they follow the same convention `InteractiveBrick`'s now-uniform
+      single-region-constructor division expects, rather than being a special case in that
+      shared base.
+      Verified via `gradlew :app:compileDebugJavaWithJavac --rerun-tasks` (full clean
+      rebuild) after every group of files, per this doc set's own discipline — compile
+      only proves call sites are correct, not gameplay/visual output.
+- [x] Re-pack the *existing* placeholder art unchanged, confirm all 8 worlds still
       render/collide identically (this is [MARIO_RESKIN_PLAN.md §4.4.2](MARIO_RESKIN_PLAN.md)'s
       own isolation step — verify the code change before any art changes, so a bug is
-      unambiguously attributable to one or the other).
+      unambiguously attributable to one or the other). **Confirmed 2026-09-08: on-device
+      regression pass run with `ART_SCALE=1` and the existing placeholder art, works as
+      expected** — Step R.1 is fully closed (commit `862fab1`), Step R.2 can start.
 
 ### Step R.2 — Player character (Path A, priority 1)
 
-- [ ] Draw the 3 base states at 64×64px/frame, matching the frame-index convention in
+- [x] Draw the 3 base states, matching the frame-index convention in
       [MARIO_GAME_MECHANICS.md §13.3](MARIO_GAME_MECHANICS.md#133-frame-strip-slicing-convention)
       exactly (4 cols × 7 rows; idle/airborne/walk-cycle/skid/swim/duck poses at their
-      existing frame indices) — 84 frames total (Small 28 + Big 28 + Fire 28).
-- [ ] Draw the 4 transition/morph strips (Small→Big, Big→Fire, Big→Small, Fire→Small) —
-      54 frames, following the existing strips' row-based layout
-      (`TRANSITION_FRAME_WIDTH/HEIGHT` = 32×64 pre-`ART_SCALE`, per `Player.java`).
-- [ ] Generate the Star-recolor variants via §3's script (not hand-drawn).
-- [ ] Draw `small_dead_mario` (1 static pose).
-- [ ] Swap `PackMarioAtlas`'s `sourceDir` for just these assets, re-pack, load into a dev
+      existing frame indices) — 84 frames total (Small 28 + Big 28 + Fire 28). **Done
+      2026-09-08**, assembled from the Robot Master Series pack via
+      `docs/assets/mario-sprites/ampere-staging/build_player_sheets.py` — Small from
+      `robot1` (green scout), Big/Fire from `robot3` (bulkier "reinforced" design, Fire =
+      Big's frames with a warm-tint overlay since the pack has no separate charged/fire
+      art). **Two poses have no source material at all and are synthesized, flagged for a
+      real art pass later:** duck (a programmatic vertical squash of the idle pose) and
+      swim (reused jump-pose frames, since the pack has no swim animation).
+- [x] Draw the 4 transition/morph strips (Small→Big, Big→Fire, Big→Small, Fire→Small) —
+      confirmed 54 frames total by reading `PackMarioAtlas.ASSETS` directly (12+10+10+10+12),
+      following the existing strips' row-based layout (`TRANSITION_FRAME_WIDTH/HEIGHT` =
+      32×64 pre-`ART_SCALE`, per `Player.java`). **Done 2026-09-08** via
+      `build_transitions_and_recolors.py` — programmatic grow/shrink-and-crossfade between
+      the relevant base poses (Small↔Big/Fire scale+crossfade, Big↔Fire same-size
+      crossfade since they share a silhouette), plus a tint-cycling variant for the Star
+      growth strip. Placeholder-quality, not hand-animated.
+- [x] Generate the Star-recolor variants via §3's script (not hand-drawn). **Done
+      2026-09-08** — flat-color silhouettes (black/green/red) of the Small/Big base
+      sheets, same convention as the original assets, via the same script above.
+- [x] Draw `small_dead_mario` (1 static pose). **Done 2026-09-08** — robot1's own death
+      sheet's frame 0 (a black "powered-down" silhouette), which reads well thematically
+      for a robot without needing new art.
+- [x] Swap `PackMarioAtlas`'s `sourceDir` for just these assets, re-pack, load into a dev
       build, and visually confirm every animation state in-game before moving on — use
       `debug.DebugPanel`'s power-state cycling
       ([MARIO_GAME_MECHANICS.md §12](MARIO_GAME_MECHANICS.md#12-debugqa-tooling)) to cycle
       Small→Big→Fire→Small on demand instead of hunting for a Mushroom/Flower in a level.
 
-**2026-09-08 update:** consider sourcing this step's base art from
-[§7.1](#71-player--enemies--boss--two-strong-all-in-one-candidates)'s "Robot Master Series
-– Base Asset Pack" or "Robot Platform Pack" instead of drawing from scratch, then editing
+      **Real technical finding made while implementing, not anticipated by this step's own
+      wording:** `PackMarioAtlas.main` hard-fails (`IllegalStateException`) on any missing
+      source file, so pointing `sourceDir` at a folder containing *only* Ampere's assets
+      breaks packing for the ~107 other assets not yet reskinned. Fixed by adding a
+      reskin-overlay directory (`docs/assets/mario-sprites/reskin-source/`, new 3rd CLI
+      arg, defaulted in `pack.sh`) checked first per-asset, falling back to the original
+      `C:\workspace\Mario\SandBox` for anything not yet reskinned — lets the reskin land
+      incrementally, one category at a time, matching this doc's own R.2→R.6 step
+      structure instead of requiring [MARIO_RESKIN_PLAN.md §4.4.4](MARIO_RESKIN_PLAN.md)'s
+      single-combined-directory framing literally.
+
+      **Second finding, which led to the `ART_SCALE` reversal in Step R.0's update above:
+      `ART_SCALE` is a single *global* multiplier** (every asset's `.split(...)` call reads
+      the same `MarioConfiguration.ART_SCALE`), so using `2` would require *every* asset
+      category reskinned at 64px before it's safe to flip — doing it now, with only the
+      player replaced, would break every still-32px enemy/brick/tile/item/lift's
+      frame-slicing. Initially resolved by generating two parallel sets (native-32px +an
+      archived 64px set for a later combined cutover); once the user decided to drop the
+      resolution-upgrade track entirely (see R.0), the 64px archive was deleted and both
+      generation scripts simplified back down to native-32px-only, no `ART_SCALE`
+      parameterization.
+
+      **Real bug found on the user's own on-device test, not caught by compiling or by
+      the staged-preview screenshots earlier in this step: growing (Mushroom) and
+      charging (Fire Flower) changed Ampere's color but not his size.** Root cause: the
+      Big/Fire art-generation helper (`fit_into` in `build_player_sheets.py`) scales a
+      source frame by `min(width_ratio, height_ratio)` to avoid distorting it — but
+      robot3's source frames are 32×32 (square) going into a 32×64 (twice-as-tall) cell,
+      so `min(32/32, 64/32) = min(1, 2) = 1`: the helper never upscaled the character at
+      all, just anchored a Small-sized sprite at the bottom of a taller *transparent*
+      canvas. The collision box genuinely grew (32×64, correct) but the drawn character
+      inside it stayed Small-sized, so the only visible change was robot1→robot3's color
+      difference — exactly matching what on-device testing showed. Fixed with a new
+      `fit_fill_height` helper that scales by height directly (allowing width to exceed
+      the nominal 32px column, cropped at the cell edge by `paste()` - a visual bounding
+      box a little wider than the hitbox is normal for pixel art) instead of the
+      distortion-avoiding `min()` approach, used for every Big/Fire pose including the
+      duck approximation. Regenerated, re-packed (still 106 regions / 2 pages, confirming
+      dimensions are still unchanged), and recompiled clean.
+
+      **Confirmed 2026-09-08 on-device: fix verified, works fine** - Ampere now visibly
+      grows/re-colors correctly through Mushroom/Fire Flower/shrink. Step R.2 is closed.
+
+**2026-09-08 update, decided:** source this step's base art from
+[§7.1](#71-player--enemies--boss--two-strong-all-in-one-candidates)'s **"Robot Master
+Series – Base Asset Pack,"** not "Robot Platform Pack" — it's the only one of the two with
+a boss and with 3 distinct enemy types (needed for Scuttler/Roller/Plater to not all read
+as the same silhouette), and one of its player states is already named "charge," lining up
+directly with Ampere's "charged" power state. Its alt "covered-face" variants are also a
+useful hedge against the new player design reading as another existing mascot. Then edit
 frame counts/layout to match the convention above — still cheaper than full original
-authoring even with the re-layout work.
+authoring even with the re-layout work. "Robot Platform Pack" isn't discarded entirely:
+its coin and HP-heart assets (missing from Robot Master Series' own list) are earmarked as
+a Step R.4 supplement for the Bolt/gear coin and Spare-chassis 1-Up specifically.
 
 ### Step R.3 — Priority-1 world assets (highest on-screen frequency)
 
 Per [MARIO_GAME_MECHANICS.md §16.4](MARIO_GAME_MECHANICS.md#164-reskin-priority-by-on-screen-frequency)'s
 tier 1: `Brick`, `stone`/`chocolate` (×5 themes), `EnemyMushroom`-equivalent.
 
-- [ ] Design and draw the new terrain tile look for all 5 themes (Ground/UnderGround/
+- [x] Design and draw the new terrain tile look for all 5 themes (Ground/UnderGround/
       Castle/Sea + the CloudsNight decision from §4.4 of the mechanics doc — tint shader
-      vs. hand-drawn `bw_*` set).
-- [ ] Design and draw the breakable-brick sprite + its break-fragment art
-      (`brick_peaces`, 2×4 grid).
-- [ ] Design the Bolt/gear coin sprite with the future Morse hook in mind (§7.5) — no new
+      vs. hand-drawn `bw_*` set). **Done 2026-09-08** via
+      `docs/assets/mario-sprites/ampere-staging/build_terrain_and_common.py` — a
+      procedurally-drawn sci-fi armor-panel motif (not extracted from either robot pack:
+      neither pack's tile art is meant as small repeating 32×32 floor tiles, per
+      [MARIO_GAME_MECHANICS.md §16.5](MARIO_GAME_MECHANICS.md#165-assets-that-might-not-need-original-art-at-all)'s
+      own note that a per-theme palette variation from one base design is a reasonable
+      scope reduction), recolored per theme (Surface=steel blue-grey, Substrate=dark
+      teal-green with a glowing teal accent, Fortress=maroon with warm amber accent,
+      Flooded Sector=blue-cyan with cyan accent). `bw_stone` (CloudsNight) got its own
+      plain-greyscale variant of the same tile rather than a shader — matches the
+      original's own convention of a literal separate asset, and `bw_chocolate` still
+      reuses `chocolate_Castle.png` unchanged, per `PackMarioAtlas`'s existing setup.
+
+      **Superseded 2026-09-08 for 3 of the 5 themes**, per the
+      [KENNEY_ALL_IN_ONE_INDEX.md](KENNEY_ALL_IN_ONE_INDEX.md) scan: Fortress, Substrate,
+      and Flooded Sector's `stone`/`chocolate`/`brick` are no longer the procedural
+      panel — they're real pixel art pulled from Pixel Platformer Industrial Expansion,
+      Tiny Dungeon, and Roguelike Dungeon Pack respectively (exact tile indices and the
+      extraction script are documented in that doc's §12.1). Ground (Surface) and
+      `bw_stone` (CloudsNight) are still the procedural tiles — lowest priority, already
+      read acceptably. Re-packed (still 106 regions / 2 pages, confirming dimensions
+      match) and recompiled clean. **Confirmed 2026-09-08 on-device: looks fine** —
+      Fortress/Substrate/Flooded Sector's sourced terrain verified in-game.
+- [x] Design and draw the breakable-brick sprite + its break-fragment art
+      (`brick_peaces`, 2×4 grid). **Done 2026-09-08** — brick uses a visually distinct
+      2×2 segmented-hatch pattern (vs. stone/chocolate's single-panel look) specifically
+      so it reads as "breakable" at a glance; `brick_peaces`' fragments are small chunk
+      pairs in the matching per-theme palette (row1=Ground/Sea, row2=UnderGround,
+      row3=Castle, per `BrickFragment.java`'s own row convention).
+- [x] Design the Bolt/gear coin sprite with the future Morse hook in mind (§7.5) — no new
       art or code for the hook itself yet, just don't design the coin/HUD layout in a way
       that would need reworking once a `letterOfMorseCode`-style tag and a
-      `ChallengeLetter`-style top-left HUD dock are added.
-- [ ] Design and draw the most common enemy's replacement (walk cycle, matching
+      `ChallengeLetter`-style top-left HUD dock are added. **Done 2026-09-08** — extracted
+      and recomposed from Robot Platform Pack's `Tileset&Items.png` (a clean, isolated
+      5-frame coin-spin icon in that sheet, unlike the tile art above), scaled up into
+      `Coin.png`/`CoinAnim.png`'s existing 3-frame/4-frame layout. No coin/HUD layout
+      changes made, so the Morse-hook reservation from §7.5 still holds untouched.
+- [x] Design and draw the most common enemy's replacement (walk cycle, matching
       whatever frame count the new design needs — not required to match the original's
       2×4 grid exactly, since this is new character art, not a literal reskin of the same
-      pose timing).
-- [ ] Re-pack and playtest one full world (World 1, per the level atlas) before scaling
+      pose timing). **Done 2026-09-08** — "Scuttler" sourced from Robot Master Series'
+      `enemy1` (a small round bot with tiny legs and a single red eye, already reads as
+      Goomba-like without copying Goomba's mushroom silhouette), recolored per theme into
+      the existing 2×4 grid (`EnemyMashroom.java`'s own Sea/Ground/UnderGround/Castle row
+      convention, kept as-is rather than redesigned, since the frame count itself isn't
+      Nintendo-specific).
+- [x] Re-pack and playtest one full world (World 1, per the level atlas) before scaling
       up to the rest — this is the same "prove the pipeline on a vertical slice" discipline
-      the original port used.
+      the original port used. **Packed and compiled clean 2026-09-08** (same page/region
+      counts as before this step — 34/122 assets now sourced from the reskin overlay, up
+      from 15).
+
+      **Two real bugs found on the user's own on-device test, in the coin and Scuttler
+      art specifically (terrain/brick looked fine):**
+      1. **Coin rendered vertically garbled.** Root cause: `Coin.png`/`CoinAnim.png`'s
+         frames were extracted from Robot Platform Pack's `Tileset&Items.png`, cropped to
+         a fixed 32px-tall band, then scaled by a flat 1.8× and center-pasted — since the
+         source content already spanned ~94% of that band's height, the 1.8× scale
+         overflowed to ~58px and got center-clipped back down to 32px, chopping a
+         different ~7px sliver off each frame's top/bottom depending on that frame's own
+         shape (each rotation phase has a different silhouette) — this is what read as
+         "halves reversed" once the frames cycled. Compounding it: that tileset packs
+         icons edge-to-edge with zero padding, so a tight alpha-bbox crop (the first fix
+         attempted) bled in a sliver of the *adjacent* sprite, corrupting the shape
+         further. **Fixed by dropping the extraction entirely** and drawing the coin
+         procedurally instead (a filled ellipse whose width narrows/widens across frames
+         to simulate a spin) — same approach already used for the terrain tiles, and one
+         that has no extraction-fragility failure mode.
+      2. **Scuttler (the `enemy` region) rendered too small.** Root cause: robot1's
+         `enemy1` source frame's actual content bounding box is only 15×14px inside its
+         32×32 native canvas (confirmed via `getbbox()`) — it was copied through 1:1 with
+         only a recolor, no scale-up. Fixed with a new `place_content` helper (tight-bbox
+         crop, then scale to fill ~85% of the target cell, anchored to the bottom so the
+         creature stands on the tile floor) — confirmed the fixed frame's content now
+         fills 27×25px of its 32×32 cell.
+
+      Re-packed and recompiled clean after both fixes (same 34/122 overlay count, same
+      page/region layout). **Confirmed 2026-09-08 on-device: both fixes tested and work
+      fine.** Combined with the terrain-swap confirmation above (also 2026-09-08),
+      **Step R.3 is fully closed.**
+
+      **2026-09-08 addendum:** the procedural terrain/brick tiles work but read as
+      programmer art next to the sourced player/enemy sprites. A local
+      `Kenney_Game_Assets_All` mega-bundle was scanned and curated into
+      [KENNEY_ALL_IN_ONE_INDEX.md](KENNEY_ALL_IN_ONE_INDEX.md) — **best lead: "Pixel
+      Platformer Industrial Expansion,"** genuine pixel-art girders/panels/hazard-tape
+      already industrial-themed, a likely direct upgrade for Fortress's terrain
+      specifically. **That scan also closes both theme gaps §7.4 left open** (Substrate
+      and Flooded Sector, neither of which had a good match in the original sourcing
+      pass): "Tiny Dungeon"'s stone/door tiles for Substrate (+ "RTS Sci-fi"'s pipes/blobs
+      as decoration) and "Roguelike Dungeon Pack"'s existing blue palette for Flooded
+      Sector, reframed as flooded tunnels rather than literal underwater. **Extended
+      further to cover fonts/UI/audio too**: the bundle's shared `Other/Fonts/` folder
+      (15 `.ttf` files, not tied to any one pack) has a genuinely blocky "Kenney Blocks"
+      font for the HUD and sci-fi display faces for the title screen, closing
+      [MARIO_GAME_MECHANICS.md §16.5](MARIO_GAME_MECHANICS.md#165-assets-that-might-not-need-original-art-at-all)'s
+      font question with zero new art; "UI Pixel Pack" is a better HUD-chrome style match
+      than the previously-favored "UI Pack - Sci-fi" (confirmed pixel-art vs. vector by
+      opening both previews); "Mobile Controls" is a strong on-screen joystick/button
+      candidate; and "Sci-Fi Sounds" + "Music Jingles" (Retro style) + "Music Loops"
+      cover essentially all 23 SFX keys and all 5 music moods locally — see
+      [KENNEY_ALL_IN_ONE_INDEX.md](KENNEY_ALL_IN_ONE_INDEX.md)'s §8/§9 for the full
+      per-key mapping. **Further extended to items/mechanisms/scenery**: 3 of 4 power-ups
+      (Battery cell/Overclock chip/Charge coil) turned up direct matches inside Robot
+      Master Series' own `other/` folder (never fully explored until this pass), pipes
+      and a castle-replacement building came from RTS Sci-fi, and Sea/Substrate backdrop
+      textures came from Robot Master Series' own unused background art — see that doc's
+      §2-§4. **Residual scope needing AI-gen or quick custom art, per its §11**: the
+      odd-shaped enemies with no pack match (PiranhaPlant/OctoPussy/FishyWater etc.),
+      trees (a pylon/antenna reframe is recommended first), and two single small icons
+      (Spare chassis, Axe/lever) cheap enough to hand-pixel directly. Not yet actioned -
+      a follow-up pass, not blocking R.3's own closure.
 
 ### Step R.4 — Remaining enemies, bricks, items, hazards, lifts
+
+**2026-09-09: this step is being handed off task-by-task — see
+[MARIO_RESKIN_JUNIOR_DEV_GUIDE.md](MARIO_RESKIN_JUNIOR_DEV_GUIDE.md)** for the hands-on
+recipe, a shared `sprite_tools.py` helper module (extracted from the fixes below, so the
+same bugs can't recur through copy-paste), a mistakes-hall-of-fame table, and a concrete
+task list (Iron → QuestionMark/Bank → Plater/Helmet → The Warden → Spare chassis, then
+the rest of tier-3/4 as a checklist). Progress continues to be logged here as each task
+closes.
 
 - [ ] Work down [MARIO_GAME_MECHANICS.md §16.4](MARIO_GAME_MECHANICS.md#164-reskin-priority-by-on-screen-frequency)'s
       tiers 3 and 4 in order.
 - [ ] For each, decide Path A vs. Path C (§1) individually rather than batching — a
       one-off enemy used 3 times in the whole game (e.g. `SonOfABuitch`) is a reasonable
       candidate for an AI-assisted first draft with a light cleanup pass; the boss is not.
-      **2026-09-08 update:** the mini-boss in
+      **2026-09-08 update, decided:** use the mini-boss from
       [§7.1](#71-player--enemies--boss--two-strong-all-in-one-candidates)'s "Robot Master
-      Series" pack is a real candidate for "The Warden" specifically — check it before
-      defaulting to a custom-drawn boss.
+      Series – Base Asset Pack" for "The Warden" — same pack as Step R.2's player art and
+      the same pack's own 3 enemy types for Scuttler/Roller/Plater, keeping the whole
+      roster in one consistent style rather than mixing sources. Supplement with "Robot
+      Platform Pack"'s coin/HP-heart assets specifically (missing from Robot Master
+      Series) for the Bolt/gear coin and Spare-chassis 1-Up.
+
+      **2026-09-09: Phase 1 done** (`docs/assets/mario-sprites/ampere-staging/build_r4_phase1.py`)
+      — Battery cell (`mashroom`/`mashrooms`), Overclock chip (`star`), Charge coil
+      (`flower`), and Roller/`EnemyTurtle` (`turtle`/`turtle_dark`, 128×48 = 4 frames of
+      32×48 — confirmed *taller than a tile* by reading `EnemyTurtle.java`'s own
+      `super()` call rather than assuming, since Robot Master Series' `enemy2` source
+      frames are natively wide-squat (48×32), the opposite aspect — fixed with
+      anchor-bottom fill-height scaling, the same technique already validated for
+      Ampere's Big/Fire in R.2) plus `turtle_shell`/`turtle_shell_dark` (32×32 static,
+      reusing the most compact walk frame). Every crop is verified via `getbbox()` at
+      generation time (printed, asserted non-empty) — this closes out a real false start:
+      an earlier attempt on a throwaway `reskin-byteplus` branch got these exact same
+      assets wrong (mushroom/flower unrecognizable) from *guessed* crop coordinates that
+      were never checked against the source image, plus a compositing-order bug on the
+      coil's glow effect and a wide/height mix-up on the turtle frame size. That branch
+      was abandoned rather than fixed in place — this phase was rebuilt from scratch on
+      clean `reskin` with verification built into the script itself, not bolted on after
+      a bug report. Packed (39/122 overlay) and compiled clean; **not yet on-device
+      verified.**
+
+      **Still open for R.4** (tier-3/4 per §16.4, not yet started): `turtle_shell_red`/
+      `_flip` variants and `enemy_turtle_patrol` (not reached by World 1's own data, per
+      `TurtleShell.java`'s doc — lower priority); Plater/`FlyingTurtle`/`Helmet` family;
+      `Iron`; `QuestionMark`/`Bank` family; The Warden/`Boss`; and tier-4's long tail of
+      one-off enemies/mechanisms.
 
 ### Step R.5 — Scenery, backdrops, HUD, UI text
 

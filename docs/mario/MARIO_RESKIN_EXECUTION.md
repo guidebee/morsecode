@@ -566,11 +566,60 @@ closes.
       a direct Iron placement in a castle level (e.g. Level 14) before marking this
       fully done.
 
-      **Still open for R.4** (tier-3/4 per §16.4, not yet started): `turtle_shell_red`/
-      `_flip` variants and `enemy_turtle_patrol` (not reached by World 1's own data, per
-      `TurtleShell.java`'s doc — lower priority); Plater/`FlyingTurtle`/`Helmet` family;
-      `Iron`; `QuestionMark`/`Bank` family; The Warden/`Boss`; and tier-4's long tail of
-      one-off enemies/mechanisms.
+      **2026-09-11: Task 2 (QuestionMark/Bank) done**
+      (`docs/assets/mario-sprites/ampere-staging/build_r4_questionmark.py`) —
+      `question_mark`/`question_mark_grey` (`QuestionMark.png`/`QuestionMarkGrey.png`,
+      3×1 each). **Resolved the guide's own flagged ambiguity**: read `Bank.java` and
+      `BankWithItem.java` directly — neither uses the `question_mark` region at all,
+      both call `MarioResourceManager.themedRegion("brick", attribute)` (the plain
+      themed brick art from Step R.3), so this task only needed the two
+      `question_mark*` files, no `Bank`-specific art. Built procedurally (beveled panel
+      + a hand-drawn pixel "?" glyph) rather than sourced, per the guide's own
+      suggestion — no clean "?" glyph exists in either robot pack or the Kenney bundle.
+      `QuestionMark.java`'s own `IDLE_FRAMES = {0, 0, 1, 2, 1, 0}` cycles 3 unique
+      frames without ever offsetting Y (confirmed by reading `act()` — no bump/bob
+      logic in the idle path), so the 3 frames are a brightness pulse
+      (`sprite_tools.glow_pulse` at 0/0.18/0.4 strength) rather than a vertical bob.
+      Viewed both generated sheets before packing — each shows a legible "?" glyph
+      with 3 distinct brightness steps. Packed (42/122 overlay, up from 40 — same page
+      counts) and compiled clean. **Not yet on-device verified** — no test device
+      available in this session.
+
+      **2026-09-11: Task 3 (Plater/Helmet family) investigated — real gap, flagged per
+      §6 rather than forced.** Confirmed `Helmet.java`'s `super(regionFor(color),
+      tileSize, tileSize, x, y, false)` is 32×32 (same convention as `EnemyMashroom`,
+      not tall like `EnemyTurtle`) — matches the guide's prediction. Also confirmed the
+      frame layout by reading `act()`'s `setFrame((movingRight ? 2 : 0) +
+      (showingFirstFrame ? 0 : 1))`: cols 0-1 = left-facing walk pair, cols 2-3 =
+      right-facing walk pair, exactly as the guide table said. **But no suitable source
+      art exists for the walking-body + shell-drop shape this enemy needs**:
+      - Robot Master Series' `enemy3` folder does exist (guide flagged this as
+        uncertain), but opening `enemy3all.png`/`enemy3attack-Sheet[32height32wide].png`
+        shows a stationary clam/turret creature (a green dome that opens to reveal a
+        glowing red eye/charge-up) — no legs, no walk cycle, doesn't fit a
+        Buzzy-Beetle-style walker at all.
+      - Robot Platform Pack's `EnemyRobot` (`EnemyRobot_Run.png`, 64×64/4 frames) is a
+        small floating camera-eye drone — also no legs/walk-cycle/shell mechanic.
+      - `robot2`/`robot3` folders are player-color skin variants (base/masked), not
+        enemies. `miniboss1` is reserved for Task 4 (The Warden).
+      - Kenney bundle's Pixel Platformer `tilemap-characters_packed.png` characters are
+        generic round blob heads (per `KENNEY_ALL_IN_ONE_INDEX.md` §5's own note) — too
+        generic to read as a named enemy, wrong weight for a mid-tier walker.
+      Per the guide's explicit instruction *not* to force `enemy1`/`enemy2` art to
+      double up here without flagging it, this task is deferred as an open gap rather
+      than shipped with a mismatched or duplicate-looking sprite. **No files were
+      generated for this task.** Candidates for a follow-up pass: hand-pixel a small
+      domed/armored variant reusing `enemy1`'s body proportions (already validated) as
+      the base with an added shell silhouette, or activate Retro Diffusion (per
+      `KENNEY_ALL_IN_ONE_INDEX.md`'s closing note — its commercial tier isn't purchased
+      yet) for an AI-assisted first draft.
+
+      **Still open for R.4** (tier-3/4 per §16.4, not yet started): Plater/`Helmet`
+      family (see gap above) and `FlyingTurtle`/`HelmetShell` follow-on work that
+      depends on it; `turtle_shell_red`/`_flip` variants and `enemy_turtle_patrol` (not
+      reached by World 1's own data, per `TurtleShell.java`'s doc — lower priority); The
+      Warden/`Boss`; Spare chassis/`one_up`; and tier-4's long tail of one-off
+      enemies/mechanisms.
 
 ### Step R.5 — Scenery, backdrops, HUD, UI text
 

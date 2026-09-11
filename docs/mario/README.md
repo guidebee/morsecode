@@ -29,6 +29,13 @@ depends on what you're doing:
   how the port was actually built, step by step, with the design rationale behind
   decisions the mechanics doc now just states as fact. Read these for *why*, not *what*.
 
+## I'm considering Unity / planning more platformer games
+- **[MARIO_UNITY_PORT_FEASIBILITY.md](MARIO_UNITY_PORT_FEASIBILITY.md)** — source-audited
+  Unity migration research: sprite-sheet and level conversion, gameplay fidelity,
+  Android embedding constraints, effort estimates, and a reusable C# platformer
+  architecture with a second-game validation plan. Includes current Unity documentation
+  sources and corrections where older planning documents differ from the implemented code.
+
 ## I'm working on the visual reskin
 - **[MARIO_RESKIN_PLAN.md](MARIO_RESKIN_PLAN.md)** — the decisions and rationale: new
   identity direction, the `ART_SCALE` resolution architecture, ordering, risks.

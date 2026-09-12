@@ -67,11 +67,18 @@ def build_fire_ball():
 # -------------------------------------------------------- lava/lava_ball/water
 
 def build_lava():
-    print("Lava/LavaBall/Water (procedural hazard tiles):")
-    im = canvas(32, 32)
+    print("Lava/LavaBall/Water (procedural hazard columns):")
+    # Scenery's single-arg constructor (what MarioTileRegistry's "Lava"/
+    # "Water" handlers both use) draws "at its native size" - reads the
+    # region's own raw pixel dimensions, not tileSize. Confirmed against the
+    # real Nintendo-derived fallback files: Lava.png/Water.png are 32x128 (a
+    # 4-tile-tall column), NOT 32x32 - the same class of bug as the pump
+    # family above (see pump_segment's own doc), caught by the same
+    # full-directory dimension audit that found the pump mismatch.
+    im = canvas(32, 128)
     d = ImageDraw.Draw(im)
-    rect(im, 0, 0, 32, 32, (196, 70, 30))
-    for i, y in enumerate((6, 16, 24)):
+    rect(im, 0, 0, 32, 128, (196, 70, 30))
+    for y in range(6, 124, 12):
         d.arc((2, y - 4, 14, y + 4), 200, 340, fill=(255, 180, 90, 255), width=2)
         d.arc((16, y - 3, 30, y + 5), 20, 160, fill=(140, 40, 20, 255), width=2)
     im.save(f"{OUT}/Lava.png")
@@ -87,10 +94,10 @@ def build_lava():
 
     build_sheet(32, 32, [ball(True), ball(False)], 2, 1, f"{OUT}/LavaBall.png")
 
-    water = canvas(32, 32)
+    water = canvas(32, 128)
     d3 = ImageDraw.Draw(water)
-    rect(water, 0, 0, 32, 32, (47, 99, 119))
-    for y in (5, 15, 25):
+    rect(water, 0, 0, 32, 128, (47, 99, 119))
+    for y in range(5, 124, 12):
         d3.arc((-4, y - 4, 12, y + 4), 200, 340, fill=(127, 224, 232, 220), width=2)
         d3.arc((10, y - 3, 26, y + 5), 20, 160, fill=(22, 53, 64, 255), width=2)
         d3.arc((24, y - 4, 40, y + 4), 200, 340, fill=(127, 224, 232, 220), width=2)
@@ -226,42 +233,57 @@ def build_connective_pieces():
 
 # ------------------------------------------------------------- pump family
 
-def pump_body(base, dark):
-    im = canvas(32, 32)
-    rect(im, 4, 0, 28, 32, dark)
-    rect(im, 7, 0, 25, 32, base)
-    for y in (6, 16, 26):
-        rect(im, 7, y, 25, y + 2, dark)
+def pump_segment(w, h, base, dark):
+    """A riveted pipe band at any canvas size - Pump.java's own doc says its
+    art is "64px, 2 tiles wide" (confirmed against the real Nintendo-derived
+    fallback files: pump*.png is 64x32, pump top*.png is 64x64 - NOT 32x32,
+    despite the AssetSpec's "1x1" cols/rows, which just means "don't slice
+    into a multi-frame strip," not "one tile square." InteractiveBrick's
+    2-arg constructor derives the sprite's world size directly from the
+    region's own raw pixel dimensions, so shipping this at the wrong size
+    silently makes the pipe render at half its intended width - this is
+    exactly the bug a user's on-device report caught (PiranhaPlant appearing
+    off-center to the right of a too-narrow pipe: the plant's own spawn x,
+    ported from the original as `tile.x*tileSize + tileSize/2`, centers a
+    32px-wide plant in what's supposed to be a 64px-wide pipe mouth per
+    MARIO_PORT_PLAN_PHASE2.md's own P2.10.2 note)."""
+    im = canvas(w, h)
+    margin = w // 16
+    rect(im, margin, 0, w - margin, h, dark)
+    rect(im, margin + 3, 0, w - margin - 3, h, base)
+    for y in range(6, h - 4, 10):
+        rect(im, margin + 3, y, w - margin - 3, y + 2, dark)
     return im
 
 
-def pump_top(base, dark):
-    im = canvas(32, 32)
-    rect(im, 2, 10, 30, 32, dark)
-    rect(im, 5, 12, 27, 32, base)
-    rect(im, 0, 4, 32, 12, dark)
-    rect(im, 2, 6, 30, 12, base)
+def pump_top(w, h, base, dark):
+    im = canvas(w, h)
+    margin = w // 16
+    rect(im, margin, h * 3 // 8, w - margin, h, dark)
+    rect(im, margin + 3, h * 3 // 8 + 2, w - margin - 3, h, base)
+    rect(im, 0, h // 8, w, h * 3 // 8, dark)
+    rect(im, margin - 2, h // 8 + 2, w - margin + 2, h * 3 // 8, base)
     return im
 
 
 def build_pumps():
-    print("Pump family (procedural riveted pipe, 6 theme variants + hori_image):")
+    print("Pump family (procedural riveted pipe, 64x32/64x64 - 6 theme variants + hori_image):")
     themes = {
         "": (METAL, METAL_DARK),
         " Castle": ((217, 140, 74), (107, 47, 47)),
         " Sea": ((127, 224, 232), (47, 99, 119)),
     }
     for suffix, (base, dark) in themes.items():
-        pump_body(base, dark).save(f"{OUT}/pump{suffix}.png")
+        pump_segment(64, 32, base, dark).save(f"{OUT}/pump{suffix}.png")
         print("wrote", f"{OUT}/pump{suffix}.png")
-        pump_top(base, dark).save(f"{OUT}/pump top{suffix}.png")
+        pump_top(64, 64, base, dark).save(f"{OUT}/pump top{suffix}.png")
         print("wrote", f"{OUT}/pump top{suffix}.png")
 
     # HoriImage: two 2-tile (64x64) pieces side by side (MarioTileRegistry's
-    # own HoriImage handler splits at pieceSize=tileSize*2) - a wider pipe
-    # opening built from the same motif, scaled up.
-    left = pump_top(METAL, METAL_DARK).resize((64, 64), Image.NEAREST)
-    right = pump_body(METAL, METAL_DARK).resize((64, 64), Image.NEAREST)
+    # own HoriImage handler splits at pieceSize=tileSize*2) - reuse the same
+    # motif, drawn natively at 64x64 (not upscaled) for both pieces.
+    left = pump_top(64, 64, METAL, METAL_DARK)
+    right = pump_segment(64, 64, METAL, METAL_DARK)
     build_sheet(64, 64, [left, right], 2, 1, f"{OUT}/HoriImage.png")
 
 

@@ -666,6 +666,41 @@ closes.
       not by actually watching it scroll), and Helmet/HelmetShell (does the
       open/close-shell "walk" read as movement rather than static jitter).
 
+      **2026-09-12: real bug found from an actual on-device/in-game report (not caught
+      by compiling, packing, or viewing PNGs statically) — the user saw the PiranhaPlant
+      spawn visibly off-center to the right of its own pipe.** Root cause: `pump.png`/
+      `pump top.png` (+ the `Castle`/`Sea` theme variants) were built at 32×32, but
+      `Pump.java`'s own doc says its art is **"64px, 2 tiles wide"** — confirmed against
+      the real Nintendo-derived fallback files (`pump*.png` is 64×32, `pump top*.png` is
+      64×64) — because `Pump` extends `InteractiveBrick` via its 2-arg
+      `(region, x, y)` constructor, which derives the sprite's on-screen size directly
+      from **the region's own raw pixel dimensions**, not from `tileSize` — the
+      `AssetSpec`'s "1×1" cols/rows only means "don't slice into a multi-frame strip," it
+      says nothing about the region being one tile square. Shipping the pipe at half its
+      intended width left it only covering the tile's left half, while `PiranhaPlant`'s
+      own spawn x (`tile.x*tileSize + tileSize/2`, ported verbatim from the original per
+      `MARIO_PORT_PLAN_PHASE2.md`'s own P2.10.2 note — centering a 32px plant in what the
+      original's pipe mouth actually is, 64px/2 tiles wide) correctly centered the plant
+      on the *intended* 64px mouth, so it visibly hung off the right edge of the
+      too-narrow rendered pipe. Same root cause, same fix, also caught `Lava.png`/
+      `Water.png` shipping at 32×32 instead of the correct 32×128 (`Scenery`'s own
+      single-arg constructor likewise draws "at its native size" straight from the
+      region's pixel dimensions — confirmed the same way).
+
+      **Fix and a lesson for future asset work on this project**: after this report, ran
+      a full-directory dimension audit — every file actually shipped under
+      `reskin-source/` compared, byte-for-byte pixel size, against its real
+      Nintendo-derived counterpart in the fallback dir — rather than trusting any
+      `AssetSpec` cols/rows number to imply a size. This is a stronger check than the
+      per-asset "read the consuming class" step the guide already calls for, because it
+      catches exactly this class of bug (a *region whose real native size isn't
+      tileSize-derived at all*) in one pass across every asset at once, and should be
+      run again as a final gate any time a new batch of non-multi-frame ("1×1"-cols/rows)
+      assets is added. Fixed all 8 (`pump`/`pump top` ×3 themes, `Lava`, `Water`) in
+      `build_r4_mechanisms.py`, re-verified 0 mismatches across all 118 currently-reskinned
+      files with a fallback counterpart, re-packed (still 119/122, same page/region
+      counts) and recompiled clean.
+
 ### Step R.5 — Scenery, backdrops, HUD, UI text
 
 - [ ] Parallax backgrounds (Mountain/Clouds/CloudsNight/Fence/Sea) — reference §2.3's

@@ -83,11 +83,12 @@ public class FlyingTurtle extends Enemy {
     }
 
     @Override
-    public void onStomped(Player player) {
+    public boolean onStomped(Player player) {
         EnemyTurtle turtle = new EnemyTurtle(getX(), getY(), "normal".equals(color) ? "Ground" : "UnderGround", tileSize);
         MarioContext.world().addEnemy(turtle);
         MarioContext.spawn(turtle);
         deactivate();
+        return true;
     }
 
     @Override

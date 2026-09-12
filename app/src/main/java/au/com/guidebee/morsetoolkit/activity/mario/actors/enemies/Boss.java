@@ -177,13 +177,11 @@ public class Boss extends Enemy {
         setFrame((lookLeft ? 0 : 4) + (showingFirstFrame ? 0 : 1));
     }
 
+    /** Never a real stomp - see the class doc ("jumping on Bowser's head doesn't kill him here either"); always routes through {@link #onTouchedSide}'s identical star/hurt logic. */
     @Override
-    public void onStomped(Player player) {
-        if (player.hasStar()) {
-            die(true);
-        } else {
-            player.shrink();
-        }
+    public boolean onStomped(Player player) {
+        onTouchedSide(player);
+        return false;
     }
 
     @Override

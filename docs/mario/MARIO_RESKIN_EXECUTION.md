@@ -547,11 +547,53 @@ closes.
       a bug report. Packed (39/122 overlay) and compiled clean; **not yet on-device
       verified.**
 
-      **Still open for R.4** (tier-3/4 per §16.4, not yet started): `turtle_shell_red`/
-      `_flip` variants and `enemy_turtle_patrol` (not reached by World 1's own data, per
-      `TurtleShell.java`'s doc — lower priority); Plater/`FlyingTurtle`/`Helmet` family;
-      `Iron`; `QuestionMark`/`Bank` family; The Warden/`Boss`; and tier-4's long tail of
-      one-off enemies/mechanisms.
+      **2026-09-12: Junior Dev Guide Tasks 1-5 done** (`build_r4_tasks1to5.py`, per
+      [MARIO_RESKIN_JUNIOR_DEV_GUIDE.md §4](MARIO_RESKIN_JUNIOR_DEV_GUIDE.md#4-ready-to-execute-tasks-do-these-first-in-order)) —
+      the prior junior-dev handoff had produced no output at all (guide + `sprite_tools.py`
+      existed, none of its tasks executed); redone from scratch here:
+      - **Task 1 (Iron)**: procedural, reusing the exact per-theme palette already
+        established for stone/chocolate/brick, but flatter/duller (no light-accent
+        corners, single inset panel) so it reads as "depleted" next to the brighter
+        active tiles. 4-frame Sea/Ground/UnderGround/Castle strip.
+      - **Task 2 (QuestionMark/QuestionMarkGrey)**: procedural beveled block + a
+        hand-drawn 5×7 pixel "?" glyph bitmap, brightening across the 3-frame idle bob.
+        **Confirmed by reading `Bank.java`**: Bank does *not* use the question_mark
+        region at all — it reuses the plain themed `brick` region (`MarioResourceManager.themedRegion("brick", attribute)`) — no new art needed for Bank itself, closing the guide's own open question about it.
+      - **Task 3 (Helmet family)**: sourced from Robot Master Series' `enemy3` — **not
+        a legged walker like enemy1/enemy2** (confirmed via `enemy3all.png` and a
+        per-frame `getbbox()` scan: it's a clam/shell creature that opens and closes,
+        11 frames going from fully-shut to fully-open). Frame 0 (shut) doubles directly
+        as `helmet_shell` — a closed shell is exactly the right "retracted" look: two
+        mid-open frames become the walk-pair. `dark`/`white` are tint recolors of the
+        same source art (dark tint strengthened to 0.65 after an initial pass at 0.5
+        looked too similar to normal side-by-side).
+      - **Task 4 (The Warden = Boss/BossFire)**: sourced from Robot Master Series'
+        `miniboss1_base[80height144wide].png` — confirmed via `PIL .size` that the
+        bracket suffix means 144 wide × 80 tall/frame (11 near-identical left-facing
+        tank-robot poses), not assumed from the filename alone. No boss-body
+        "spitting fire" pose exists anywhere in the source (the `miniboss1_laser_*`
+        sheets are beam VFX strips, not body poses) — the fire pose is a `glow_pulse`
+        flash on the idle pose instead, matching `Boss.java`'s own re-verified frame
+        layout (linear index = row-major: 0/1=left idle, 2=fire, 4/5=right idle, 3
+        unused). `BossFire` (the thrown projectile, 48×16/frame) has no source match
+        either — procedural ember, same technique as the Bolt/gear coin.
+      - **Task 5 (Spare chassis/1UP)**: hand-pixelled small chassis/antenna icon (grey
+        head shape, green life-light, 2-frame blink) rather than the pragmatic
+        heart-icon fallback — per the guide's own note this is worth the ~20 minutes
+        of custom art since it fits the mechanical identity better.
+
+      Packed (51/122 overlay, up from 39/122 — 12 new files, same page/region counts
+      as before) and compiled clean. Every crop verified via `getbbox()` at generation
+      time (printed), every output PNG actually viewed before packing, per the guide's
+      Golden Rule. **Not yet on-device tested** — no test device available in this
+      session; flagging for on-device confirmation per the guide's own step 10 before
+      this is considered fully closed.
+
+      **Still open for R.4** (tier-3/4 per §16.4): `turtle_shell_red`/`_flip` variants
+      and `enemy_turtle_patrol` (not reached by World 1's own data, lower priority);
+      Plater/`FlyingTurtle` family (the *walking* enemies, distinct from the Helmet
+      buzzy-beetle family just closed above); and tier-4's long tail of one-off
+      enemies/mechanisms/scenery per [MARIO_RESKIN_JUNIOR_DEV_GUIDE.md §5](MARIO_RESKIN_JUNIOR_DEV_GUIDE.md#5-the-rest-of-tier-34--same-recipe-less-hand-holding).
 
 ### Step R.5 — Scenery, backdrops, HUD, UI text
 

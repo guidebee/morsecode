@@ -66,11 +66,12 @@ public class EnemyTurtlePatrol extends Enemy {
     }
 
     @Override
-    public void onStomped(Player player) {
+    public boolean onStomped(Player player) {
         TurtleShell shell = new TurtleShell(getX(), getY() + tileSize / 2f, "Ground", movingRight, tileSize);
         MarioContext.world().addEnemy(shell);
         MarioContext.spawn(shell);
         deactivate();
+        return true;
     }
 
     @Override

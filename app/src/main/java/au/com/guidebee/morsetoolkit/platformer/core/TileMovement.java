@@ -30,7 +30,11 @@ public final class TileMovement {
             newX = (float) (((int) newX / tileSize + 1) * tileSize);
             blocked = true;
         }
-        actor.setX(Math.max(0, newX));
+        if (newX < 0) {
+            newX = 0;
+            blocked = true;
+        }
+        actor.setX(newX);
         return blocked;
     }
 

@@ -53,8 +53,9 @@ public class Spikey extends Enemy {
     }
 
     @Override
-    public void onStomped(Player player) {
+    public boolean onStomped(Player player) {
         onTouchedSide(player);
+        return false;
     }
 
     /** Ported from {@code Collusion/EnemyToEnemy.java}'s own {@code case 117}. */

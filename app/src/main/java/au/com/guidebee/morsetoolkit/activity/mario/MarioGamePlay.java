@@ -2,6 +2,7 @@ package au.com.guidebee.morsetoolkit.activity.mario;
 
 import com.guidebee.game.GamePlay;
 
+import au.com.guidebee.morsetoolkit.activity.mario.actors.player.PlayerPowerState;
 import au.com.guidebee.morsetoolkit.activity.mario.level.LevelCatalog;
 import au.com.guidebee.morsetoolkit.activity.mario.level.LevelDefinition;
 import au.com.guidebee.morsetoolkit.activity.mario.screen.MarioGameScreen;
@@ -22,6 +23,17 @@ public class MarioGamePlay extends GamePlay {
 
     private final MarioGameActivity gameActivity;
     private final GameStateController gameState = new GameStateController();
+    /**
+     * Mario's power-up carried from the level he just left into the one
+     * {@link #goToLevel} is about to switch to - set by {@code
+     * MarioGameScreen#advanceToNextLevel} right before the switch, read back
+     * by the new {@code MarioGameScreen}'s own {@code Player} construction.
+     * Reset to {@code SMALL} by {@link #startLevel} - a fresh pick from the
+     * menu starts Small regardless of whatever a previous playthrough left
+     * this holding, same as {@link #gameState} resets there instead of
+     * carrying forward.
+     */
+    private PlayerPowerState pendingPowerState = PlayerPowerState.SMALL;
 
     public MarioGamePlay(MarioGameActivity activity) {
         gameActivity = activity;
@@ -45,6 +57,16 @@ public class MarioGamePlay extends GamePlay {
     /** Score/coins/lives/pause for whichever level is currently active - see the class doc. */
     public GameStateController gameState() {
         return gameState;
+    }
+
+    /** @see #pendingPowerState */
+    public PlayerPowerState pendingPowerState() {
+        return pendingPowerState;
+    }
+
+    /** Called by {@code MarioGameScreen#advanceToNextLevel} right before {@link #goToLevel} - see {@link #pendingPowerState}'s own doc. */
+    public void setPendingPowerState(PlayerPowerState state) {
+        pendingPowerState = state;
     }
 
     /**
@@ -91,6 +113,7 @@ public class MarioGamePlay extends GamePlay {
      */
     public void startLevel(int levelNumber) {
         gameState.reset();
+        pendingPowerState = PlayerPowerState.SMALL;
         int[] arrival = findArrivalTile(levelNumber);
         int spawnTileX = arrival != null ? arrival[0] : -1;
         int spawnTileY = arrival != null ? arrival[1] : -1;

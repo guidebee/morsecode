@@ -12,6 +12,8 @@ package au.com.guidebee.morsetoolkit.platformer.core;
 public interface SolidTile {
     boolean isActive();
     boolean overlaps(float x, float y, int width, int height);
+    float getX();
     float getY();
+    float getWidth();
     float getHeight();
 }

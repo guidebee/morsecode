@@ -69,9 +69,10 @@ public class Rocket extends Enemy {
     }
 
     @Override
-    public void onStomped(Player player) {
+    public boolean onStomped(Player player) {
         MarioResourceManager.sound("smb_kick").play();
         deactivate();
+        return true;
     }
 
     /**

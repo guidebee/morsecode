@@ -983,6 +983,19 @@ public class Player extends PowerStateActor<PlayerPowerState> {
         return powerState;
     }
 
+    /**
+     * Applies a power state immediately, with none of {@link #grow()}/{@link
+     * #shrink()}'s growth/shrink flipbook - used right after this Player is
+     * constructed (always {@link PlayerPowerState#SMALL}, per the
+     * constructor) to restore whatever power-up Mario was carrying when he
+     * left the previous level, since a fresh level's own spawn otherwise has
+     * no notion of "already Big/Fire" the way the original game's
+     * checkpoint-to-checkpoint state did.
+     */
+    public void applyPowerState(PlayerPowerState state) {
+        changePowerState(state);
+    }
+
     /** Used by {@code fx.MarioGhost}'s static snapshot at the axe-triggered boss finale - see that class's doc. */
     public boolean isFacingRight() {
         return facingRight;

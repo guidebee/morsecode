@@ -104,13 +104,30 @@ public class TileWorld extends TiledLayer implements TileCollisionSource {
         return false;
     }
 
-    /** The active {@link SolidTile} overlapping this rectangle, or null - used to route a hit-from-below. */
+    /**
+     * The active {@link SolidTile} overlapping this rectangle the most, or
+     * null - used to route a hit-from-below. Picking the largest overlap
+     * (rather than just the first match in registration order) matters
+     * whenever the rectangle isn't tile-aligned and straddles two adjacent
+     * solid tiles (e.g. a player jumping up under a "?" block sandwiched
+     * between two plain bricks): the tile the player is mostly under should
+     * win, not whichever tile happened to load first.
+     */
     public SolidTile findActiveBrickAt(float x, float y, int width, int height) {
+        SolidTile best = null;
+        float bestOverlapArea = 0;
         for (SolidTile solid : listFor(SolidTile.class)) {
-            if (solid.isActive() && solid.overlaps(x, y, width, height)) {
-                return solid;
+            if (!solid.isActive() || !solid.overlaps(x, y, width, height)) {
+                continue;
+            }
+            float overlapWidth = Math.min(x + width, solid.getX() + solid.getWidth()) - Math.max(x, solid.getX());
+            float overlapHeight = Math.min(y + height, solid.getY() + solid.getHeight()) - Math.max(y, solid.getY());
+            float overlapArea = overlapWidth * overlapHeight;
+            if (best == null || overlapArea > bestOverlapArea) {
+                best = solid;
+                bestOverlapArea = overlapArea;
             }
         }
-        return null;
+        return best;
     }
 }

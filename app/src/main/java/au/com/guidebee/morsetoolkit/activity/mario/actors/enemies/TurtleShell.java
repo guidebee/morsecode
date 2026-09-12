@@ -71,12 +71,13 @@ public class TurtleShell extends Enemy {
     }
 
     @Override
-    public void onStomped(Player player) {
+    public boolean onStomped(Player player) {
         if (moving) {
             moving = false;
         } else {
             kick(player);
         }
+        return true;
     }
 
     @Override

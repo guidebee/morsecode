@@ -76,11 +76,12 @@ public class Helmet extends Enemy {
     }
 
     @Override
-    public void onStomped(Player player) {
+    public boolean onStomped(Player player) {
         HelmetShell shell = new HelmetShell(getX(), getY(), color, movingRight, tileSize);
         MarioContext.world().addEnemy(shell);
         MarioContext.spawn(shell);
         deactivate();
+        return true;
     }
 
     @Override

@@ -54,8 +54,17 @@ public class PipeEntryAnimation extends Sprite {
     public static void spawn(Player player, boolean horizontal, float duration) {
         PlayerPowerState state = player.getPowerState();
         TextureRegion region = MarioResourceManager.region(state.regionName);
-        MarioContext.spawn(new PipeEntryAnimation(region, state.width, state.height,
-                player.getX(), player.getY(), horizontal, duration));
+        PipeEntryAnimation animation = new PipeEntryAnimation(region, state.width, state.height,
+                player.getX(), player.getY(), horizontal, duration);
+        MarioContext.spawn(animation);
+        // MarioContext.spawn() appends to the LayerManager, which always
+        // lands on top of every existing layer - fine for the real Player
+        // (meant to be drawn in front of the tile world), but wrong here:
+        // this stand-in needs to slide behind the pipe tile it's entering,
+        // not float above it. Move it just behind the tile world layer
+        // (still in front of the scenery background band) so the pipe
+        // artwork occludes it as it slides in, in every level.
+        animation.setZIndex(MarioContext.world().getZIndex());
     }
 
     @Override

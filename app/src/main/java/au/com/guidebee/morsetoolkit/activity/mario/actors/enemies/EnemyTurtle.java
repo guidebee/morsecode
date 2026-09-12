@@ -65,11 +65,12 @@ public class EnemyTurtle extends Enemy {
     }
 
     @Override
-    public void onStomped(Player player) {
+    public boolean onStomped(Player player) {
         TurtleShell shell = new TurtleShell(getX(), getY(), attribute, movingRight, tileSize);
         MarioContext.world().addEnemy(shell);
         MarioContext.spawn(shell);
         deactivate();
+        return true;
     }
 
     /** Ported from {@code Collusion/EnemyToEnemy.java}'s own {@code case 102}. */

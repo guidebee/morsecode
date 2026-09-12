@@ -60,7 +60,7 @@ def load_frames(path):
 
 def build_flying_turtle():
     print("FlyingTurtle / FlyingTurtleDark (Roller art + propeller):")
-    for src_name, out_name in (("turtle.png", "FlyingTurtle.png"), ("turtle_dark.png", "FlyingTurtledark.png")):
+    for src_name, out_name in (("turtle.png", "FlyingTurtle.png"), ("turtledark.png", "FlyingTurtledark.png")):
         frames = load_frames(f"{OUT}/{src_name}")
         winged = [add_wings(f) for f in frames]
         build_sheet(32, 48, winged, 4, 1, f"{OUT}/{out_name}")
@@ -84,7 +84,7 @@ def build_enemy_turtle_patrol():
 
 def build_shell_variants():
     print("turtle_shell_red / turtle_shell_flip family (recolors of the existing shell):")
-    base_shell = Image.open(f"{OUT}/turtle_shell.png").convert("RGBA")
+    base_shell = Image.open(f"{OUT}/TurtelShell.png").convert("RGBA")
     # turtle_shell_red: used by FlyingTurtlePatrol - a warning-red recolor.
     tint(base_shell, (196, 48, 40), 0.55).save(f"{OUT}/TurtelShellRed.png")
     print("wrote", f"{OUT}/TurtelShellRed.png")
@@ -96,7 +96,7 @@ def build_shell_variants():
     flipped = ImageOps.flip(base_shell)
     flipped.save(f"{OUT}/TurtelShellFilp.png")
     print("wrote", f"{OUT}/TurtelShellFilp.png")
-    ImageOps.flip(Image.open(f"{OUT}/turtle_shell_dark.png").convert("RGBA")).save(f"{OUT}/TurtelShellFilpdark.png")
+    ImageOps.flip(Image.open(f"{OUT}/TurtelShelldark.png").convert("RGBA")).save(f"{OUT}/TurtelShellFilpdark.png")
     print("wrote", f"{OUT}/TurtelShellFilpdark.png")
     ImageOps.flip(Image.open(f"{OUT}/TurtelShellRed.png").convert("RGBA")).save(f"{OUT}/TurtelShellFilpRed.png")
     print("wrote", f"{OUT}/TurtelShellFilpRed.png")

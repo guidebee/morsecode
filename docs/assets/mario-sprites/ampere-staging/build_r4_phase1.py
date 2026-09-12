@@ -155,17 +155,26 @@ def build_roller():
         # Layout per EnemyTurtle.java: cols 0-1 = left-facing, cols 2-3 = right-facing.
         frames = [tinted_left[0], tinted_left[1], tinted_right[0], tinted_right[1]]
         suffix = "" if theme == "Ground" else f"_{theme}"
-        out_name = "turtle_dark.png" if theme == "UnderGround" else f"turtle{suffix}.png"
+        # AssetSpec's actual sourcePath is "turtledark.png" (no underscore) -
+        # an earlier version of this line wrote "turtle_dark.png", which the
+        # packer's exact-filename lookup never matched, silently leaving the
+        # UnderGround EnemyTurtle frame on stale Nintendo art. Caught during
+        # the tier-3/4 pass by diffing every AssetSpec sourcePath against
+        # this directory's actual filenames - see MARIO_RESKIN_EXECUTION.md.
+        out_name = "turtledark.png" if theme == "UnderGround" else f"turtle{suffix}.png"
         build_sheet(cell_w, cell_h, frames, f"{OUT}/{out_name}")
 
     # turtle_shell / turtle_shell_dark - single 32x32 static pose, using the
     # most compact/rounded walk frame (index 0) rather than a dedicated
-    # "curled up" pose (none exists in the source material).
+    # "curled up" pose (none exists in the source material). AssetSpec's
+    # actual sourcePaths are "TurtelShell.png"/"TurtelShelldark.png" (the
+    # original's own misspelling of "Turtle") - see the turtledark.png note
+    # above for why this matters, not just cosmetic.
     shell_base = place_content(raw[0], 32, 32, fill=0.85, anchor="bottom")
-    tint(shell_base, THEMES["Ground"], 0.3).save(f"{OUT}/turtle_shell.png")
-    print("wrote", f"{OUT}/turtle_shell.png")
-    tint(shell_base, THEMES["UnderGround"], 0.3).save(f"{OUT}/turtle_shell_dark.png")
-    print("wrote", f"{OUT}/turtle_shell_dark.png")
+    tint(shell_base, THEMES["Ground"], 0.3).save(f"{OUT}/TurtelShell.png")
+    print("wrote", f"{OUT}/TurtelShell.png")
+    tint(shell_base, THEMES["UnderGround"], 0.3).save(f"{OUT}/TurtelShelldark.png")
+    print("wrote", f"{OUT}/TurtelShelldark.png")
 
 
 if __name__ == "__main__":

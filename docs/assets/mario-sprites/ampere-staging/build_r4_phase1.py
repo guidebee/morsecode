@@ -106,9 +106,9 @@ def build_powerups():
         place_content(verified_crop(miscel, (b[0], 16, b[1], 32), "battery"), 32, 32)
         for b in battery_bounds
     ]
-    battery_frames[0].save(f"{OUT}/mashroom.png")
-    print("wrote", f"{OUT}/mashroom.png")
-    build_sheet(32, 32, battery_frames[:2], f"{OUT}/mashrooms.png")
+    battery_frames[0].save(f"{OUT}/Mashroom.png")
+    print("wrote", f"{OUT}/Mashroom.png")
+    build_sheet(32, 32, battery_frames[:2], f"{OUT}/Mashrooms.png")
 
     # Overclock chip (Star) - miscel.png row3 (y=32-48).
     chip_bounds = [(1, 15), (17, 31), (33, 47), (49, 63)]
@@ -116,7 +116,7 @@ def build_powerups():
         place_content(verified_crop(miscel, (b[0], 32, b[1], 48), "chip"), 32, 32)
         for b in chip_bounds
     ]
-    build_sheet(32, 32, chip_frames, f"{OUT}/star.png")
+    build_sheet(32, 32, chip_frames, f"{OUT}/Star.png")
 
     # Charge coil (Flower) - ONE compact segment of gate.png's coil column
     # (confirmed via column alpha-sum that gate.png is a seamless repeating
@@ -124,7 +124,7 @@ def build_powerups():
     # segment is used, not a slice of the endless pattern).
     coil_base = place_content(verified_crop(gate, (0, 8, 16, 26), "coil"), 32, 32)
     coil_frames = [glow_pulse(coil_base, p) for p in (0.0, 0.15, 0.35, 0.15)]
-    build_sheet(32, 32, coil_frames, f"{OUT}/flower.png")
+    build_sheet(32, 32, coil_frames, f"{OUT}/Flower.png")
 
 
 # ------------------------------------------------------------------ roller

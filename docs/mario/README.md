@@ -44,6 +44,11 @@ depends on what you're doing:
 - **[MARIO_RESKIN_CREDITS.md](MARIO_RESKIN_CREDITS.md)** — the licensing/attribution
   tracker: source and license per shipped image/audio asset, plus a record of paths
   (Path B/LPC, AI-gen) deliberately declined and why.
+- **[MARIO_ART_HANDOFF_SPEC.md](MARIO_ART_HANDOFF_SPEC.md)** — **the self-contained brief
+  to hand an artist or an AI art tool for a brand-new skin.** Every one of the 122 asset
+  files with its exact filename/pixel size/frame grid, the conventions that recur across
+  many of them, and a delivery/verification checklist — written so the recipient never
+  needs to read this doc set or the game's source at all.
 
 ## Generated assets
 

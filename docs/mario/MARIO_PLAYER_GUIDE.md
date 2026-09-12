@@ -16,6 +16,7 @@ under the hood, see [MARIO_GAME_MECHANICS.md](MARIO_GAME_MECHANICS.md).
 |---|---|---|
 | Move left/right | Drag the on-screen joystick left/right | ← / → or A / D |
 | Duck (Big/Fire only) / enter a pipe below you | Drag the joystick down | ↓ or S |
+| Enter a same-level pipe ahead of you | Walk into the pipe's mouth, drag the joystick right | → or D |
 | Climb a beanstalk | Drag the joystick up | ↑ or W |
 | Jump | Button **B** | Space, ↑, or Z |
 | Run (hold) / Throw a fireball (tap, Fire Mario only) | Button **A** | X |
@@ -111,7 +112,8 @@ a sky/lift level, then a castle with a boss — except World 8, whose "castle" i
 ## Secrets worth knowing
 
 - **The World 1 warp room** — Level 1-2 (the underground level) hides a small room with
-  four pipes; three of them skip you straight ahead to World 2, 3, or 4.
+  four pipes; three of them skip you straight ahead to World 2, 3, or 4. Like every
+  same-level pipe, you enter by walking into its mouth (hold Right), not by pressing Down.
 - **Beanstalks** — five levels have a hidden beanstalk entrance (hold Up at the right
   spot); climbing one is a short bonus-coin detour, not a progression shortcut.
 - **Bonus rooms** — fourteen small coin rooms are tucked behind secret pipes throughout

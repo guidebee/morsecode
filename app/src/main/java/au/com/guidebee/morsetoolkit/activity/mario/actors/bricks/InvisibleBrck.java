@@ -55,6 +55,12 @@ public class InvisibleBrck extends InteractiveBrick {
         return blankRegion;
     }
 
+    /** Not standable/walkable-into until triggered - see this method's own doc on {@link InteractiveBrick}. */
+    @Override
+    public boolean blocksLanding() {
+        return false;
+    }
+
     @Override
     public void hitFromBelow(Player player) {
         Iron iron = new Iron(getX(), getY(), attribute, tileSize);

@@ -7,6 +7,7 @@ import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.player.Player;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.projectiles.BossFire;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.projectiles.Hammer;
+import au.com.guidebee.morsetoolkit.activity.mario.fx.DirectFallingSprite;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
 import au.com.guidebee.morsetoolkit.platformer.core.TileMovement;
 
@@ -21,10 +22,11 @@ import au.com.guidebee.morsetoolkit.platformer.core.TileMovement;
  * hurts Mario instead, matching the classic games (jumping on Bowser's head
  * doesn't kill him here either).
  *
- * <p>Skips the original's separate "falling off screen" corpse animation
- * ({@code DirectFalling}) on death - deactivating immediately, same
- * simplification this port already applies elsewhere (see {@code Brick}'s
- * skipped bonk-jitter, {@code TurtleShell}'s unified moving/stationary class).
+ * <p>{@link #die} spawns a {@link DirectFallingSprite} corpse before
+ * deactivating - matches every one of the original's own death reactions
+ * (star stomp/touch, a moving shell, running out of fireball hits), which
+ * all route through the same {@code DirectFalling(this.getImage(),
+ * this.getX(), this.getY())} call.
  *
  * <p>The "boss" region is 64x64 per frame, 3 cols x 2 rows - confirmed
  * against {@code WholeGame.java}'s {@code getImages("Boss.png", 3, 2)}.
@@ -207,6 +209,8 @@ public class Boss extends Enemy {
         if (kicked) {
             MarioResourceManager.sound("smb_kick").play();
         }
+        DirectFallingSprite.spawn(getX(), getY(),
+                MarioResourceManager.region("boss").split(tileSize * 2, tileSize * 2)[0][0]);
         deactivate();
         for (Enemy enemy : new ArrayList<>(MarioContext.world().getEnemies())) {
             if (enemy != this && enemy.isActive()) {

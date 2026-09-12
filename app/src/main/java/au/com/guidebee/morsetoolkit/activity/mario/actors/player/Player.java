@@ -208,6 +208,20 @@ public class Player extends PowerStateActor<PlayerPowerState> {
     /** Set by {@link #die()}/{@link #beginDeathAnimation()}, cleared by {@link #consumeDeath()} - see that method's doc. */
     private boolean justDied;
 
+    /**
+     * True while a just-started transition's own {@code preShiftUp32} already
+     * moved {@code y} to keep Mario's feet planted (see {@link
+     * #startTransition}) - without this, {@link #changePowerState} re-derives
+     * the *same* shift again from scratch when the flipbook finishes (its own
+     * {@code oldHeight} still reads the pre-transition {@link #getHeight()},
+     * since nothing else touched the actor's real size in between), doubling
+     * a Small-\>Big grow's net upward movement to 64px instead of 32 and
+     * pushing his *feet* 32px higher than where they started - easy to miss
+     * in open air, but exactly what let debug-triggered growth punch through
+     * a ceiling a single, correctly-sized 32px shift would have cleared.
+     */
+    private boolean pendingYPreShifted;
+
     /** True while the enemy-hit-while-Small death (launch up, then fall) is playing - see {@link #beginDeathAnimation}. Not part of {@link PowerStateActor}'s own transition flipbook - a genuinely different, Mario-specific state machine (see this class's own doc). */
     private boolean dyingAnimated;
     private float deathDelayTimer;
@@ -599,14 +613,31 @@ public class Player extends PowerStateActor<PlayerPowerState> {
         int tileSize = world.tileSize();
         float duckAboveY = ducking ? getY() + duckHeadRoomPx : Float.NEGATIVE_INFINITY;
 
-        if (dx > 0 && world.containsImpassableArea(newX, getY(), width, height, duckAboveY)) {
+        if (dx > 0 && isBlockingArea(newX, getY(), width, height, duckAboveY)) {
             newX = (float) (((int) (newX + width) / tileSize) * tileSize - width);
             speed = 0;
-        } else if (dx < 0 && world.containsImpassableArea(newX, getY(), width, height, duckAboveY)) {
+        } else if (dx < 0 && isBlockingArea(newX, getY(), width, height, duckAboveY)) {
             newX = (float) (((int) newX / tileSize + 1) * tileSize);
             speed = 0;
         }
         setX(newX);
+    }
+
+    /**
+     * {@code world.containsImpassableArea}, further excluding an
+     * {@link InvisibleBrck} that hasn't been triggered yet - see {@link
+     * InteractiveBrick#blocksLanding}'s own doc. Used by every directional
+     * collision check *except* {@link #moveYWithCollision}'s own
+     * hit-from-below branch, which deliberately keeps using the raw,
+     * unfiltered check instead - that's the one direction an untriggered
+     * invisible brick *should* react to.
+     */
+    private boolean isBlockingArea(float x, float y, int width, int height, float duckAboveY) {
+        if (!world.containsImpassableArea(x, y, width, height, duckAboveY)) {
+            return false;
+        }
+        InteractiveBrick brick = world.findActiveBrickAt(x, y, width, height);
+        return brick == null || brick.blocksLanding();
     }
 
     private void moveYWithCollision(float dy) {
@@ -617,14 +648,15 @@ public class Player extends PowerStateActor<PlayerPowerState> {
         float duckAboveY = ducking ? getY() + duckHeadRoomPx : Float.NEGATIVE_INFINITY;
 
         if (dy > 0) {
-            if (world.containsImpassableArea(getX(), newY, width, height, duckAboveY)) {
-                // Looked up at this pre-snap newY, not the post-snap value
-                // below - once snapped, the player's feet sit exactly flush
-                // with the brick's top edge, and InteractiveBrick#overlaps's
-                // strict "y + height > getY()" no longer holds at that exact
-                // boundary, so the Bouncer would never be found (silently
-                // falling back to a normal stand instead of relaunching).
-                InteractiveBrick landedOn = world.findActiveBrickAt(getX(), newY, width, height);
+            boolean impassable = world.containsImpassableArea(getX(), newY, width, height, duckAboveY);
+            // Looked up at this pre-snap newY, not the post-snap value
+            // below - once snapped, the player's feet sit exactly flush
+            // with the brick's top edge, and InteractiveBrick#overlaps's
+            // strict "y + height > getY()" no longer holds at that exact
+            // boundary, so the Bouncer would never be found (silently
+            // falling back to a normal stand instead of relaunching).
+            InteractiveBrick landedOn = impassable ? world.findActiveBrickAt(getX(), newY, width, height) : null;
+            if (impassable && (landedOn == null || landedOn.blocksLanding())) {
                 newY = (float) (((int) (newY + height) / tileSize) * tileSize - height);
                 if (landedOn instanceof Bouncer) {
                     // Ported from Player_Brick.collided's own `if (b.getID() == 13)
@@ -642,6 +674,10 @@ public class Player extends PowerStateActor<PlayerPowerState> {
                     onGround = true;
                 }
             } else {
+                // Either open air, or an untriggered InvisibleBrck (see that
+                // class's own doc) - not standable, matching the original's
+                // own exclusion from every directional collision branch but
+                // hit-from-below.
                 onGround = false;
             }
         } else if (dy < 0 && world.containsImpassableArea(getX(), newY, width, height, duckAboveY)) {
@@ -683,7 +719,17 @@ public class Player extends PowerStateActor<PlayerPowerState> {
             updateSwimAnimation(frames);
             return;
         }
-        if (!onGround) {
+        // A lift isn't part of the tile grid, so every frame's own
+        // moveYWithCollision (run before this, as part of the same
+        // applyMovement) unconditionally clears onGround the instant gravity
+        // ticks it even slightly positive again - LiftCollisionResolver only
+        // re-confirms onGround=true (via landOnLift) afterward, in the
+        // following collision-resolver pass, too late for this frame's own
+        // animation pick. Without also checking onLift here, a rider showed
+        // the airborne "jump" pose (facingRight ? 2 : 3) every single frame,
+        // walk input or not, instead of the walk cycle - reported as "lost
+        // moving animation, only has hand raised up" while riding a lift.
+        if (!onGround && !onLift) {
             setFrame(facingRight ? 2 : 3);
             return;
         }
@@ -816,6 +862,10 @@ public class Player extends PowerStateActor<PlayerPowerState> {
      *                     not just once {@link #changePowerState} applies at
      *                     the end - matches the original's own immediate
      *                     {@code this.setY(this.getY() - 32)} in this one case.
+     *                     Recorded in {@link #pendingYPreShifted} so {@link
+     *                     #changePowerState} knows not to shift {@code y} a
+     *                     *second* time once the flipbook finishes - see that
+     *                     field's own doc.
      */
     private void startTransition(String regionName, PlayerPowerState target, boolean preShiftUp32) {
         TextureRegion[] rowFrames = MarioResourceManager.region(regionName)
@@ -831,6 +881,7 @@ public class Player extends PowerStateActor<PlayerPowerState> {
         }
         float yShift = preShiftUp32 ? (PlayerPowerState.BIG.height - PlayerPowerState.SMALL.height) : 0f;
         beginTransition(frames, target, transitionFrameWidth, transitionFrameHeight, yShift);
+        pendingYPreShifted = preShiftUp32;
         speed = 0;
         gravity = 0;
     }
@@ -937,7 +988,15 @@ public class Player extends PowerStateActor<PlayerPowerState> {
     }
 
     private void changePowerState(PlayerPowerState newState) {
-        float oldHeight = getHeight();
+        // If startTransition's own preShiftUp32 already moved y for this
+        // transition, getHeight() is stale (still the pre-transition size -
+        // nothing else touches it mid-flipbook) and re-deriving the shift
+        // from it here would double-apply the same move. Treating oldHeight
+        // as already-equal-to newState.height makes the shift below a no-op
+        // in that case, instead of re-shifting - see pendingYPreShifted's own
+        // doc for the bug this fixes.
+        float oldHeight = pendingYPreShifted ? newState.height : getHeight();
+        pendingYPreShifted = false;
         powerState = newState;
         initFrames(newState);
         setSize(newState.width, newState.height);
@@ -985,7 +1044,40 @@ public class Player extends PowerStateActor<PlayerPowerState> {
         if (powerState == PlayerPowerState.FIRE) {
             startTransition("fire_to_small_mario", PlayerPowerState.SMALL, false);
         } else {
+            if (powerState == PlayerPowerState.SMALL) {
+                ensureHeadroomForGrowth();
+            }
             grow();
+        }
+    }
+
+    /**
+     * Debug-cycle-only safety net. Growing Small -> Big immediately claims
+     * 32px of extra headroom above Mario's current position - see {@link
+     * #startTransition}'s own {@code preShiftUp32} doc for why that shift is
+     * unconditional and immediate, with no collision check of its own. Fine
+     * in real play, where every Mushroom is placed with that headroom
+     * already clear; not fine for this debug cycle, which can trigger growth
+     * anywhere Mario happens to be standing - including right under a low
+     * ceiling (reported at Level 14's own spawn point) - permanently
+     * embedding him in it with no way back out, since nothing else in this
+     * class ever re-checks a standing player's own bounding box against the
+     * world. Nudges him downward first, just far enough that the post-growth
+     * box lands clear, instead of touching {@link #grow}/{@link
+     * #startTransition} themselves (real Mushroom pickups need no such
+     * check, and shouldn't silently reposition Mario if they ever did).
+     */
+    private void ensureHeadroomForGrowth() {
+        float extraHeight = PlayerPowerState.BIG.height - PlayerPowerState.SMALL.height;
+        float targetY = getY() - extraHeight;
+        float maxNudge = world.tileSize() * 2f;
+        float nudge = 0f;
+        while (nudge < maxNudge && world.containsImpassableArea(getX(), targetY + nudge,
+                PlayerPowerState.BIG.width, PlayerPowerState.BIG.height)) {
+            nudge += 1f;
+        }
+        if (nudge > 0f) {
+            setY(getY() + nudge);
         }
     }
 
@@ -1001,14 +1093,30 @@ public class Player extends PowerStateActor<PlayerPowerState> {
      * left the previous level, since a fresh level's own spawn otherwise has
      * no notion of "already Big/Fire" the way the original game's
      * checkpoint-to-checkpoint state did.
+     *
+     * <p>Deliberately does *not* reuse {@link #changePowerState}'s own "keep
+     * Mario's feet planted, shift the box up" logic: that math assumes he's
+     * already settled and standing on solid ground at the moment of growth
+     * (true for a real Mushroom pickup, and for {@link #debugCyclePowerState}
+     * once {@link #ensureHeadroomForGrowth} has done its own check), but this
+     * runs immediately after construction, before gravity has ever had a
+     * chance to settle him onto the actual floor below the spawn tile - the
+     * "planted feet" it would compute from are still the *raw spawn
+     * position*'s, not where they'll really end up. Reported at Level 14's
+     * own spawn point: Small Mario spawns with a tile of empty air below him
+     * and falls into place; shifting a spawned Big Mario's already-taller box
+     * up from that same raw spawn Y (as {@code changePowerState} would)
+     * landed his head in the low ceiling directly above it - a ceiling the
+     * *unshifted* box was already clear of, since Big is exactly the one
+     * tile taller that Small's own fall would have covered. Just resizing in
+     * place and letting the normal per-frame gravity in {@link
+     * #applyMovement} settle him from there - exactly like every other
+     * spawn, regardless of power state - avoids the bad assumption entirely.
      */
     public void applyPowerState(PlayerPowerState state) {
-        changePowerState(state);
-    }
-
-    /** Used by {@code fx.MarioGhost}'s static snapshot at the axe-triggered boss finale - see that class's doc. */
-    public boolean isFacingRight() {
-        return facingRight;
+        powerState = state;
+        initFrames(state);
+        setSize(state.width, state.height);
     }
 
     public boolean isOnGround() {

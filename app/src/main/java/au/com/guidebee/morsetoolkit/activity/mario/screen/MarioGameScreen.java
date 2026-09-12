@@ -943,31 +943,53 @@ public class MarioGameScreen extends ScreenAdapter {
      * {@code getID()==15} case. Unlike every other special touch in this
      * class, this doesn't change {@link #levelState} or set {@link
      * #pendingCheckpoint} at all - it just clears the way (every other enemy
-     * vanishes, Mario starts auto-walking right) and, if the boss is still
-     * alive, runs the dramatic {@link BossFallingAnim#spawnCollapse} in
-     * parallel. The level's own "WhyYouDOThis"/"Princess" checkpoint just
-     * past this point (already handled by {@link #beginAnotherCastleMessage})
-     * is what actually ends the level, same as before this method existed -
-     * a boss already defeated by fireballs/a star before Mario ever reaches
-     * the axe skips this whole visual (it already played its own
-     * "smb_bowserfalls" via {@code Boss#die}), matching the original: level
-     * completion was never gated on actually beating the boss (see
+     * vanishes) and, if the boss is still alive, runs the dramatic {@link
+     * BossFallingAnim#spawnCollapse} in parallel. The level's own
+     * "WhyYouDOThis"/"Princess" checkpoint just past this point (already
+     * handled by {@link #beginAnotherCastleMessage}) is what actually ends
+     * the level, same as before this method existed - a boss already
+     * defeated by fireballs/a star before Mario ever reaches the axe skips
+     * this whole visual (it already played its own "smb_bowserfalls" via
+     * {@code Boss#die}), matching the original: level completion was never
+     * gated on actually beating the boss (see
      * docs/MARIO_PORT_PLAN_PHASE2.md S1.4).
+     *
+     * <p>Only the boss-already-dead case starts Mario's auto-walk right here.
+     * With the boss still alive, {@link BossFallingAnim} itself puts him
+     * under forced auto-walk once the collapse finishes - matching the
+     * original's own sequencing, confirmed by reading the source:
+     * {@code RemoveBridge()} never touches the player at all, and it's
+     * {@code BossFallingAnim.update()}'s own {@code game.player.MoveForward()}
+     * (called only once the boss has finished falling) that starts him
+     * moving. Mario is just frozen (an empty forced command) here in the
+     * meantime, standing exactly where the boss was - see {@code
+     * BossFallingAnim}'s own doc for why this port no longer spawns a
+     * separate frozen stand-in there the way an earlier revision (and the
+     * original's own {@code DemoMario}) did.
      */
     private void triggerAxe(Axe axe) {
         axe.trigger();
         Boss boss = findActiveBoss();
         if (boss != null) {
+            player.setForcedCommand(new PlatformerCommand());
             BossFallingAnim.spawnCollapse(axe, boss, player, world.tileSize());
+        } else {
+            PlatformerCommand walkForward = new PlatformerCommand();
+            walkForward.right = true;
+            player.setForcedCommand(walkForward);
         }
+        // spawnCollapse's own boss.deactivate() must run first (above) - it
+        // removes him from the stage, so this loop's isActive() check then
+        // correctly skips him instead of calling Actor#remove() a second
+        // time on an already-detached actor, which throws (confirmed by an
+        // on-device NullPointerException in Actor.remove() when an earlier
+        // revision of this method deactivated every enemy, boss included,
+        // before spawnCollapse got its own turn).
         for (Enemy enemy : new ArrayList<>(world.getEnemies())) {
             if (enemy.isActive()) {
                 enemy.deactivate();
             }
         }
-        PlatformerCommand walkForward = new PlatformerCommand();
-        walkForward.right = true;
-        player.setForcedCommand(walkForward);
     }
 
     private Boss findActiveBoss() {

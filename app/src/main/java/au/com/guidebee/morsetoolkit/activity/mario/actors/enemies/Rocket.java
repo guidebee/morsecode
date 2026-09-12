@@ -5,6 +5,7 @@ import com.guidebee.game.graphics.TextureRegion;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.player.Player;
+import au.com.guidebee.morsetoolkit.activity.mario.fx.DirectFallingSprite;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
 
 /**
@@ -12,11 +13,12 @@ import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
  * {@code Objects/Rocket.java}: flies straight and level at a constant speed
  * toward whichever direction it was launched, no gravity, no tile collision
  * (matches the original - it only ever disappears by flying far enough off
- * either side of the level). A stomp always destroys it outright (matches
- * {@link Enemy}'s own default {@link #onStomped}, not overridden); a
- * side-touch hurts Mario unless starred (also the default, not overridden);
- * immune to fireballs (the original's own {@code KilledByFireBall()} is
- * empty), so {@link #onDefeatedByProjectile} is overridden to a no-op.
+ * either side of the level). A stomp sends it falling straight down in place
+ * (see {@link #onStomped}, ported from {@code MarioJumpedOnEnemy()}, not the
+ * {@link Enemy} default); a side-touch hurts Mario unless starred (the
+ * default, not overridden); immune to fireballs (the original's own {@code
+ * KilledByFireBall()} is empty), so {@link #onDefeatedByProjectile} is
+ * overridden to a no-op.
  *
  * <p>Reuses frame index 3 of the "rocket_launcher" (or, on a CloudsNight
  * level - only ever reachable via {@code SpawnController}'s ambient
@@ -34,6 +36,7 @@ public class Rocket extends Enemy {
     private static final float FALL_OUT_MARGIN_TILES = 20f;
 
     private final int tileSize;
+    private final boolean blackAndWhite;
 
     public Rocket(float x, float y, boolean movingRight, int tileSize) {
         this(x, y, movingRight, false, tileSize);
@@ -42,6 +45,7 @@ public class Rocket extends Enemy {
     public Rocket(float x, float y, boolean movingRight, boolean blackAndWhite, int tileSize) {
         super(regionFor(blackAndWhite, tileSize), tileSize, tileSize, x, y, movingRight);
         this.tileSize = tileSize;
+        this.blackAndWhite = blackAndWhite;
         // The "rocket_launcher" strip's frame 3 faces left as drawn. Flipping
         // the region itself before handing it to Sprite's constructor (as
         // this used to do) doesn't work: Sprite's constructor immediately
@@ -77,9 +81,19 @@ public class Rocket extends Enemy {
         }
     }
 
+    /**
+     * Ported from {@code MarioJumpedOnEnemy()}: unlike the {@link Enemy}
+     * default (a plain {@link #deactivate}), a stomped rocket doesn't just
+     * vanish - it spawns a {@link DirectFallingSprite} at its current
+     * position/facing (the original's own {@code new DirectFalling(
+     * this.getImage(), this.getX(), this.getY())}, image already carrying
+     * whichever way it happened to be flying) and falls straight down out of
+     * view before disappearing.
+     */
     @Override
     public boolean onStomped(Player player) {
         MarioResourceManager.sound("smb_kick").play();
+        DirectFallingSprite.spawn(getX(), getY(), regionFor(blackAndWhite, tileSize), movingRight);
         deactivate();
         return true;
     }

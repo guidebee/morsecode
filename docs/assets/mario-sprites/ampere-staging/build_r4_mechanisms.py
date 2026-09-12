@@ -140,7 +140,9 @@ def build_wall():
 # ------------------------------------------------------------ rocket launcher
 
 def build_rocket_launcher(out_name, base_color, dark_color, accent):
-    print(f"{out_name} (turret, 32x32 x4 rows - rows 0-2 used per LevelLoader.spawnRocketLauncher):")
+    print(f"{out_name} (turret+rocket, 32x32 x4 rows - 0-2 are the turret head/body per "
+          f"LevelLoader.spawnRocketLauncher, 3 is the flying rocket projectile per "
+          f"Rocket.regionFor - NOT unused, see MARIO_BUG_FIXES.md S2.1):")
     head = canvas(32, 32)
     d = ImageDraw.Draw(head)
     rect(head, 4, 16, 28, 32, dark_color)
@@ -152,8 +154,19 @@ def build_rocket_launcher(out_name, base_color, dark_color, accent):
     body_b = canvas(32, 32)
     rect(body_b, 4, 0, 28, 32, dark_color)
     rect(body_b, 6, 2, 26, 30, tuple(max(0, c - 15) for c in base_color))
-    unused = body_b
-    build_sheet(32, 32, [head, body_a, body_b, unused], 1, 4, f"{OUT}/{out_name}")
+    # The flying rocket itself (Rocket.regionFor's frame index 3) - drawn
+    # left-facing per the reskin convention documented in
+    # MARIO_BUG_FIXES.md S2.1 (Rocket mirrors via setTransform at runtime for
+    # a rightward launch; the stored frame must be the left-facing pose).
+    rocket = canvas(32, 32)
+    rd = ImageDraw.Draw(rocket)
+    rd.polygon([(22, 9), (29, 5), (29, 12), (25, 14)], fill=dark_color + (255,))
+    rd.polygon([(22, 23), (29, 27), (29, 20), (25, 18)], fill=dark_color + (255,))
+    rd.rectangle((9, 11, 24, 21), fill=base_color + (255,), outline=dark_color + (255,))
+    rd.polygon([(2, 16), (9, 9), (9, 23)], fill=dark_color + (255,))
+    rd.ellipse((13, 13, 19, 19), fill=accent + (255,))
+    build_sheet(32, 32, {(0, 0): head, (0, 1): body_a, (0, 2): body_b, (0, 3): rocket},
+                1, 4, f"{OUT}/{out_name}")
 
 
 # -------------------------------------------------------- bouncer / spring

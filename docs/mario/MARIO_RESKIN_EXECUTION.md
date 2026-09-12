@@ -701,6 +701,31 @@ closes.
       files with a fallback counterpart, re-packed (still 119/122, same page/region
       counts) and recompiled clean.
 
+      **2026-09-12: real bug found from an actual on-device/in-game report — Level 5-2's
+      `RocketLauncher`-fired rocket was invisible in flight** (the turret itself rendered
+      fine). Root cause: `build_rocket_launcher()` in `build_r4_mechanisms.py` built
+      `RocketLauncher.png`/`CloudsNight/RocketLauncher.png` as a 32×128 canvas (correctly
+      sized for 4 rows) but passed its 4 frames to `build_sheet()` as a **flat list**
+      instead of an explicit `{(col, row): frame}` dict — `build_sheet()`'s own docstring
+      says a flat list always maps to `{(i, 0): frame ...}`, i.e. one row, not one column;
+      the same "flat list into a multi-row grid" mistake already caught and fixed for
+      `Boss.png`/`Monkey.png` on the `reskin-codex` branch, but never audited here since
+      it shipped from a different script. Confirmed via per-row `getbbox()`: only row 0
+      (the static turret head, frame index 0 — what `RocketLauncher`'s own sprite uses)
+      had content; rows 1-3 were fully transparent. `Rocket.regionFor()` reads frame index
+      3 for the flying projectile itself (see
+      [MARIO_BUG_FIXES.md §2.1](MARIO_BUG_FIXES.md#21-rocket-and-the-ambient-jumping-fish-always-faced-left-even-when-launched-right)
+      — that frame was never "unused" the way the original code's own comment claimed),
+      so every fired rocket rendered as a fully transparent region.
+
+      **Fix**: `build_rocket_launcher()` now passes an explicit `{(0,0): head, (0,1):
+      body_a, (0,2): body_b, (0,3): rocket}` dict, and frame 3 is real left-facing rocket
+      art (nose cone + fins) instead of a duplicate turret-body frame — matching the
+      reskin convention `MARIO_BUG_FIXES.md §2.1` already documents (`Rocket` mirrors this
+      stored left-facing frame via `setTransform` for a rightward launch; the art itself
+      must not be pre-flipped). Regenerated both `RocketLauncher.png` files, re-packed
+      (still 119/122, same page/region counts) and recompiled clean.
+
 ### Step R.5 — Scenery, backdrops, HUD, UI text
 
 - [ ] Parallax backgrounds (Mountain/Clouds/CloudsNight/Fence/Sea) — reference §2.3's

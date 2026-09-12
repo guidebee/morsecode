@@ -90,9 +90,27 @@ public abstract class Enemy extends Sprite {
         }
     }
 
-    /** Player landed on top. Default: die (matches EnemyMashroom; EnemyTurtle overrides). */
-    public void onStomped(Player player) {
+    /**
+     * Player landed on top. Default: die (matches EnemyMashroom; EnemyTurtle
+     * overrides).
+     *
+     * @return true if this was a genuine, safe stomp - {@code
+     * EnemyCollisionResolver} only bounces Mario and awards the stomp score
+     * when this returns true. An override that can't be safely stomped
+     * (Spikey, PiranhaPlant, OrbitingFireball, ...) delegates straight to
+     * {@link #onTouchedSide} and returns false: without that, the resolver
+     * used to bounce/score Mario off these exactly as if they'd been beaten,
+     * *in addition to* whatever onTouchedSide just did to hurt him - and,
+     * since bounceOffEnemy() plays "smb_stomp" with no re-entry guard of its
+     * own (unlike shrink()'s own dyingAnimated/invincibility checks), every
+     * frame Mario kept overlapping a stationary hazard like a FireBar ring or
+     * a Piranha Plant re-fired that sound on top of his one real death cry,
+     * which is what actually read as the death sound "playing multiple
+     * times".
+     */
+    public boolean onStomped(Player player) {
         deactivate();
+        return true;
     }
 
     /** Player touched from the side (or from below). Default: hurt the player unless they have a star. */

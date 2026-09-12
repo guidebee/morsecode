@@ -103,8 +103,9 @@ public class PiranhaPlant extends Enemy {
 
     /** Never a real stomp - see the class doc. */
     @Override
-    public void onStomped(Player player) {
+    public boolean onStomped(Player player) {
         onTouchedSide(player);
+        return false;
     }
 
     @Override

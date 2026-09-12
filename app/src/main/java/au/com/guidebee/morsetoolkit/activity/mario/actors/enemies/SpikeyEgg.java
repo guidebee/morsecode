@@ -71,8 +71,9 @@ public class SpikeyEgg extends Enemy {
     }
 
     @Override
-    public void onStomped(Player player) {
+    public boolean onStomped(Player player) {
         onTouchedSide(player);
+        return false;
     }
 
     @Override

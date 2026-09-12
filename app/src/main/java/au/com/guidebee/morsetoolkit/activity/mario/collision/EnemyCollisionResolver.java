@@ -57,9 +57,15 @@ public final class EnemyCollisionResolver {
             boolean playerAbove = py + ph / 2f <= enemy.getY() + enemy.getHeight() / 2f;
 
             if (overlapY <= overlapX && playerAbove) {
-                enemy.onStomped(player);
-                player.bounceOffEnemy();
-                MarioContext.gameState().addScore(STOMP_SCORE);
+                // See Enemy#onStomped's own doc: only a genuine, safe stomp
+                // earns the bounce/score - an enemy that can't be safely
+                // stomped already reacted (hurt or star-killed Mario) inside
+                // its own onStomped, via onTouchedSide, and returns false so
+                // this doesn't also treat that as a rewarded kill on top.
+                if (enemy.onStomped(player)) {
+                    player.bounceOffEnemy();
+                    MarioContext.gameState().addScore(STOMP_SCORE);
+                }
             } else {
                 enemy.onTouchedSide(player);
             }

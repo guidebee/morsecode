@@ -382,6 +382,11 @@ public class MarioGameScreen extends ScreenAdapter {
         int startTileY = spawnTileY >= 0 ? spawnTileY : level.posY;
         player = new Player(startTileX * world.tileSize(),
                 startTileY * world.tileSize(), world, input);
+        // Restore whatever power-up Mario was carrying out of the previous
+        // level (Big/Fire) - see MarioGamePlay#pendingPowerState's own doc.
+        // Defaults to SMALL for a fresh game (MarioGamePlay#startLevel resets
+        // it), matching the Player constructor's own default.
+        player.applyPowerState(gamePlay.pendingPowerState());
         // Ported from Mario.java's own `if ("Sea".equals(attribute)) player.Water = true`
         // set once at level load, never toggled mid-level - see Player#setWater's doc.
         player.setWater("Sea".equals(level.attribute));
@@ -1056,6 +1061,12 @@ public class MarioGameScreen extends ScreenAdapter {
     }
 
     private void advanceToNextLevel() {
+        // Carry Mario's current power-up (Big/Fire) into the next level -
+        // ported gameplay didn't need this doc since the original never
+        // reloaded a fresh screen/Player per level the way this port does;
+        // without it, every checkpoint transition silently reset him to
+        // Small. See MarioGamePlay#pendingPowerState's own doc.
+        gamePlay.setPendingPowerState(player.getPowerState());
         boolean advanced = gamePlay.goToLevel(pendingCheckpoint.nextLevel, pendingCheckpoint.locX, pendingCheckpoint.locY);
         if (advanced) {
             // Marks *this* level cleared, not the target - any successful

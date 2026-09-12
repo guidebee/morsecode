@@ -41,6 +41,9 @@ depends on what you're doing:
   if you're picking up Step R.4 onward as a task list.** The hands-on recipe, a shared
   Python helper module, a "mistakes hall of fame" from real bugs already hit, and
   ready-to-execute tasks.
+- **[MARIO_RESKIN_CREDITS.md](MARIO_RESKIN_CREDITS.md)** — the licensing/attribution
+  tracker: source and license per shipped image/audio asset, plus a record of paths
+  (Path B/LPC, AI-gen) deliberately declined and why.
 
 ## Generated assets
 

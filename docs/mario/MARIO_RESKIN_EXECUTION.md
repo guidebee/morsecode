@@ -716,15 +716,62 @@ closes.
 
 ### Step R.6 — Audio
 
-- [ ] Map all 23 sound effects to their closest Kenney-pack analog (§2.5, or §7.3's
+- [x] Map all 23 sound effects to their closest Kenney-pack analog (§2.5, or §7.3's
       sci-fi-specific pack), edit/trim as needed to match the original's timing/feel where
       that matters (e.g. the jump sound's short punchy length).
-- [ ] Source or compose the 5 looping music tracks (§2.6 flagged this as the one audio
+- [x] Source or compose the 5 looping music tracks (§2.6 flagged this as the one audio
       category without an obvious ready-made CC0 answer — **now closed, see §7.3**).
-- [ ] Swap files under `assets/mario/audio/`, confirm every `sound(...)`/`music(...)` call
+- [x] Swap files under `assets/mario/audio/`, confirm every `sound(...)`/`music(...)` call
       site still resolves (call sites use the constant key, not a hardcoded filename, so
       this is a low-risk swap per
       [MARIO_RESKIN_PLAN.md §4.4.5](MARIO_RESKIN_PLAN.md)).
+
+      **Done 2026-09-12** via `docs/assets/mario-audio/build_audio.py`, sourced from the
+      local Kenney bundle's `Audio/` folder (CC0, same bundle as the image sourcing —
+      confirmed again via its own `Readme.html`, logged in
+      [MARIO_RESKIN_CREDITS.md](MARIO_RESKIN_CREDITS.md)).
+      - **Format**: current assets are mono 16-bit PCM WAV; Kenney's are OGG, and no
+        `ffmpeg` is available in this environment — resolved with Python's `soundfile`
+        (bundled `libsndfile`, which decodes OGG Vorbis directly) rather than shelling out,
+        downmixing every source to mono to match the existing convention. No code changes
+        needed — `MarioResourceManager`'s loader is a fixed `"mario/audio/" + name + ".wav"`
+        path, and every source file this script picked has a matching output extension.
+      - **21 of 23 SFX keys replaced** — `smb_jump-small`/`-super` (Digital Audio's
+        `phaseJump` set), `smb_coin` (`highUp`, a short bright chime), `smb_fireball`/
+        `smb_bowserfire`/`smb_bowserfalls` (Sci-Fi Sounds' laser/explosion families),
+        `smb_breakblock`/`smb_bump`/`smb_kick` (three distinct `impactMetal` variants —
+        same family since all three are "hit a solid metal thing", different numbered
+        takes so they're not identical), `smb_stomp` (Impact Sounds), `smb_powerup`/
+        `smb_powerup_appears` (Sci-Fi Sounds' `forceField`, two variants), `smb_pipe`
+        (`doorOpen`), `smb_flagpole` (`phaserDown`), `smb_pause` (UI Audio `switch`), and
+        the 6 fanfare-style one-shots `smb_1-up`/`smb_gameover`/`smb_stage_clear`/
+        `smb_world_clear`/`smb_mariodie`/`smb_fireworks` (Music Jingles' Retro set, one
+        distinct numbered jingle each, per `KENNEY_ALL_IN_ONE_INDEX.md` §9.2's own
+        recommendation). **`smb_vine`/`smb_warning` deliberately left untouched** —
+        grep-confirmed dead code (loaded, never played, in the original game too per
+        `MARIO_GAME_MECHANICS.md` §15.2), zero player-visible effect either way.
+      - **5 music tracks replaced**, all confirmed CC0 loop-able tracks from Kenney's
+        `Music Loops` pack. `Ground`/`UnderGround` come from the `Retro` subfolder (the
+        pack's own chiptune-styled set, checked first per the existing recommendation);
+        `Castle`/`Star`/`Sea` come from the larger general `Loops` pool since the
+        `Retro` set's remaining 3 tracks (Comedy/Polka/Reggae) all read as lighthearted,
+        a poor fit for fortress tension, an invincibility power moment, or underwater
+        calm. **Mood assignment is title-connotation + a lightweight loudness (RMS)
+        check only, not an actual listen-through** — no audio playback is available in
+        this environment either, the same gap §2.6/§9.1 already flagged for the
+        original research pass. Looping itself needs no per-track authoring: confirmed
+        `MarioGameScreen.java`'s own `currentMusic.setLooping(true)` call handles it in
+        code regardless of source file length, so a 12–48s loop clip is fine where the
+        original assets ran up to 2 minutes.
+      - **Compiled clean** (no code changes). File size: ~13MB total for
+        `assets/mario/audio/`, roughly on par with the original's ~13MB (`Ground.wav`
+        alone shrank from 7.96MB/2:04min to 1.4MB/15s; the other 4 tracks landed close
+        to their originals).
+      - **Not yet listened to end-to-end or on-device tested** — flagging this
+        explicitly since audio is the one asset category this whole doc set has never
+        been able to verify by ear in this environment. Before shipping: actually play
+        each SFX key and all 5 music loops, re-pick any that read as tonally wrong
+        (mood match) or clip/pop at the loop seam.
 
 ### Step R.7 — Full regression pass
 

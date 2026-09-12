@@ -157,6 +157,16 @@ looping background music as needing an external download (HydroGene/Tallbeard on
 and §2.5 mapped SFX against generic Kenney packs without checking a sci-fi-specific one
 closely. **This bundle covers both locally, no extra downloads needed.**
 
+**DONE 2026-09-12**: both the music and SFX plans below were executed as written (exact
+per-key file picks in `docs/assets/mario-audio/build_audio.py`), converted `.ogg` → `.wav`
+via Python's `soundfile` (no `ffmpeg` available in this environment, but `soundfile`'s
+bundled `libsndfile` decodes OGG Vorbis directly — closes this section's own open
+question). See [MARIO_RESKIN_EXECUTION.md Step R.6](MARIO_RESKIN_EXECUTION.md#step-r6--audio)
+for the full write-up, including the one deviation from the plan below (Castle/Star/Sea
+pulled from the general `Loops` pool instead of `Retro`, since Retro's remaining 3 tracks
+after Ground/UnderGround were all lighthearted — a poor mood fit) and the still-open
+caveat that none of this has been confirmed by an actual listen-through yet.
+
 ### 6.1 Looping music (5 needed: Ground/UnderGround/Castle/Star/Sea)
 
 | Pack | Contents |

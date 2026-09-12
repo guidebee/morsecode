@@ -515,9 +515,9 @@ task list (Iron → QuestionMark/Bank → Plater/Helmet → The Warden → Spare
 the rest of tier-3/4 as a checklist). Progress continues to be logged here as each task
 closes.
 
-- [ ] Work down [MARIO_GAME_MECHANICS.md §16.4](MARIO_GAME_MECHANICS.md#164-reskin-priority-by-on-screen-frequency)'s
-      tiers 3 and 4 in order.
-- [ ] For each, decide Path A vs. Path C (§1) individually rather than batching — a
+- [x] Work down [MARIO_GAME_MECHANICS.md §16.4](MARIO_GAME_MECHANICS.md#164-reskin-priority-by-on-screen-frequency)'s
+      tiers 3 and 4 in order. **Done 2026-09-12 — see the full write-up below.**
+- [x] For each, decide Path A vs. Path C (§1) individually rather than batching — a
       one-off enemy used 3 times in the whole game (e.g. `SonOfABuitch`) is a reasonable
       candidate for an AI-assisted first draft with a light cleanup pass; the boss is not.
       **2026-09-08 update, decided:** use the mini-boss from
@@ -589,11 +589,82 @@ closes.
       session; flagging for on-device confirmation per the guide's own step 10 before
       this is considered fully closed.
 
-      **Still open for R.4** (tier-3/4 per §16.4): `turtle_shell_red`/`_flip` variants
-      and `enemy_turtle_patrol` (not reached by World 1's own data, lower priority);
-      Plater/`FlyingTurtle` family (the *walking* enemies, distinct from the Helmet
-      buzzy-beetle family just closed above); and tier-4's long tail of one-off
-      enemies/mechanisms/scenery per [MARIO_RESKIN_JUNIOR_DEV_GUIDE.md §5](MARIO_RESKIN_JUNIOR_DEV_GUIDE.md#5-the-rest-of-tier-34--same-recipe-less-hand-holding).
+      **2026-09-12: two real filename bugs caught and fixed while auditing the rest of
+      the tier-3/4 table** — diffed every `PackMarioAtlas.ASSETS` `sourcePath` against
+      `reskin-source`'s actual filenames (the Golden Rule applied to filenames, not just
+      pixel coordinates) and found the Phase-1 turtle art had never actually been
+      applied: it was saved as `turtle_dark.png`/`turtle_shell.png`/`turtle_shell_dark.png`,
+      but the real `AssetSpec` paths are `turtledark.png`/`TurtelShell.png`/
+      `TurtelShelldark.png` (no underscore; the source's own "Turtel" misspelling) — the
+      packer's lookup is an exact-filename check with silent fallback to the original
+      Nintendo art on a miss, so these 3 regions had been shipping unreskinned since R.4
+      Phase 1 with no error anywhere. Fixed (renamed + `build_r4_phase1.py`/
+      `build_r4_flying_turtle.py` updated), plus 4 more case-only mismatches
+      (`mashroom`/`mashrooms`/`star`/`flower`) that happened to still work on
+      case-insensitive Windows NTFS but violated the guide's own "case-sensitive!"
+      warning — fixed for portability. Re-packed/recompiled clean after each fix.
+
+      **2026-09-12: the rest of the tier-3/4 table done**, closing out R.4 entirely —
+      `build_r4_flying_turtle.py`, `build_r4_procedural_enemies.py`,
+      `build_r4_mechanisms.py`, and `build_r4_scenery.py`:
+      - **FlyingTurtle/FlyingTurtledark/FlyingTurtlePatrol/EnemyTurtlePatrol**: reuse
+        Roller's already-built turtle art directly (confirmed identical frame convention
+        by reading each class), FlyingTurtle variants get a small propeller overlay.
+        `turtle_shell_red` (used by `FlyingTurtlePatrol`) and the `turtle_shell_flip*`
+        family (grep-confirmed dead code, zero references anywhere) are cheap recolors
+        of the existing shell.
+      - **Monkey, SonOfABuitch, SpikeyEgg, Spikey, FishGrey/FishRed, OctoPussy**:
+        procedural pixel art. These are the guide's own flagged AI-gen candidates, but
+        the picked tool (Retro Diffusion) was never purchased/activated and no
+        image-generation tool is reachable from this environment — checked Kenney's
+        Pixel Shmup ships and Pixel Platformer character heads first (neither fit: the
+        ships are top-down-only silhouettes with no left/right facing read, the heads
+        are confirmed too generic per `KENNEY_ALL_IN_ONE_INDEX.md` §5's own verdict),
+        then substituted hand-drawn procedural pixel art, the same technique already
+        used for Iron/QuestionMark/1UP/BossFire.
+      - **Mechanisms/hazards** (`fire_ball`, `lava`/`lava_ball`/`water`, `axe` — a
+        console/switch icon per the index doc's own recommendation, `wall`,
+        `rocket_launcher`(+bw), `bouncer`(+bw)/`spring` — spring reuses the Charge coil
+        motif per the guide's own suggestion, `wooden_bridge`/`white_line`/`chain`/
+        `rope`/`bridge_blocks`, the 6-variant `pump` family + `hori_image`,
+        `plant`/`plant_dark`): procedural riveted-pipe/panel motif, consistent with the
+        established terrain look — no pack anywhere scanned ships plain connective pipe/
+        girder segments at this scale. `explosion` is a real source match (Robot Master
+        Series' own `explode-Sheet`) — its `getbbox()` check caught the sheet's fully
+        faded-out last frame before it shipped as an empty region. `bw_hammer` reuses
+        Monkey's wrench-prop design.
+      - **Scenery/parallax** (`small_castle`/`big_castle`(+bw), `tree`/`bw_tree`, `lift`,
+        `mountain`/`clouds`/`cloudsnight`/`fence`/`fence2`, `sea_background`,
+        `stone_clowd`, the flag/ornament/banner family, `bubble`): the two castles are a
+        layered fortress-with-comms-mast silhouette drawn directly at their real native
+        target resolution (160×160 / 304×352, confirmed from the Nintendo-derived
+        fallback files rather than assumed) instead of upscaled from a smaller source;
+        `tree` is reframed as an antenna/pylon array per the index doc's own
+        recommendation (no style-matched tree source exists anywhere scanned); the 5
+        full 1536×448 parallax backdrops (confirmed standalone per-level images, not
+        overlay layers, via `BackgroundBand.java`'s own doc) use a repeat period that
+        evenly divides 1536 so they tile with no seam; `another_castle_message`/
+        `quest_complete` get on-theme replacement banner text ("SIGNAL LOST"/"SIGNAL
+        RESTORED") rather than blank placeholders, since Ampere's identity/names were
+        already finalized back in Step R.0. `bubble` was missing from the guide's own
+        tier-3/4 table — caught by a final self-audit diffing every `AssetSpec` against
+        `reskin-source` before declaring R.4 done.
+      - **`font`/`info`/`info2` skipped** — grep-confirmed dead code (zero `region(...)`
+        references anywhere in the Java source), matching the guide's own flagged
+        suspicion; not worth building unreachable art for.
+
+      **R.4 is now content-complete: 119/122 `AssetSpec`s sourced from the reskin
+      overlay** (the remaining 3 are the confirmed-dead `font`/`info`/`info2`), same
+      page/region counts as before every single step above, compiled clean throughout.
+      **Not yet on-device tested** — no test device was available in this session; per
+      the guide's own step 10, an on-device pass (all 8 worlds, since this pass touched
+      every remaining category) is the one remaining gate before R.4 can be marked fully
+      closed. Given the sheer number of new procedural assets in this pass, prioritize
+      spot-checking: Boss (does the mini-boss actually read as one coherent creature in
+      motion, not just in a static strip), the parallax backdrops (do they scroll
+      without a visible seam at the 1536px wrap point — confirmed by construction here,
+      not by actually watching it scroll), and Helmet/HelmetShell (does the
+      open/close-shell "walk" read as movement rather than static jitter).
 
 ### Step R.5 — Scenery, backdrops, HUD, UI text
 

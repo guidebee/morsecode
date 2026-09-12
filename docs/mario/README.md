@@ -28,8 +28,15 @@ depends on what you're doing:
   **[MARIO_PORT_PLAN_PHASE2.md](MARIO_PORT_PLAN_PHASE2.md)** — the historical record of
   how the port was actually built, step by step, with the design rationale behind
   decisions the mechanics doc now just states as fact. Read these for *why*, not *what*.
+- **[MARIO_BUG_FIXES.md](MARIO_BUG_FIXES.md)** — gameplay bugs found and fixed after the
+  initial port, split into pure code fixes and sprite/rendering fixes (the latter flagged
+  for reskin relevance — see below).
 
 ## I'm working on the visual reskin
+- **[MARIO_BUG_FIXES.md §2](MARIO_BUG_FIXES.md#2-spriterendering-fixes--relevant-to-the-reskin)**
+  — sprite/rendering bugs whose fix changes an assumption reskin art needs to follow
+  (currently: `Rocket`/`FishyGround`'s default facing direction and how their right-facing
+  flip actually works). Check this before reskinning either of those two.
 - **[MARIO_RESKIN_PLAN.md](MARIO_RESKIN_PLAN.md)** — the decisions and rationale: new
   identity direction, the `ART_SCALE` resolution architecture, ordering, risks.
 - **[MARIO_RESKIN_EXECUTION.md](MARIO_RESKIN_EXECUTION.md)** — the actionable companion:

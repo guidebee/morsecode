@@ -23,8 +23,9 @@ import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
  * {@code Mario.java}'s own case 19 vs. its ambient-bomb block) "bw_rocket_launcher")
  * region for its own sprite - not a separate asset - matching the original's
  * own {@code bsLoader.getStoredImages("RocketLauncher"/"BWRocketLauncher")[3]}.
- * Flipped horizontally for a rightward launch, matching the original's own
- * {@code ImageUtil.flipHorizontal}.
+ * Mirrored for a rightward launch, matching the original's own {@code
+ * ImageUtil.flipHorizontal} - see the constructor's own doc for why that's a
+ * {@link #setTransform} rather than a pre-flipped region.
  */
 public class Rocket extends Enemy {
 
@@ -38,19 +39,26 @@ public class Rocket extends Enemy {
     }
 
     public Rocket(float x, float y, boolean movingRight, boolean blackAndWhite, int tileSize) {
-        super(regionFor(movingRight, blackAndWhite, tileSize), tileSize, tileSize, x, y, movingRight);
+        super(regionFor(blackAndWhite, tileSize), tileSize, tileSize, x, y, movingRight);
         this.tileSize = tileSize;
+        // The "rocket_launcher" strip's frame 3 faces left as drawn. Flipping
+        // the region itself before handing it to Sprite's constructor (as
+        // this used to do) doesn't work: Sprite's constructor immediately
+        // re-slices it via TextureRegion.split(), which - per that method's
+        // own doc - always rebuilds sub-regions from raw pixel coordinates
+        // and silently discards any flip already applied to the region being
+        // split. That left every rightward-fired rocket rendering with the
+        // original left-facing art no matter what. Flipping via the Sprite's
+        // own mirror transform instead applies at draw time, after slicing,
+        // so it actually takes effect.
+        if (movingRight) {
+            setTransform(TRANS_MIRROR);
+        }
     }
 
-    private static TextureRegion regionFor(boolean movingRight, boolean blackAndWhite, int tileSize) {
-        TextureRegion frame = MarioResourceManager.region(blackAndWhite ? "bw_rocket_launcher" : "rocket_launcher")
+    private static TextureRegion regionFor(boolean blackAndWhite, int tileSize) {
+        return MarioResourceManager.region(blackAndWhite ? "bw_rocket_launcher" : "rocket_launcher")
                 .split(tileSize, tileSize)[3][0];
-        if (movingRight) {
-            TextureRegion flipped = new TextureRegion(frame);
-            flipped.flip(true, false);
-            return flipped;
-        }
-        return frame;
     }
 
     @Override

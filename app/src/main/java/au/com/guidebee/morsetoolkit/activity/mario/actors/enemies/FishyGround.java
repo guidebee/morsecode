@@ -1,7 +1,5 @@
 package au.com.guidebee.morsetoolkit.activity.mario.actors.enemies;
 
-import com.guidebee.game.graphics.TextureRegion;
-
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.player.Player;
 import au.com.guidebee.morsetoolkit.activity.mario.fx.FallingDeadSprite;
@@ -19,8 +17,9 @@ import au.com.guidebee.morsetoolkit.activity.mario.fx.FallingDeadSprite;
  *
  * <p>Always uses the "FishRed" art regardless of {@code type} (confirmed by
  * reading the original constructor - both direction branches load "FishRed",
- * never "FishGrey"), flipped horizontally for a rightward launch - same
- * convention as {@link Rocket}'s own {@code regionFor}.
+ * never "FishGrey"), mirrored for a rightward launch - see the constructor's
+ * own doc for why that's a {@link #setTransform} rather than a pre-flipped
+ * region, same fix {@link Rocket} needed.
  *
  * <p>The original's despawn check also ORs in two screen-relative
  * off-either-side conditions; skipped here since the vertical arc (spawned
@@ -46,20 +45,21 @@ public class FishyGround extends Enemy {
     private boolean showingFirstFrame = true;
 
     public FishyGround(float x, float y, boolean movingRight, float speedMagnitude, int tileSize) {
-        super(regionFor(movingRight), tileSize, tileSize, x, y, movingRight);
+        super(MarioResourceManager.region("fish_red"), tileSize, tileSize, x, y, movingRight);
         this.speedX = movingRight ? speedMagnitude : -speedMagnitude;
         this.tileSize = tileSize;
-        setFrame(0);
-    }
-
-    private static TextureRegion regionFor(boolean movingRight) {
-        TextureRegion region = MarioResourceManager.region("fish_red");
+        // Flipping the region before handing it to Sprite's constructor (as
+        // this used to do, mirroring Rocket's own former mistake - see that
+        // class's constructor doc) never actually took effect: Sprite's
+        // constructor immediately re-slices the region via
+        // TextureRegion.split(), which always rebuilds sub-regions from raw
+        // pixel coordinates and discards any flip already applied to the
+        // region being split. Mirroring via the Sprite's own transform
+        // instead applies at draw time, after slicing, so it actually works.
         if (movingRight) {
-            TextureRegion flipped = new TextureRegion(region);
-            flipped.flip(true, false);
-            return flipped;
+            setTransform(TRANS_MIRROR);
         }
-        return region;
+        setFrame(0);
     }
 
     @Override
@@ -97,7 +97,8 @@ public class FishyGround extends Enemy {
     @Override
     public void onDefeatedByProjectile() {
         MarioResourceManager.sound("smb_kick").play();
-        FallingDeadSprite.spawn(getX(), getY(), regionFor(movingRight).split(tileSize, tileSize)[0][0]);
+        FallingDeadSprite.spawn(getX(), getY(),
+                MarioResourceManager.region("fish_red").split(tileSize, tileSize)[0][0]);
         deactivate();
     }
 }

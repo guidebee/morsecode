@@ -4,6 +4,7 @@ import java.util.Random;
 
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.player.Player;
+import au.com.guidebee.morsetoolkit.activity.mario.fx.DirectFallingSprite;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
 
 /**
@@ -78,6 +79,21 @@ public class SonOfABuitch extends Enemy {
         SpikeyEgg egg = new SpikeyEgg(getX(), getY(), true, tileSize);
         MarioContext.world().addEnemy(egg);
         MarioContext.spawn(egg);
+    }
+
+    /**
+     * Ported from {@code MarioJumpedOnEnemy()}: unlike the {@link Enemy}
+     * default (a plain {@link #deactivate}), a stomped Lakitu falls straight
+     * down out of view - the original passes no sound of its own here (the
+     * generic stomp bounce/sound already covers it, same as every ordinary
+     * enemy - see {@code Player#bounceOffEnemy}'s own doc).
+     */
+    @Override
+    public boolean onStomped(Player player) {
+        DirectFallingSprite.spawn(getX(), getY(),
+                MarioResourceManager.region("son_of_a_buitch").split(tileSize, (tileSize * 3) / 2)[0][0]);
+        deactivate();
+        return true;
     }
 
     @Override

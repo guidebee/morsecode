@@ -25,8 +25,7 @@ import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
  * walk-right cycle, see that class's own frame-layout doc); a vertical entry
  * shows a single static standing pose while sliding down, also matching the
  * original (its own equivalent is a plain, unanimated image snapshot - which
- * pose it froze on wasn't meaningful enough to reproduce exactly, the same
- * simplification {@link MarioGhost} already makes for its own snapshot).
+ * pose it froze on wasn't meaningful enough to reproduce exactly).
  */
 public class PipeEntryAnimation extends Sprite {
 
@@ -34,7 +33,7 @@ public class PipeEntryAnimation extends Sprite {
     private static final float ANIM_FRAME_INTERVAL = 0.2f;
     /** Walk-right cycle - see {@link Player}'s own frame-layout doc. */
     private static final int[] WALK_FRAMES = {4, 5, 6};
-    /** Standing-right pose - see {@link MarioGhost}'s own matching frame index. */
+    /** Standing-right pose - matches {@link Player}'s own idle-right frame index. */
     private static final int STANDING_FRAME = 0;
 
     private final boolean horizontal;

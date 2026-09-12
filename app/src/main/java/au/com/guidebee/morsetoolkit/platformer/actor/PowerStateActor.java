@@ -71,8 +71,25 @@ public abstract class PowerStateActor<S extends Enum<S>> extends Layer {
         applyMovement(delta);
     }
 
+    /**
+     * Unlike {@code microedition.Sprite#paint} (whose own {@code final}
+     * implementation checks {@link #isVisible()} before drawing anything),
+     * this class draws directly via {@link #paintPowerState} instead of
+     * composing a {@code Sprite} (subclasses like Mario's own {@code Player}
+     * need to swap frame size/atlas at runtime for growth/shrink, which
+     * {@code Sprite}'s own construction-time-bound region doesn't support),
+     * so it has to make that same visibility check itself. Without it,
+     * {@link #setVisible}{@code (false)} - used by e.g. a game's own
+     * pipe-entry/boss-cutscene sequences to hide the real player behind a
+     * stand-in while he's driven by a scripted command - silently did
+     * nothing: the player kept right on rendering, in *addition to* whatever
+     * stand-in was spawned in his place.
+     */
     @Override
     public void paint(Batch batch) {
+        if (!isVisible()) {
+            return;
+        }
         paintPowerState(batch);
     }
 

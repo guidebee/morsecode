@@ -373,6 +373,34 @@ next until the current one is checked off.
       **Confirmed 2026-09-08 on-device: fix verified, works fine** - Ampere now visibly
       grows/re-colors correctly through Mushroom/Fire Flower/shrink. Step R.2 is closed.
 
+      **2026-09-12: real bug found from an actual in-game report - jumping to hit an Iron
+      block (or anything solid overhead) showed a big visible gap between Ampere and the
+      block, as if he stopped well short of actually touching it.** Confirmed this is not a
+      collision bug: `Iron`/`InteractiveBrick`'s hitbox is byte-identical to `main`'s (same
+      `tileSize`-derived width/height, same `TileWorld`/`SolidTile` code, no `ART_SCALE`
+      effect at the current `ART_SCALE=1`), and the original Nintendo-derived `Player.png`/
+      `BigPlayer.png` fill every single frame's cell edge-to-edge with zero transparent
+      margin (confirmed via `getbbox()` against every frame in the fallback source) - so
+      `main`, which uses that art, never had anything to fix here. Root cause was in
+      `build_player_sheets.py`'s own `fit_into`/`fit_fill_height` helpers: the Robot Master
+      Series source frames they scale from carry real internal padding of their own (the
+      jump-apex frame `robo1jump-Sheet[...].png` frame 3, e.g., is only ink from y=15 to
+      y=47 of its 48px-tall cell - the top 31% is transparent), and neither helper cropped
+      to the frame's own content bbox before scaling, so that padding rode straight through
+      into the packed `player.png`/`BigPlayer.png` - worst on the jump pose specifically
+      (confirmed: Ampere's jump frame had a 22px empty band at the top of Big's 64px-tall
+      cell, next to zero for the original). The exact "Golden Rule" crop-before-scale
+      pattern `place_content()` already uses elsewhere in this project's own build scripts
+      was simply never applied to the player sheets. **Fix**: added `crop_to_content()` to
+      `build_player_sheets.py`, called at the top of both `fit_into`/`fit_fill_height`.
+      Regenerated `player.png`/`BigPlayer.png`/`FirePlayer.png`, then re-ran
+      `build_transitions_and_recolors.py` (re-derives every color/star/transition variant
+      from those three) to propagate the fix everywhere. Small Mario's jump pose now fills
+      its cell exactly like the original (0px top gap); Big/Fire's own `fit_fill_height`
+      keeps its already-deliberate small margin (~8% of cell height, unchanged design
+      intent) instead of the previous accidental 34%. Re-packed (still 117/122, same
+      page/region counts) and recompiled clean.
+
 **2026-09-08 update, decided:** source this step's base art from
 [§7.1](#71-player--enemies--boss--two-strong-all-in-one-candidates)'s **"Robot Master
 Series – Base Asset Pack,"** not "Robot Platform Pack" — it's the only one of the two with

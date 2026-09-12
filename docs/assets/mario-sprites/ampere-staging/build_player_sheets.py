@@ -27,9 +27,28 @@ def load_row_frames(path, frame_w, frame_h):
     return [im.crop((i * frame_w, 0, (i + 1) * frame_w, frame_h)) for i in range(n)]
 
 
+def crop_to_content(frame):
+    """Crop to the frame's own tight alpha bounding box first - the source
+    pack's raw frames (idle/run/jump/dash) carry significant internal
+    transparent padding (e.g. robo1jump-Sheet's own jump-apex frame is only
+    ink from y=15 to y=47 of its 48px-tall cell), unlike the original
+    Nintendo-derived art this replaces, which always fills its frame
+    edge-to-edge (confirmed: every Player.png/BigPlayer.png frame there has
+    bbox == the full cell). Scaling the raw, padded frame as-is (as this
+    function used to) carries that padding straight through - most visibly
+    on the jump pose, where it read as Mario's head stopping visibly short
+    of a block he'd otherwise be touching ("big gap between Mario and the
+    block" - see MARIO_BUG_FIXES.md's own doc on why this isn't a collision
+    bug: the hitbox already matches the original exactly, only the art was
+    inset within it)."""
+    bbox = frame.getbbox()
+    return frame.crop(bbox) if bbox else frame
+
+
 def fit_into(frame, cell_w, cell_h, anchor="center"):
     """Nearest-neighbour scale preserving aspect ratio, then pad onto a
     transparent cell_w x cell_h canvas. anchor='center' or 'bottom'."""
+    frame = crop_to_content(frame)
     fw, fh = frame.size
     scale = min(cell_w / fw, cell_h / fh)
     nw, nh = max(1, round(fw * scale)), max(1, round(fh * scale))
@@ -56,6 +75,7 @@ def fit_fill_height(frame, cell_w, cell_h, fill=0.92):
     cell_w - paste() clips that overflow at the cell edges, which reads fine
     for pixel art (a visual bounding box a bit wider than the hitbox is
     normal) rather than shrinking the whole character back down to fit."""
+    frame = crop_to_content(frame)
     fw, fh = frame.size
     scale = (fill * cell_h) / fh
     nw, nh = max(1, round(fw * scale)), max(1, round(fh * scale))

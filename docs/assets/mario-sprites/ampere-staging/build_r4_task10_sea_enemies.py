@@ -39,5 +39,5 @@ if __name__ == "__main__":
 
     build_sheet(32, 32, fish_grey, 2, 1, f"{OUT}/FishGrey.png")
     build_sheet(32, 32, fish_red, 2, 1, f"{OUT}/FishRed.png")
-    build_sheet(32, 48, octo, 2, 1, f"{OUT}/Octopussy.png")
+    build_sheet(32, 48, octo, 2, 1, f"{OUT}/OctoPussy.png")
     print("wrote FishGrey.png, FishRed.png, Octopussy.png")

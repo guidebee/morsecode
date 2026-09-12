@@ -144,9 +144,24 @@ def make_clowd_and_flags():
     stone = Image.open(f"{OUT}/stone_Sea.png").convert("RGBA")
     save(tint(stone, (180, 186, 194), 0.28), "stone_Clowd.png")
 
-    ind75 = place_content(industrial_tile(75), 4, 288, fill=1.0, anchor="center")
-    save(ind75, "Flag.png")
-    save(tint(ind75, (154, 162, 178), 0.4), "FlagFence.png")
+    # BUG FIX (found by a full reskin-source content-bbox audit): place_content
+    # crops to the source's tight content bbox then scales UNIFORMLY by
+    # whichever dimension is more limiting - for a roughly-square ~12x18
+    # source going into a 4x288 (1:72 aspect) target, width is catastrophically
+    # limiting (scale ~= 4/12), so the "flag" pole rendered as a single ~4x6px
+    # dot near vertical-center instead of a visible pole, leaving the whole
+    # rest of the 288px-tall canvas fully transparent. place_content is only
+    # correct for roughly-square icon cells, not an extreme-aspect-ratio rod.
+    # Fixed by tiling a small opaque swatch of the source vertically instead.
+    beam = industrial_tile(75)
+    beam_content = beam.crop(beam.getbbox())  # drop the source's own transparent margins
+    swatch = beam_content.resize((4, 4), Image.NEAREST)
+    rod = Image.new("RGBA", (4, 288), (0, 0, 0, 0))
+    for y in range(0, 288, 4):
+        rod.paste(swatch, (0, y), swatch)
+    assert rod.getbbox() == (0, 0, 4, 288), f"flag rod should be fully opaque top-to-bottom, got {rod.getbbox()}"
+    save(rod, "Flag.png")
+    save(tint(rod, (154, 162, 178), 0.4), "FlagFence.png")
 
     orb = place_content(industrial_tile(83), 32, 32, fill=0.9, anchor="center")
     save(orb, "FlagSphere.png")

@@ -35,7 +35,21 @@ def boss_frames():
     # 3x2 layout, row-major indices:
     # 0/1 left idle, 2 spit pose, 4/5 right idle (Boss.java).
     # Index 3 is currently unused by code; keep a coherent mirrored spit pose.
-    return [left0, left1, spit, left_spit, right0, right1]
+    #
+    # BUG FIX (found by a reskin-source content-bbox audit - row 1 was
+    # entirely empty, getbbox()==None for all 3 cells): build_sheet's flat-
+    # list shorthand only fills row 0 ({(i, 0): frame for i, frame in
+    # enumerate(list)}, per its own docstring) - it does NOT wrap into
+    # additional rows just because `rows=2` is passed. Returning a flat
+    # 6-item list here silently pasted frames 3/4/5 at columns 3/4/5 of row
+    # 0, entirely outside the 192px-wide (3-column) canvas, dropping the
+    # ENTIRE look-right idle pair Boss.java actually reads (frames 4/5) -
+    # the boss was invisible whenever facing right. Return the proper
+    # {(col, row): frame} mapping instead of a flat list.
+    return {
+        (0, 0): left0, (1, 0): left1, (2, 0): spit,
+        (0, 1): left_spit, (1, 1): right0, (2, 1): right1,
+    }
 
 
 def boss_fire_frames():

@@ -30,7 +30,17 @@ def monkey_frames():
     # 3x2 row-major grid expected by Monkey.java:
     # 0/1 = left idle cycle, 2 = left throw pose,
     # 3 = right throw pose, 4/5 = right idle cycle.
-    return [left0, left1, left_throw, right_throw, right0, right1]
+    #
+    # BUG FIX (same root cause as Boss.png - see that file's own note):
+    # build_sheet's flat-list shorthand only fills row 0. A flat 6-item
+    # list here silently dropped the entire row-1 intent (right_throw,
+    # right0, right1 - Monkey.java's own look-right idle pair), making the
+    # monkey invisible whenever facing right. Return the explicit
+    # {(col, row): frame} mapping instead.
+    return {
+        (0, 0): left0, (1, 0): left1, (2, 0): left_throw,
+        (0, 1): right_throw, (1, 1): right0, (2, 1): right1,
+    }
 
 
 if __name__ == "__main__":

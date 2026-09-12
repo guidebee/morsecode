@@ -6,6 +6,7 @@ import au.com.guidebee.morsetoolkit.activity.mario.MarioConfiguration;
 import au.com.guidebee.morsetoolkit.activity.mario.MarioResourceManager;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.player.Player;
 import au.com.guidebee.morsetoolkit.activity.mario.actors.projectiles.Hammer;
+import au.com.guidebee.morsetoolkit.activity.mario.fx.DirectFallingSprite;
 import au.com.guidebee.morsetoolkit.activity.mario.fx.FallingDeadSprite;
 import au.com.guidebee.morsetoolkit.activity.mario.world.MarioContext;
 import au.com.guidebee.morsetoolkit.platformer.core.TileMovement;
@@ -15,10 +16,10 @@ import au.com.guidebee.morsetoolkit.platformer.core.TileMovement;
  * a tight +-1 tile range around its spawn, jumping occasionally, and throws
  * a {@link Hammer} at Mario on a random timer (see the 3-arg
  * {@link Hammer#Hammer(float, float, boolean)} constructor, built for
- * exactly this). Every touch reaction (stomp deactivates it, side-touch
- * hurts unless starred) already matches {@link Enemy}'s own defaults, so
- * only {@link #onDefeatedByProjectile} needs overriding, to add the
- * original's kick sound.
+ * exactly this). A stomp sends it drifting/falling away (see {@link
+ * #onStomped}, ported from {@code MarioJumpedOnEnemy()}, not the {@link
+ * Enemy} default); a side-touch hurts Mario unless starred (the default, not
+ * overridden).
  *
  * <p>Skips the original's {@code ComeDown}/{@code setYloc} interaction - a
  * mechanism for some *external* system to override this enemy's y position,
@@ -113,6 +114,22 @@ public class Monkey extends Enemy {
         }
         boolean lookLeft = player.getX() < getX();
         setFrame((lookLeft ? 0 : 4) + (showingFirstFrame ? 0 : 1));
+    }
+
+    /**
+     * Ported from {@code MarioJumpedOnEnemy()}: unlike the {@link Enemy}
+     * default (a plain {@link #deactivate}), a stomped monkey drifts away
+     * while falling - the original passes no sound of its own here (the
+     * generic stomp bounce/sound already covers it, same as every ordinary
+     * enemy - see {@code Player#bounceOffEnemy}'s own doc).
+     */
+    @Override
+    public boolean onStomped(Player player) {
+        boolean driftRight = player.getX() >= getX();
+        DirectFallingSprite.spawnDrifting(getX(), getY(),
+                MarioResourceManager.region("monkey").split(tileSize, (tileSize * 3) / 2)[0][0], driftRight);
+        deactivate();
+        return true;
     }
 
     @Override

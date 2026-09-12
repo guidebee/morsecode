@@ -72,4 +72,22 @@ public abstract class InteractiveBrick extends Sprite implements SolidTile {
      */
     public void hitFromBelow(Player player) {
     }
+
+    /**
+     * Whether this brick blocks landing on top of it or walking into its
+     * side - true for every brick except {@link InvisibleBrck} before it's
+     * been triggered, which overrides this to false. Ported from {@code
+     * Collusion/Player_Brick.collided}'s own {@code if (b.getID() != 17)}
+     * guard wrapped around every directional collision branch *except* the
+     * hit-from-below one - an invisible brick reacts to nothing but a jump
+     * into its underside until that turns it into a real {@link Iron} block.
+     * {@link SolidTile#isActive} alone can't express this: it's still {@code
+     * true} the whole time (so the hit-from-below check, which shares the
+     * same generic {@code containsImpassableArea}/{@code findActiveBrickAt}
+     * machinery, can still find it), so the landing/horizontal call sites in
+     * {@code Player}'s own movement code check this separately instead.
+     */
+    public boolean blocksLanding() {
+        return true;
+    }
 }

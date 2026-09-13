@@ -7,6 +7,23 @@ backends (GGE never had them and won't get them), no 3D pipeline, no engine
 rewrite onto raw `com.badlogic.gdx` — see [Strategy decision](#strategy-decision)
 for why.
 
+**Test fixtures used by this plan (updated 2026-09-13):** two standalone
+GuidebeeGameEngine tutorial repos exist as sibling checkouts —
+`C:\workspace\Box2D` (the official GGE Box2D tutorial series, 11 physics
+demo stages) and `C:\workspace\Raindrop` (the official GGE general-engine
+tutorial series — scene graph, collision, camera/viewport, MIDP-style API,
+tiled maps). Both import `com.guidebee.game.*` directly (not a renamed/older
+API — `com.mapdigit.game.tutorial.*` in Raindrop is just the sample app's own
+package, its engine imports are already `com.guidebee.game.*`), so both are
+**source-compatible with the current `gameengine` module as-is**. They are
+old, dormant Gradle projects (Gradle 2.4, AGP 1.3.0, `jcenter()`, a dead
+`com.guidebee:game-engine:0.9.x` Bintray dependency) and each only wires up
+one demo screen per manifest even though the source tree contains several —
+see [5.4](#54-box2d-regression-suite-box2d-tutorial-repo) and
+[5.5](#55-general-engine-regression-suite-raindrop-tutorial-repo) for how
+this plan turns them into living regression suites instead of building a
+regression harness from scratch.
+
 ---
 
 ## 1. Current-state audit
@@ -88,13 +105,64 @@ Everything below assumes **(A)**.
 4. Write down current device test matrix (min: one API 21-23 device or
    emulator, one API 29-31, one current API 35/36 device, one x86_64 emulator
    for CI) — see [Section 7](#7-device-test-matrix).
-5. Spot-check `decoder/` for any accidental dependency on `gameengine` (it's
-   listed as a sibling module in `settings.gradle`); if none, exclude it from
+5. Spot-check `decoder/` for any accidental dependency on `gameengine` — it's
+   listed as a sibling module in `settings.gradle`, but is a plain
+   `java-library`/`kotlin.jvm` module with no Android and no `gameengine`
+   dependency (confirmed by reading `decoder/build.gradle`). Excluded from
    further regression scope.
+6. **Import and modernize the two tutorial repos as in-repo regression
+   fixtures** (new step, added after finding `C:\workspace\Box2D` and
+   `C:\workspace\Raindrop`). Do this in Phase 0, not Phase 4, so the Box2D
+   regression suite exists *before* any engine code changes and can itself be
+   validated against the pre-upgrade engine first:
+   - Copy each repo's `app/src/main/java`, `app/src/main/assets` (and `res/`
+     if present) into two new modules inside the `morsecode` repo, e.g.
+     `testapps/box2d-tutorial/` and `testapps/raindrop-tutorial/`, and add
+     `include ':testapps:box2d-tutorial'` / `include ':testapps:raindrop-tutorial'`
+     to `settings.gradle`. Copying the source into `morsecode`'s own git
+     history (rather than a cross-repo relative-path dependency on
+     `C:\workspace\Box2D`/`C:\workspace\Raindrop`, which may not exist at that
+     path on another machine or CI) is what makes these reusable/durable
+     regression fixtures instead of a one-off local convenience.
+   - Rewrite each new module's `build.gradle` from scratch, modeled on
+     `gameengine/build.gradle`'s Android config (`compileSdk 37`,
+     `minSdk 21`, `targetSdk 37`, Java 17, no Compose needed): drop the dead
+     `jcenter()`/`compile 'com.guidebee:game-engine:0.9.x'` dependency
+     entirely and replace it with `implementation project(':gameengine')` —
+     this is what makes the tutorial apps build against **the exact in-tree
+     engine code this plan is modifying**, giving immediate feedback on every
+     phase rather than testing against a frozen published artifact.
+   - Both repos' manifests only declare **one** launcher `<activity>` even
+     though the source tree contains several dormant Activities per lesson
+     (Box2D repo: `Box2DGameActivity` is the only one, but
+     `Box2DGameScene`'s constructor hardcodes a single stage, `BulletStage`;
+     Raindrop: only `.drop.DropGameActivity` is manifest-registered, while
+     `basics.HelloWorldActivity`, `coords.CoordinateGameActivity`, and
+     `microedition.DropGameActivity` exist as unreferenced source). Add a
+     small picker so every lesson is actually reachable in one APK instead of
+     requiring source edits to switch demos:
+     - **Box2D tutorial app:** add a plain launcher list Activity naming the
+       11 stages (`BasicBox2DStage`, `BodyTypeStage`, `BulletStage`,
+       `CollisionStage`, `ForceAndImpulseStage`, `JointsOverviewStage`,
+       `RayCastStage`, `SelfControlStage`, `SensorStage`, `ShapeTypeStage`,
+       plus the base `Box2DGameStage`), passing the chosen class name as an
+       Intent extra to `Box2DGameActivity`; change `Box2DGameScene` to
+       instantiate the requested stage (reflection or a simple `switch`)
+       instead of hardcoding `new BulletStage()`.
+     - **Raindrop tutorial app:** add manifest entries for the three dormant
+       Activities alongside the existing `DropGameActivity`, plus a similar
+       launcher list, so `basics`/`coords`/`drop`/`microedition` are all
+       reachable from one installed APK.
+   - Confirm both modernized apps build and run **unchanged in behavior**
+     against the current, pre-upgrade `gameengine` before moving on — this is
+     the "does the fixture itself work" check, independent of the upgrade.
 
 **Exit criteria:** baseline APK + baseline perf numbers captured and committed
 to `docs/` (e.g. `docs/perf-baseline-2026-09.md`) so later phases have
-something to diff against.
+something to diff against; `testapps/box2d-tutorial` and
+`testapps/raindrop-tutorial` build, install, and every lesson/stage is
+reachable and behaves correctly against the pre-upgrade engine (this baseline
+run doubles as the golden reference for [5.4](#54-box2d-regression-suite-box2d-tutorial-repo)).
 
 ---
 
@@ -273,11 +341,11 @@ phase is a **JNI wrapper + native build re-sync**, not a physics-API migration.
    is sensitive to compiler optimization flags affecting floating-point
    codegen; a stricter `-O2`/LTO setting on the new NDK could subtly change
    simulation results. Confirm with the regression suite in
-   [5.4](#54-box2d-regression-suite).
+   [5.4](#54-box2d-regression-suite-box2d-tutorial-repo).
 
-**Exit criteria:** Box2D regression suite (below) passes bit-for-bit or
-visually-identical against the Phase-0 baseline; native build has zero new
-warnings.
+**Exit criteria:** all 11 stages in `testapps/box2d-tutorial` (5.4) pass
+bit-for-bit or visually-identical against the Phase-0 baseline; native build
+has zero new warnings.
 
 ---
 
@@ -319,7 +387,7 @@ warnings.
 | Level | What | When |
 |---|---|---|
 | Native build smoke | `./gradlew :gameengine:assembleDebug` on clean checkout, all 3 target ABIs | Every phase, every commit |
-| Instrumented/unit | Any existing `gameengine` unit tests (math, collision helpers) + new Box2D regression harness (5.4) | Every phase |
+| Instrumented/unit | Any existing `gameengine` unit tests (math, collision helpers) + the Box2D (5.4) and general-engine (5.5) tutorial-app regression suites | Every phase |
 | Manual per-game regression checklist | Full playthrough checklist per game (5.2) | End of every phase, on the full device matrix |
 | Perf capture | `dumpsys gfxinfo`/GPU Inspector frame-time capture, diffed against Phase-0 baseline | End of Phase 3, end of Phase 4, final sign-off |
 | Visual regression | Screenshot diff (menu screen + one representative gameplay frame) per game | End of Phase 3 (GL pipeline changes are the highest visual-risk phase) |
@@ -390,37 +458,83 @@ all 5 phases are merged.
 - [ ] Edge-to-edge / gesture-nav / cutout handling correct on an API 35+
       device specifically (Phase 2's target).
 
-### 5.4 Box2D regression suite
+### 5.4 Box2D regression suite (Box2D tutorial repo)
 
-Because none of the 3 games exercise `com.guidebee.game.physics` directly,
-build a **small standalone test harness** (a 4th, throwaway `GameActivity`
-under `gameengine`'s own `androidTest`/a debug-only test screen, not shipped
-in `app`) that:
+Because none of the 3 shipped games exercise `com.guidebee.game.physics`
+directly, this plan **no longer proposes building a from-scratch test
+harness** — `C:\workspace\Box2D` already is one, and a much better one than
+anything worth hand-rolling: it's the official GGE Box2D tutorial series, and
+its 11 stage classes (`gameengine`-relative names, all under
+`com.guidebee.game.tutorial.box2d.stage`) map directly onto the physics
+subsystems that matter for this upgrade:
 
-1. Creates a `World`, drops a handful of dynamic bodies (box + circle) onto a
-   static ground body, steps the simulation for a fixed number of frames with
-   a fixed timestep, and records final positions/velocities.
-2. Exercises at least one of each joint type actually compiled into the
-   native lib (`DistanceJoint`, `RevoluteJoint`, `WeldJoint`, `MouseJoint`,
-   `WheelJoint` — all present per `Android.mk`'s source list) since these are
-   exactly the areas where a JNI-glue bug (dangling native pointer, wrong
-   struct layout after a recompile) would silently corrupt state rather than
-   crash.
-3. Exercises `Stage`/`Actor`'s built-in Box2D integration
-   (`scene/collision/SensorListener`) with a simple sensor-overlap scenario,
-   since that's the actual code path the engine ships that the 3 games don't
-   test.
-4. Captures the final body positions/velocities from the **pre-upgrade**
-   build (Phase 0 baseline) as golden values, then re-runs the identical
-   harness after Phase 4 and asserts equality within a small floating-point
-   epsilon. A meaningful drift here — beyond float noise — indicates the
-   solver iteration constants or compiler flags changed simulation behavior
-   and needs investigation before merging.
+| Stage | Exercises |
+|---|---|
+| `BasicBox2DStage` | World creation, basic body/fixture setup |
+| `BodyTypeStage` | Static / kinematic / dynamic body type behavior |
+| `ShapeTypeStage` | Circle, polygon, edge, chain shapes |
+| `ForceAndImpulseStage` | `applyForce`/`applyLinearImpulse`-style APIs |
+| `CollisionStage` | Contact detection + collision filtering (`Filter`) |
+| `SensorStage` | Sensor fixtures / overlap-without-collision |
+| `RayCastStage` | Raycast queries against the world |
+| `JointsOverviewStage` | `MotorJoint` (confirmed present, see below) — and, per its actor set, the joint types the wiki's "Joints" lesson covers |
+| `SelfControlStage` | Player-controlled body (`Player`/`TankWithRadar`-style actors) — direct velocity/position control interacting with the solver |
+| `BulletStage` | Continuous collision detection (CCD) / fast-moving-body tunneling prevention — the current HEAD's default stage in `Box2DGameScene` |
+| `Box2DGameStage` | Base class the others extend — shared world-stepping/rendering plumbing |
 
-**Exit criteria for Phase 4 specifically:** this harness's golden-value
-comparison passes; only then is the Box2D native upgrade considered safe to
-ship, independent of the 3 games showing no visible symptom (they wouldn't,
-since none of them use it — the harness is the only signal).
+This is broader and more realistic coverage (real `Actor`/`Stage`
+integration, real joints, real fixture filters) than a synthetic harness
+would have been, and it already exists — the work is packaging it as a
+runnable regression suite, not authoring test scenarios from scratch:
+
+1. Complete the Phase 0 import (`testapps/box2d-tutorial`) and its stage
+   picker so all 11 stages are individually launchable.
+2. At the **Phase 0 baseline**, for each of the 11 stages, capture a short
+   recorded reference: either (a) a screen-recorded video of ~10s of
+   interaction per stage (cheapest, good for the visually-obvious failures —
+   a body falling through the ground, a joint not constraining, sensors not
+   firing), and/or (b) instrument each `*Stage` to log body
+   position/velocity/angle every N steps to `logcat`, captured as a golden
+   text file per stage. (b) is strictly more useful for Phase 4 specifically
+   since it gives a numeric diff, not just an eyeball check — prefer adding
+   it if time allows, but (a) alone is enough to unblock the plan.
+3. After Phase 4 (Box2D native/JNI re-sync), re-run all 11 stages on the
+   same device(s) and diff against the Phase 0 golden reference: same visual
+   behavior, and (if (b) was done) body state logs matching within a small
+   floating-point epsilon.
+4. Specifically watch `JointsOverviewStage`/`SelfControlStage` for JNI-glue
+   correctness issues (dangling native pointers, stale local refs across
+   `World.step()` callbacks, wrong struct layout after a recompile) — these
+   fail by silently corrupting simulation state rather than crashing, which
+   is exactly why a numeric golden-value diff (3b) matters more here than for
+   the visually-obvious stages like `BulletStage`.
+
+**Exit criteria for Phase 4 specifically:** all 11 Box2D tutorial stages
+behave identically (visually, and numerically where instrumented) to the
+Phase 0 baseline; only then is the Box2D native upgrade considered safe to
+merge — independent of the 3 shipped games showing no visible symptom (they
+wouldn't, since none of them use `com.guidebee.game.physics` — the tutorial
+app is the only end-to-end signal for this subsystem).
+
+### 5.5 General engine regression suite (Raindrop tutorial repo)
+
+`C:\workspace\Raindrop` is not Box2D-specific (its "drop" mini-game uses the
+lightweight `scene/collision` AABB path, not `physics`), but it's valuable
+regression coverage for engine surface area the 3 shipped games exercise
+*less* than the games themselves suggest, or in different combinations:
+
+| Lesson (source package) | Exercises | Relevant to |
+|---|---|---|
+| `basics` (`HelloWorldActivity`/`Screen`/`Actor`) | Minimal `Stage`/`Actor`/`Screen` bring-up | Sanity check that the core lifecycle chain (Phase 2) still works stand-alone |
+| `coords` (`CoordinateGameActivity`/`Scene`) | Camera & viewport basics | Phase 3's viewport/EGL-surface changes |
+| `drop` (`Mario`, `RainDrop`, `CollisionDirector`, `Score` HUD) | `scene.collision.CollisionListener`, `Touchpad`/`GameControllerListener` input, HUD, `TextureAtlas`, **a `forest.tmx` tiled map asset** (`assets/tiledmap/`) | The one asset in either fixture that exercises `com.guidebee.game.maps.tiled` at all — neither Flappy Bird, Battle City, nor Mario ship a TMX map, so this is the only tiled-map regression coverage available; keep it in the suite specifically for that reason |
+| `microedition` (`DropGameActivity` variant, `Bucket`/`Fly`/`RainDrop` actors) | `LayerManager`/`Sprite`-style MIDP API, parallel to Battle City's approach but a distinct actor set | Any change to `com.guidebee.game.microedition` (Phase 3.2's tile-instancing work touches this package directly) |
+
+Treat this as a lighter-weight companion suite: run its full lesson list
+(after the Phase 0 manifest fix makes all four reachable) at the end of every
+phase alongside the 3 games' checklists (5.2), same pass/fail bar, but no
+dedicated golden-value capture is needed — visual/functional correctness is
+sufficient since nothing here is float-precision-sensitive the way Box2D is.
 
 ---
 
@@ -439,17 +553,17 @@ since none of them use it — the harness is the only signal).
 
 | Phase | Effort | Can start after |
 |---|---|---|
-| 0 — Baseline | 0.5–1 day | — |
+| 0 — Baseline (incl. importing/modernizing the 2 tutorial apps) | 1.5–2.5 days | — |
 | 1 — Build tooling | 1–2 days | Phase 0 |
 | 2 — Lifecycle/windowing | 2–3 days | Phase 1 (needs the new NDK/build to test against) |
 | 3 — Rendering pipeline | 3–5 days | Phase 1 (independent of Phase 2, could run in parallel if two people are available) |
 | 4 — Box2D native upgrade | 2–4 days | Phase 1; independent of 2/3, can run in parallel |
 | 5 — Cleanup/hardening | 1–2 days | All of 1–4 |
 
-**Total: ~10–17 working days** for one engineer working sequentially;
+**Total: ~11–18 working days** for one engineer working sequentially;
 Phases 2, 3, and 4 are mutually independent once Phase 1 lands, so they can
 be parallelized across 2-3 engineers to compress the calendar time to roughly
-Phase 1 + max(Phase 2, Phase 3, Phase 4) + Phase 5 ≈ **6–9 working days**.
+Phase 1 + max(Phase 2, Phase 3, Phase 4) + Phase 5 ≈ **7–10 working days**.
 
 ---
 
@@ -457,13 +571,18 @@ Phase 1 + max(Phase 2, Phase 3, Phase 4) + Phase 5 ≈ **6–9 working days**.
 
 - [ ] All 3 games (Flappy Bird, Battle City, Mario) pass their full manual
       regression checklist (5.2) on the full device matrix (Section 6).
+- [ ] All 11 stages in `testapps/box2d-tutorial` (5.4) and all 4 lessons in
+      `testapps/raindrop-tutorial` (5.5) pass their regression checks on the
+      full device matrix.
 - [ ] Perf capture at final sign-off is **equal to or better than** the
       Phase-0 baseline on every device class, on all 3 games.
 - [ ] APK size is smaller than the pre-upgrade baseline (dead-code + ABI
       trimming should guarantee this).
-- [ ] Box2D regression harness (5.4) golden-value comparison passes.
 - [ ] Zero new `UnsatisfiedLinkError`/native crashes across a full play
-      session per game per device class.
+      session per game, and per tutorial-app stage/lesson, per device class.
 - [ ] `docs/GAME_ENGINE.md` updated to describe the new baseline (GLES3
       default, ETC2 textures, current NDK, Box2D-version-parity note) so the
       next engineer doesn't have to re-derive this audit.
+- [ ] `testapps/box2d-tutorial` and `testapps/raindrop-tutorial` are kept in
+      the repo post-upgrade as a standing regression suite for any future
+      `gameengine` change, not deleted once this upgrade ships.

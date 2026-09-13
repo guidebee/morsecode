@@ -77,6 +77,16 @@ public final class Explosion extends Sprite {
     private static Explosion[] EXPLOSIONS_POOL;
 
     /**
+     * act() was originally called once per rendered frame and advanced the
+     * animation by exactly one frame every call, implicitly assuming
+     * ~60fps — on a higher-refresh-rate display the explosion would play
+     * back (and finish) faster in real time. Throttled by wall-clock time
+     * instead, at the original ~60fps-per-animation-frame cadence.
+     */
+    private long lastFrameTime = 0;
+    private static final long FRAME_PERIOD_MS = 16;
+
+    /**
      * Initialized the explostion pool.
      */
     public static void initExplosions(){
@@ -139,6 +149,11 @@ public final class Explosion extends Sprite {
     public void act(float delta) {
         if (!isVisible())
             return;
+        long tickTime = System.currentTimeMillis();
+        if (tickTime - lastFrameTime < FRAME_PERIOD_MS) {
+            return;
+        }
+        lastFrameTime = tickTime;
         nextFrame();
         if (getFrame() == 0) {
             setVisible(false);

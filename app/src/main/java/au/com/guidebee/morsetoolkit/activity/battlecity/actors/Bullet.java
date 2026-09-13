@@ -97,6 +97,18 @@ public final class Bullet extends Sprite {
     private int dx, dy;
 
     /**
+     * act() was originally called once per rendered frame and moved the
+     * bullet by a fixed pixel step every call, implicitly assuming ~60fps —
+     * on a higher-refresh-rate display act() fires more often, so the
+     * bullet would move faster in real time. Throttled by wall-clock time
+     * instead, using the same period as {@link Tank#drive()}, so the
+     * bullet:tank speed ratio (originally implicit in their per-call pixel
+     * steps) is preserved regardless of the actual render/act call rate.
+     */
+    private long lastMoveTime = 0;
+    private static final long MINIMUM_MOVE_PERIOD = 40;
+
+    /**
      * initial the bullet pool ,the game will resume the bullet object.
      */
     public static void initBullets(){
@@ -204,6 +216,11 @@ public final class Bullet extends Sprite {
     public void act(float delta) {
         if (!isVisible() || direction == BattleField.NONE)
             return;
+        long tickTime = System.currentTimeMillis();
+        if (tickTime - lastMoveTime < MINIMUM_MOVE_PERIOD) {
+            return;
+        }
+        lastMoveTime = tickTime;
         // Move the bullet.
         move(dx, dy);
         int x = (int) (getX() + getOriginX());

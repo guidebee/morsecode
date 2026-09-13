@@ -4,8 +4,9 @@ The `gameengine/` module is an in-tree copy of the **Guidebee Game Engine (GGE)*
 Android-focused 2D game framework whose core APIs and rendering pipeline trace back to
 [libGDX](https://libgdx.com/), but which trades libGDX's cross-platform goals for a
 simpler, Android-only API surface. Instead of aiming to run everywhere, GGE leans into
-being an Android library: it ships as an Android Gradle module, drives its OpenGL ES 2.0
-rendering straight off a `GLSurfaceView`, and its game-loop lifecycle is just the
+being an Android library: it ships as an Android Gradle module, drives its OpenGL ES
+rendering straight off a `GLSurfaceView` (ES 3.0 by default on capable devices, with an
+automatic ES 2.0 fallback), and its game-loop lifecycle is just the
 Activity lifecycle.
 
 This fork lives at [GuidebeeGameEngine](https://github.com/GuidebeeGameEngine/GuidebeeGameEngine)
@@ -319,7 +320,12 @@ public static void playSound(Sound sound) {
 ## Physics: available, not required
 
 Full Box2D simulation (`com.guidebee.game.physics.World`, bodies, fixtures, joints) is
-compiled into the engine and ready to use — `GameEngine.world`,
+compiled into the engine and ready to use. The vendored Box2D is **2.3.1** — already at
+version parity with the Box2D current libGDX itself ships, so "upgrading Box2D" here
+means re-syncing the JNI wrapper and native build against current upstream (bug fixes,
+compiler warnings), not migrating to Box2D's rewritten v3.x C API — that would break
+every `com.guidebee.game.physics.*` signature for no benefit, since neither game uses it
+directly. `GameEngine.world`,
 `GameEngine.toBox2D(pixels)` / `toPixel(box2dUnits)`, and the default velocity/position
 solver iteration counts all live as static fields on `GameEngine` for exactly that
 purpose. Neither Flappy Bird nor Battle City actually needs a full rigid-body simulation

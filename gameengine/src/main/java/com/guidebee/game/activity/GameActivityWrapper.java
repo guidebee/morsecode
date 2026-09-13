@@ -18,7 +18,6 @@ package com.guidebee.game.activity;
 
 //--------------------------------- IMPORTS ------------------------------------
 
-import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -32,6 +31,10 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
 
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
+
 import com.guidebee.game.ApplicationListener;
 import com.guidebee.game.Configuration;
 import com.guidebee.game.GameEngine;
@@ -43,8 +46,6 @@ import com.guidebee.game.engine.platform.surfaceview.FillResolutionStrategy;
 import com.guidebee.game.engine.utils.GameEngineiNativesLoader;
 import com.guidebee.utils.Clipboard;
 import com.guidebee.utils.collections.Array;
-
-import java.lang.reflect.Method;
 
 //[------------------------------ MAIN CLASS ----------------------------------]
 
@@ -203,9 +204,10 @@ public class GameActivityWrapper implements BaseActivity {
             } catch (Exception ex) {
                 log("Application", "Content already displayed, cannot request FEATURE_NO_TITLE", ex);
             }
-            activity.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
-                    WindowManager.LayoutParams.FLAG_FULLSCREEN);
-            activity.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN);
+            // Edge-to-edge: let the game content draw behind the system bars instead
+            // of the old FLAG_FULLSCREEN approach, which is deprecated and, on apps
+            // targeting API 35+, superseded by mandatory edge-to-edge layout anyway.
+            WindowCompat.setDecorFitsSystemWindows(activity.getWindow(), false);
             activity.setContentView(graphics.getView(), createLayoutParams());
         }
 
@@ -235,40 +237,23 @@ public class GameActivityWrapper implements BaseActivity {
         }
     }
 
-    protected void hideStatusBar(boolean hide) {
-        if (!hide || getVersion() < 11) return;
-
-        View rootView = activity.getWindow().getDecorView();
-
-        try {
-            Method m = View.class.getMethod("setSystemUiVisibility", int.class);
-            if (getVersion() <= 13)
-                m.invoke(rootView, 0x0);
-            m.invoke(rootView, 0x1);
-        } catch (Exception e) {
-            log("Application", "Can't hide status bar", e);
-        }
+    protected WindowInsetsControllerCompat getInsetsController() {
+        return WindowCompat.getInsetsController(activity.getWindow(),
+                activity.getWindow().getDecorView());
     }
 
+    protected void hideStatusBar(boolean hide) {
+        if (!hide) return;
+        getInsetsController().hide(WindowInsetsCompat.Type.statusBars());
+    }
 
-    @TargetApi(19)
     @Override
     public void useImmersiveMode(boolean use) {
-        if (!use || getVersion() < 19) return;
-
-        View view = activity.getWindow().getDecorView();
-        try {
-            Method m = View.class.getMethod("setSystemUiVisibility", int.class);
-            int code = View.SYSTEM_UI_FLAG_LAYOUT_STABLE;
-            code ^= View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION;
-            code ^= View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
-            code ^= View.SYSTEM_UI_FLAG_FULLSCREEN;
-            code ^= View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
-            code ^= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
-            m.invoke(view, code);
-        } catch (Exception e) {
-            log("Application", "Can't set immersive mode", e);
-        }
+        if (!use) return;
+        WindowInsetsControllerCompat controller = getInsetsController();
+        controller.hide(WindowInsetsCompat.Type.systemBars());
+        controller.setSystemBarsBehavior(
+                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
     }
 
 

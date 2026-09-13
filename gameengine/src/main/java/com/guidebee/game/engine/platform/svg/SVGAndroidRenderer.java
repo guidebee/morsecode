@@ -135,12 +135,12 @@ public class SVGAndroidRenderer {
 
         public RendererState() {
             fillPaint = new Paint();
-            fillPaint.setFlags(Paint.ANTI_ALIAS_FLAG | Paint.DEV_KERN_TEXT_FLAG | Paint.SUBPIXEL_TEXT_FLAG);
+            fillPaint.setFlags(Paint.ANTI_ALIAS_FLAG | Paint.SUBPIXEL_TEXT_FLAG);
             fillPaint.setStyle(Paint.Style.FILL);
             fillPaint.setTypeface(Typeface.DEFAULT);
 
             strokePaint = new Paint();
-            strokePaint.setFlags(Paint.ANTI_ALIAS_FLAG | Paint.DEV_KERN_TEXT_FLAG | Paint.SUBPIXEL_TEXT_FLAG);
+            strokePaint.setFlags(Paint.ANTI_ALIAS_FLAG | Paint.SUBPIXEL_TEXT_FLAG);
             strokePaint.setStyle(Paint.Style.STROKE);
             strokePaint.setTypeface(Typeface.DEFAULT);
 
@@ -2124,12 +2124,8 @@ public class SVGAndroidRenderer {
             state.style.textDecoration = style.textDecoration;
             state.fillPaint.setStrikeThruText(style.textDecoration == TextDecoration.LineThrough);
             state.fillPaint.setUnderlineText(style.textDecoration == TextDecoration.Underline);
-            // There is a bug in Android <= JELLY_BEAN (16) that causes stroked underlines to
-            // not be drawn properly. See bug (39511). This has been fixed in JELLY_BEAN_MR1 (4.2)
-            if (android.os.Build.VERSION.SDK_INT >= 17) {
-                state.strokePaint.setStrikeThruText(style.textDecoration == TextDecoration.LineThrough);
-                state.strokePaint.setUnderlineText(style.textDecoration == TextDecoration.Underline);
-            }
+            state.strokePaint.setStrikeThruText(style.textDecoration == TextDecoration.LineThrough);
+            state.strokePaint.setUnderlineText(style.textDecoration == TextDecoration.Underline);
         }
 
         if (isSpecified(style, SVG.SPECIFIED_DIRECTION)) {

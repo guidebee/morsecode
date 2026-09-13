@@ -4,8 +4,8 @@ include $(CLEAR_VARS)
 LOCAL_MODULE    := libgameengine
 LOCAL_C_INCLUDES := 
  
-LOCAL_CFLAGS := $(LOCAL_C_INCLUDES:%=-I%) -O2 -Wall -D__ANDROID__ -include jni.h -include stdlib.h -include string.h -include assert.h
-LOCAL_CPPFLAGS := $(LOCAL_C_INCLUDES:%=-I%) -O2 -Wall -D__ANDROID__ -include jni.h -include stdlib.h -include cstring -include new -include cassert
+LOCAL_CFLAGS := $(LOCAL_C_INCLUDES:%=-I%) -O2 -Wall -D__ANDROID__ -include jni.h -include stdlib.h -include string.h -include assert.h -include math.h
+LOCAL_CPPFLAGS := $(LOCAL_C_INCLUDES:%=-I%) -O2 -Wall -D__ANDROID__ -include jni.h -include stdlib.h -include cstring -include new -include cassert -include cmath
 LOCAL_LDLIBS := -lm -lGLESv2 -llog
 LOCAL_ARM_MODE  := arm
  
@@ -55,7 +55,6 @@ LOCAL_SRC_FILES := Box2D/Collision/b2BroadPhase.cpp		\
 	Box2D/Dynamics/Joints/b2WeldJoint.cpp		\
 	Box2D/Dynamics/Joints/b2WheelJoint.cpp		\
 	Box2D/Rope/b2Rope.cpp		\
-	Wrapper/AndroidGL20.cpp		\
 	Wrapper/Box2D/Collision/Shape/ChainShape.cpp		\
 	Wrapper/Box2D/Collision/Shape/CircleShape.cpp		\
 	Wrapper/Box2D/Collision/Shape/EdgeShape.cpp		\

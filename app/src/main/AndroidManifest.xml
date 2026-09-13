@@ -50,6 +50,60 @@
             android:theme="@style/AppTheme.NoActionBar"
             android:configChanges="keyboard|keyboardHidden|orientation">
         </activity>
+
+        <!--
+          gameengine upgrade regression fixtures (see docs/GAMEENGINE_UPGRADE_PLAN.md
+          section 5.4/5.5) — the official GuidebeeGameEngine Box2D and Raindrop tutorial
+          demos, imported in-app as extra menu entries so they exercise engine surface
+          area (Box2D bodies/joints/sensors, tiled maps, the MIDP-style API) that none
+          of the 3 shipped games use directly.
+        -->
+        <activity
+            android:name="com.guidebee.game.tutorial.box2d.StagePickerActivity"
+            android:label="Box2D Demo"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:exported="false" />
+        <activity
+            android:name="com.guidebee.game.tutorial.box2d.Box2DGameActivity"
+            android:label="Box2D Demo"
+            android:screenOrientation="landscape"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:configChanges="keyboard|keyboardHidden|orientation"
+            android:exported="false" />
+
+        <activity
+            android:name="com.mapdigit.game.tutorial.LessonPickerActivity"
+            android:label="Raindrop Demo"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:exported="false" />
+        <activity
+            android:name="com.mapdigit.game.tutorial.basics.HelloWorldActivity"
+            android:label="Raindrop: Basics"
+            android:screenOrientation="landscape"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:configChanges="keyboard|keyboardHidden|orientation"
+            android:exported="false" />
+        <activity
+            android:name="com.mapdigit.game.tutorial.coords.CoordinateGameActivity"
+            android:label="Raindrop: Coordinates"
+            android:screenOrientation="landscape"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:configChanges="keyboard|keyboardHidden|orientation"
+            android:exported="false" />
+        <activity
+            android:name="com.mapdigit.game.tutorial.drop.DropGameActivity"
+            android:label="Raindrop: Drop"
+            android:screenOrientation="landscape"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:configChanges="keyboard|keyboardHidden|orientation"
+            android:exported="false" />
+        <activity
+            android:name="com.mapdigit.game.tutorial.microedition.DropGameActivity"
+            android:label="Raindrop: Microedition"
+            android:screenOrientation="landscape"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:configChanges="keyboard|keyboardHidden|orientation"
+            android:exported="false" />
     </application>
 
 </manifest>

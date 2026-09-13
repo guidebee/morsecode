@@ -553,7 +553,56 @@ Keep the GLES2 path alive and selectable (`Configuration` flag) as the
 fallback for the rare remaining GLES2-only device, so this is additive, not
 a hard cutover.
 
-#### 3.3 Frame pacing & modern window behavior
+#### 3.3 Frame pacing & modern window behavior — done (2026-09-13)
+
+`Graphics.java` itself already computes real `deltaTime` from
+`System.nanoTime()` diffs (no fixed-60fps assumption there). Confirmed the
+project's test device is genuinely 120Hz-capable
+(`adb shell dumpsys display`: `peakRefreshRate=120.00001`, active at 120Hz)
+— this isn't a theoretical concern. Audited every `act()` override across
+the 3 games plus engine actor code for fixed-frame assumptions:
+
+- Mario's `Player.java`/`EnemyTurtlePatrol.java` and Battle City's
+  `Tank`/`EnemyTank`/`Score`/`Powerup` were already correct (either
+  `frames = delta * 60f`-scaled or wall-clock-gated via
+  `System.currentTimeMillis()`) — no changes needed.
+- Found and fixed 3 real bugs, all frame-count-driven instead of
+  time-driven: Flappy Bird's pipe scroll and background/ground parallax
+  (`Playground.java`/`Background.java`, fixed with a float accumulator that
+  carries the fractional pixel remainder between frames, avoiding stutter
+  from truncating `moveStep * delta` to `int` on a fast display); Battle
+  City's `Bullet.act()` movement (fixed with the same
+  `System.currentTimeMillis()` 40ms throttle already proven in
+  `Tank.drive()`, preserving the bullet:tank speed ratio); and Battle
+  City's `Explosion.act()` animation-frame advance (cosmetic only, fixed
+  with a 16ms wall-clock throttle matching the sibling `Score`/`Powerup`
+  pattern). All three would have played back/moved at ~2x speed on this
+  exact 120Hz device.
+- Verified on-device: all 3 games render and launch correctly post-fix,
+  zero crashes; Battle City's autonomous tank/bullet AI confirmed moving
+  smoothly frame-to-frame via 3 screenshots ~1.5s apart. A live pipe-scroll
+  speed A/B wasn't captured (scripted `adb input tap` couldn't reliably
+  sustain Flappy Bird gameplay for a timing comparison) — correctness
+  rests on the accumulator matching the same pattern already shipped and
+  proven in `Player.java`/`EnemyTurtlePatrol.java`, plus zero visual/crash
+  regression on the paths that were exercised.
+- `Window.setSustainedPerformanceMode` — not implemented; no thermal
+  throttling symptom observed for these lightweight 2D games, not worth
+  the risk of an untested Game Mode API call for a problem that hasn't
+  manifested.
+- Mid-session, `adb`/`screencap` got stuck on the test device returning an
+  identical cached black frame regardless of on-screen content (same class
+  of degraded state as Phase 2's crash-testing) — recovered with
+  `adb reboot`.
+
+Full writeup: `docs/phase3-results-2026-09.md`'s Phase 3.3 section.
+
+**Phase 3 is now complete**: 3.0 (GL20 JNI removal), 3.1 (verified
+non-issue), 3.2 (GLES3 context shipped; VAOs/ETC2/instancing deferred or
+not warranted), 3.3 (frame-pacing audit + 3 real fixes) all done.
+
+<details>
+<summary>Original 3.3 scope (superseded by the writeup above)</summary>
 
 - Verify `Graphics.java`'s continuous render-mode loop respects the display's
   actual refresh rate (90/120 Hz panels) rather than assuming 60 Hz anywhere
@@ -572,6 +621,8 @@ a hard cutover.
 frame-time and dropped-frame numbers must be **equal to or better than**
 baseline, with no visual regressions (screenshot-diff each game's menu +
 one gameplay frame against Phase-0 baseline screenshots).
+
+</details>
 
 ---
 

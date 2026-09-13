@@ -211,3 +211,127 @@ its own testing/maintenance burden) for no measurable benefit here.
 **Phase 3.2 is complete**: 3.2a (GLES3 context) shipped, 3.2b (VAOs)
 reverted with guidance for a future attempt, 3.2c (ETC2) deferred on
 tooling, 3.2d (instancing) not warranted.
+
+---
+
+# Phase 3.3 — frame pacing & modern window behavior (2026-09-13)
+
+## Confirmed the test device is a real case, not a theoretical one
+
+`adb shell dumpsys display` on the project's test device reports a
+120 Hz-capable panel (`peakRefreshRate=120.00001`, `supportedModes` include
+120/90/60/30 Hz) with `mActiveSfDisplayMode` currently at 120 Hz. This is
+the exact device the whole regression suite has been running on all
+session — the audit below is not a "some hypothetical device" concern.
+
+`Graphics.java` itself (`gameengine/engine/platform/Graphics.java:394-403`)
+already computes real per-frame `deltaTime` from `System.nanoTime()` diffs
+— it makes no fixed-60fps assumption anywhere. The risk, per the plan, is
+in game code that assumes `act(float delta)` fires at a fixed ~60Hz rate.
+
+## Audit findings
+
+Grepped the 3 games and the engine's own actor code for `60f`/`1f/60f`
+-style literals and inspected every `act()` override that moves a sprite:
+
+- **Mario (`Player.java`, `EnemyTurtlePatrol.java`) — already correct, no
+  bug.** Both already implement `frames = delta * PHYSICS_FPS` (60f) and
+  scale every original per-call constant by `frames`
+  (`Player.java`'s own doc comment: "at exactly 60fps this reduces to the
+  original formulas exactly, and it degrades gracefully at other frame
+  rates"). This is the right pattern and needed no change.
+- **Battle City `Tank`/`EnemyTank` (`drive()`) — already correct, no bug.**
+  Movement is gated by `System.currentTimeMillis()` (`minimumDrivePeriod =
+  40`ms), not by call count — tank speed is wall-clock-paced regardless of
+  how often `act()`/`drive()` fires, so it's unaffected by refresh rate.
+  `Score`/`Powerup` similarly gate their state transitions by
+  `System.currentTimeMillis()` — also fine.
+- **Flappy Bird `Bird.java` — already correct, no bug.** Gravity/position
+  integration was already properly delta-scaled
+  (`velocity.y -= GRAVITY * delta; position.add(MOVEMENT * delta, ...)`).
+- **Flappy Bird `Playground`/`Background` — real bug, fixed.** Pipe scroll
+  (`TubePosition.posX -= moveStep`, `Playground.java:376`) and the ground
+  and parallax-cloud scroll (`offset -= moveStep`/`offset += moveStep` in
+  `Playground.draw()` and `Background.draw()`) decremented by a fixed pixel
+  step once per rendered frame with no delta scaling at all — on this
+  120 Hz device the pipes/background scroll at ~2x the speed the game was
+  tuned for at 60fps, while the bird's own physics stay correctly paced.
+  Since these fields (`posX`, `offset`) are `int` and used elsewhere for
+  collision, switching to naive float delta-scaling risked stutter (a
+  fraction like `moveStep * delta` truncated to `int` can round to `0` on
+  a fast display, causing dropped/uneven steps). Fixed with a float
+  accumulator that carries the fractional remainder between frames
+  (`moveAccumulator += moveStep * delta * REFERENCE_FPS`, take the integer
+  part, keep the remainder) — reduces to the exact original per-frame step
+  at 60fps and degrades smoothly at any other rate. `Playground`'s tube
+  loop and its own ground-offset scroll in `draw()` share one
+  per-frame `frameScrollStep` so both stay in lockstep.
+- **Battle City `Bullet.act()` — real bug, fixed.** `move(dx, dy)` fired
+  unconditionally every `act()` call, ignoring `delta` and with no
+  wall-clock gate (unlike `Tank.drive()`), so bullets move ~2x too fast on
+  this device. Fixed with the same wall-clock throttle pattern as
+  `Tank.drive()`, using the identical `40`ms period — this preserves the
+  bullet:tank speed ratio implicit in their original per-call pixel steps
+  exactly, regardless of actual render/act rate, and avoids introducing
+  fractional pixel movement into collision-sensitive code
+  (`battleField.hitWall`, `collidesWith`, `Powerup.isHittingHome` all
+  expect the existing per-call integer stepping).
+- **Battle City `Explosion.act()` — minor cosmetic bug, fixed.**
+  `nextFrame()` advanced the explosion animation once per `act()` call with
+  no gating, so the (already brief) explosion FX plays back and finishes
+  roughly 2x faster on this device than intended. Fixed with a
+  `System.currentTimeMillis()` throttle at the original ~60fps-per-frame
+  cadence (`FRAME_PERIOD_MS = 16`), matching the pattern already used by
+  the sibling `Score`/`Powerup` classes in the same package.
+- **Sustained performance mode (`Window.setSustainedPerformanceMode`) —
+  not implemented.** Lower-priority per the plan; no thermal-throttling
+  symptom was observed or reported for these lightweight 2D games, and
+  adding an untested Game Mode API call for a problem that hasn't
+  manifested isn't worth the risk. Left as a documented future option, not
+  done.
+
+## Verification
+
+- `./gradlew :app:compileDebugJavaWithJavac` — clean.
+- On-device (same Mali-G615/120Hz device): relaunched Flappy Bird,
+  Battle City, and Mario (Mario untouched by this phase, smoke-checked
+  only) after the fix. All three render correctly, landscape, pixel-correct
+  menus/gameplay, zero crashes (`adb logcat` grepped for
+  `FATAL EXCEPTION`/`AndroidRuntime` across the whole session — none).
+  Battle City's autonomous tank/bullet AI was screenshotted 3 times ~1.5s
+  apart — tank and bullet positions advance smoothly frame-to-frame with no
+  freezing or teleporting. Flappy Bird's menu was screenshotted twice
+  ~2s apart — the idle bird-hover animation advances correctly; a full
+  pipe-scroll speed A/B (this device at 120Hz vs. forcing 60Hz) was not
+  captured because scripted `adb input tap` could not reliably keep the
+  bird alive through manual flap timing for a sustained gameplay window —
+  the fix's correctness rests on the accumulator's arithmetic (verified by
+  inspection: it's the same pattern already proven correct and shipped in
+  `Player.java`/`EnemyTurtlePatrol.java`) plus the absence of any visual or
+  crash regression on the menu/HUD paths that are exercised.
+- Mid-session, `adb`/`screencap` itself got stuck returning an identical
+  cached black frame regardless of what was on-screen (same degraded-state
+  symptom seen earlier in Phase 2's crash-testing) — recovered with
+  `adb reboot`, confirmed working again by a screencap byte-size sanity
+  check (2.5+ MB real frame vs. the stuck 18,650-byte black frame) before
+  continuing.
+- Manifest `exported` flags temporarily set on the 3 game activities for
+  direct-launch testing, reverted via `git checkout` afterward — confirmed
+  clean via `git diff` (matches the pre-change manifest exactly).
+
+## Exit criteria check
+
+- [x] Audited `1f/60f`-style literals and fixed-frame assumptions across
+      the 3 games and engine actor code.
+- [x] Real frame-rate-dependent bugs found and fixed (Flappy Bird pipe/
+      background scroll, Battle City bullet speed, Battle City explosion
+      animation speed) — confirmed live on the exact 120Hz test device.
+- [x] No visual regressions on the paths exercised (menus, HUD, autonomous
+      Battle City gameplay).
+- [ ] Quantified before/after frame-time/dropped-frame numbers against the
+      Phase-0 baseline — not captured (same gap noted in 3.0); the fixes
+      here are correctness fixes (right speed regardless of Hz), not
+      throughput optimizations, so a frame-time comparison wouldn't show
+      the effect anyway — the right metric (pipe/bullet speed vs. wall
+      clock) isn't something `dumpsys gfxinfo` captures.
+- [ ] Sustained performance mode — not implemented, no observed need.

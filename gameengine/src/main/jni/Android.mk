@@ -55,7 +55,6 @@ LOCAL_SRC_FILES := Box2D/Collision/b2BroadPhase.cpp		\
 	Box2D/Dynamics/Joints/b2WeldJoint.cpp		\
 	Box2D/Dynamics/Joints/b2WheelJoint.cpp		\
 	Box2D/Rope/b2Rope.cpp		\
-	Wrapper/AndroidGL20.cpp		\
 	Wrapper/Box2D/Collision/Shape/ChainShape.cpp		\
 	Wrapper/Box2D/Collision/Shape/CircleShape.cpp		\
 	Wrapper/Box2D/Collision/Shape/EdgeShape.cpp		\

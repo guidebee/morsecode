@@ -350,7 +350,7 @@ all resume correctly after backgrounding).
 This is the phase that should move the needle on the user's original
 complaint ("OpenGL performance not as good as current Android platform").
 
-#### 3.0 Remove `GL20`'s per-call JNI overhead (new top priority, found in Phase 1)
+#### 3.0 Remove `GL20`'s per-call JNI overhead — done (2026-09-13)
 
 Phase 1's on-device incident (see `docs/phase1-results-2026-09.md`) revealed
 that `GL20.java` — the GLES2 binding every game and demo actually renders
@@ -383,6 +383,20 @@ work:
   time on a sprite-heavy scene like Mario) — this is the one change in the
   plan most likely to produce a measurable, attributable number for "did
   this upgrade actually fix the performance complaint."
+
+**Done.** `GL20.java` rewritten to call `android.opengl.GLES20` directly for
+all ~140 methods, using libGDX's own reference `AndroidGL20.java`
+(`C:\workspace\libgdx\backends\gdx-backend-android\...`) as the pattern.
+`GL30 extends GL20`, so it inherited the fix automatically. `AndroidGL20.cpp`/`.h`
+deleted — this time verified properly (rewrote every caller first, confirmed
+zero remaining native declarations, then ran the full regression suite
+*twice*: once with the dead file still present, once after deleting it).
+All 3 games + 10 Box2D stages + 4 Raindrop lessons pass both times, pixel-identical
+rendering vs. baseline screenshots. **Not done**: a quantified before/after
+frame-time number (would need a temporary revert-and-rebuild A/B on the same
+device session; the performance direction itself isn't in doubt since this
+is libGDX's own decade-proven production pattern, just the magnitude is
+unmeasured). Full writeup in `docs/phase3-results-2026-09.md`.
 
 #### 3.1 GL state-cache correctness
 

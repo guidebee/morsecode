@@ -130,7 +130,7 @@ Tapping **Replay app tour** in Settings resets every one of the flags above at o
 
 - `app/` — the Android application (Compose UI, transmit/receive/decoder screens, navigation drawer, ViewModels).
 - `decoder/` — a pure-JVM (no Android dependencies) library module holding the audio-to-Morse decoding core: the timing state machine, the broadband and narrowband tone detectors, and the shared Morse lookup tables. Extracted from `app/` so the decoding logic can be unit tested with plain JUnit and reasoned about independently of Android. `app/` depends on it for the actual mic-capture/UI plumbing.
-- `gameengine/` — an in-tree Android library module containing the Guidebee Game Engine (Java game framework + JNI/OpenGL ES 2.0 + Box2D native code, built via `ndkBuild`). The two games in `app/` depend on this module directly; there is no external `game-engine` artifact. See [docs/GAME_ENGINE.md](docs/GAME_ENGINE.md) for an engine walkthrough using Flappy Bird and Battle City as examples, and [docs/tutorials](docs/tutorials/README.md) for a full 16-part tutorial series (replacing the original engine's now-unreachable wiki tutorials) built entirely around those same two games.
+- `gameengine/` — an in-tree Android library module containing the Guidebee Game Engine (Java game framework + JNI/OpenGL ES 3.0-with-ES2-fallback/Box2D native code, built via `ndkBuild`). The two games in `app/` depend on this module directly; there is no external `game-engine` artifact. See [docs/GAME_ENGINE.md](docs/GAME_ENGINE.md) for an engine walkthrough using Flappy Bird and Battle City as examples, and [docs/tutorials](docs/tutorials/README.md) for a full 16-part tutorial series (replacing the original engine's now-unreachable wiki tutorials) built entirely around those same two games.
 
 ### Decoder architecture
 
@@ -152,7 +152,7 @@ Tapping **Replay app tour** in Settings resets every one of the flags above at o
 
 - JDK 17+
 - Android SDK with platform/build-tools for API level 37 installed
-- Android NDK `21.4.7075529` (pinned in `gameengine/build.gradle` for the native engine build)
+- Android NDK `29.0.14206865` (pinned in `gameengine/build.gradle` for the native engine build; ABIs limited to `armeabi-v7a`/`arm64-v8a`)
 
 ## Building
 
@@ -170,4 +170,4 @@ Gradle wrapper is pinned to Gradle 9.7.1; the Android Gradle Plugin version is s
 - `minSdk 21`, `compileSdk`/`targetSdk 37`.
 - `RECORD_AUDIO` permission is required for the Decoder screen.
 - The `gameengine` module builds its native library via `externalNativeBuild { ndkBuild { ... } }` pointing at `gameengine/src/main/jni/Android.mk`; no manual native build step is needed — Gradle invokes `ndkBuild` automatically as part of the normal build.
-- Native game-engine libraries are linked with 16 KB ELF LOAD-segment alignment for compatibility with Android devices using 16 KB memory pages.
+- Native game-engine libraries use 16 KB ELF LOAD-segment alignment for compatibility with Android devices using 16 KB memory pages — the default under NDK r29+, no manual linker flags required.

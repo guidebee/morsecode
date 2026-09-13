@@ -687,21 +687,66 @@ warnings — actually fewer than before this phase.
 
 ---
 
-### Phase 5 — Dead-code cleanup & final hardening (1–2 days)
+### Phase 5 — Dead-code cleanup & final hardening — done (2026-09-13)
 
-1. Remove now-confirmed-dead code identified across the audit (API18 GL
-   surface classes — **not** the `AndroidGL20` shim, which turned out to be
-   live JNI code, see Phase 1) — done incrementally in earlier phases, this
-   is the final sweep for anything missed (grep for `@Deprecated`, unused
-   imports, `TODO`/`FIXME` markers left over from the original port).
-2. Re-run static analysis / lint (`./gradlew :gameengine:lintDebug` —
-   `lintOptions.abortOnError = false` is currently set; review the report
-   manually rather than relying on the build to fail).
-3. Update `docs/GAME_ENGINE.md` to reflect: GLES3-by-default, ETC2 texture
-   pipeline, updated NDK/ABI list, and note the Box2D-version-parity finding
-   so future readers don't assume "upgrade Box2D" means chasing v3.x.
-4. Tag `post-gameengine-upgrade` once all exit criteria across all phases are
-   green.
+1. **Dead-code sweep — done.** API18 GL surface classes were already removed
+   in Phase 1. Grepped for `@Deprecated` (5 hits — all legitimate,
+   still-supported backward-compat API aliases with proper `@deprecated`
+   javadoc pointing at the replacement; correctly left alone, not dead) and
+   `TODO`/`FIXME` (29 hits — almost all inherited verbatim from upstream
+   libGDX design notes on `Mesh`/`Bezier`/`BSpline`/`Quaternion`/etc., not
+   GGE-introduced defects; left alone as out of scope for a cleanup pass).
+   Found and removed one genuine piece of dead code:
+   `EglConfigChooser.printConfigs()`/`printConfig()` — a private debug-dump
+   utility whose only two call sites were themselves already commented out
+   (with a confusing "FIXME remove this" next to already-disabled code) —
+   deleted both methods plus the now-unused `Log` import and `TAG` field.
+2. **Lint — done, fixed 8 of 34 findings.** `./gradlew :gameengine:lintDebug`
+   found 34 issues; fixed the two categories that were genuine, safe wins:
+   - **`ObsoleteSdkInt` (6)**: version guards checking `SDK_INT` against a
+     threshold below `minSdk=21` (`BaseGameActivity`'s `@TargetApi(19)`,
+     `Clipboard`'s two `< HONEYCOMB` (11) branches, `GLSurfaceView20`'s
+     `>= 16` check, `SVGAndroidRenderer`'s `>= 17` check,
+     `SimpleAssetResolver`'s `>= 14` check) — all always-true given the
+     module's actual minSdk, so the guard and any now-unreachable `else`
+     branch were dead. Simplified each to just the live branch; removed
+     now-unused `TargetApi` imports/annotations and the dead
+     `android.text.ClipboardManager` pre-Honeycomb code path entirely.
+   - **`WrongConstant` (2)**: `SVGAndroidRenderer`'s `Paint.setFlags()`
+     calls OR'd in `Paint.DEV_KERN_TEXT_FLAG`, a flag lint's current
+     `@IntDef` for `setFlags()` no longer recognizes as valid (a
+     long-obsolete, effectively no-op flag) — removed from both call
+     sites, zero behavior change.
+   - **Left as-is** (reviewed, not dead code, correctly out of scope for a
+     cleanup pass): `MissingPermission` (5 — `RECORD_AUDIO`/`VIBRATE` are
+     the calling app's responsibility to request, not an engine-library
+     bug), `UnsafeDynamicallyLoadedCode` (2 — `SharedLibraryLoader`'s
+     `System.load()` by absolute path is the intended, correct mechanism
+     for its use case, same as upstream libGDX), plus `UseValueOf`,
+     `DefaultLocale`, `ClickableViewAccessibility`, `WrongCommentType`,
+     `TextConcatSpace`, `GradleDependency`, `ViewConstructor` — all minor
+     style findings, not dead code or bugs.
+3. **`docs/GAME_ENGINE.md` and `README.md` updated — done.** Both had
+   drifted stale during Phases 1-4 (neither was touched by those phases'
+   own doc updates, which correctly focused on the phase-results docs
+   instead): `README.md` still said NDK `21.4.7075529` and "OpenGL ES
+   2.0" — fixed to `29.0.14206865` (+ the ABI restriction) and the
+   ES3-default/ES2-fallback reality. `GAME_ENGINE.md` had the same stale
+   "OpenGL ES 2.0" claim, fixed the same way, and gained a note in its
+   Box2D section that the vendored Box2D (2.3.1) is already at version
+   parity with current libGDX, so "upgrading Box2D" means a JNI/native
+   re-sync (Phase 4), not chasing Box2D's rewritten v3.x C API. **ETC2
+   texture pipeline — intentionally not mentioned**, since it was
+   evaluated and deferred in Phase 3.2 (no encoder tooling available);
+   documenting a pipeline that doesn't exist would be worse than the
+   staleness this step is meant to fix.
+4. **Tagged `post-gameengine-upgrade`** once this commit landed — see
+   below.
+
+**Verification:** full `:app:assembleDebug` succeeds; all 3 games
+relaunched and screenshotted post-cleanup (menus/gameplay render
+correctly, zero crashes) since `EglConfigChooser`/`BaseGameActivity` sit
+on every game's GL/activity-lifecycle path.
 
 ---
 
@@ -906,22 +951,46 @@ Phase 1 + max(Phase 2, Phase 3, Phase 4) + Phase 5 ≈ **7–10 working days**.
 
 ---
 
-## 8. Acceptance criteria (overall)
+## 8. Acceptance criteria (overall) — final accounting (2026-09-13)
 
-- [ ] All 3 games (Flappy Bird, Battle City, Mario) pass their full manual
-      regression checklist (5.2) on the full device matrix (Section 6).
-- [ ] All 10 stages in the in-app Box2D Demo (5.4) and all 4 lessons in
-      the in-app Raindrop Demo (5.5) pass their regression checks on the
-      full device matrix.
-- [ ] Perf capture at final sign-off is **equal to or better than** the
-      Phase-0 baseline on every device class, on all 3 games.
-- [ ] APK size is smaller than the pre-upgrade baseline (dead-code + ABI
-      trimming should guarantee this).
-- [ ] Zero new `UnsatisfiedLinkError`/native crashes across a full play
-      session per game, and per tutorial-app stage/lesson, per device class.
-- [ ] `docs/GAME_ENGINE.md` updated to describe the new baseline (GLES3
-      default, ETC2 textures, current NDK, Box2D-version-parity note) so the
-      next engineer doesn't have to re-derive this audit.
-- [ ] The Box2D Demo and Raindrop Demo menu entries are kept in `app/`
-      post-upgrade as a standing regression suite for any future
-      `gameengine` change, not deleted once this upgrade ships.
+- [x] All 3 games (Flappy Bird, Battle City, Mario) pass their manual
+      regression checklist (5.2) — **on the one physical device used
+      throughout this project** (a Mali-G615 MC2, 120Hz-capable), not the
+      full multi-device matrix in Section 6. No second device/emulator was
+      available in this environment at any phase. Flagged, not silently
+      assumed done.
+- [x] All 10 Box2D Demo stages (5.4) and all 4 Raindrop Demo lessons (5.5)
+      pass their regression checks — same single-device caveat as above.
+- [ ] **Perf capture at final sign-off vs. the Phase-0 baseline — not
+      done.** Individual phases made correctness-driven changes with clear
+      directional performance rationale (Phase 3.0's JNI-overhead removal,
+      Phase 3.3's frame-pacing fixes) but none captured a rigorous
+      before/after `dumpsys gfxinfo`/frame-time number against the Phase-0
+      baseline specifically, each time noting this gap explicitly rather
+      than claiming it. Recommended follow-up, not blocking: capture
+      `adb shell dumpsys gfxinfo <pkg> framestats` on Mario (the most
+      sprite-heavy scene) on the project's device and compare against
+      `docs/perf-baseline-2026-09.md`.
+- [x] **APK size is smaller than the pre-upgrade baseline.** Baseline
+      (`docs/perf-baseline-2026-09.md`, tutorial demos merged in):
+      59,130,264 bytes. Final: 58,006,905 bytes — ~1.1 MB / ~1.9% smaller.
+- [x] Zero new crashes observed across every regression run this project
+      ran (all 3 games, all 10 Box2D stages, all 4 Raindrop lessons,
+      repeated across 5 phases). **One caveat, carried forward
+      transparently, not swept under this checkbox**: a deep rapid-relaunch
+      `SIGSEGV` investigated in Phase 2 was never root-caused and was
+      explicitly parked per user direction — unclear whether it predates
+      this upgrade or was newly introduced; needs `lldb` or deeper
+      `AndroidGraphics`-lifecycle porting to actually resolve. See
+      `docs/phase2-notes-2026-09.md`.
+- [x] `docs/GAME_ENGINE.md` (and `README.md`, which had also drifted
+      stale) updated to describe the new baseline: GLES3-default/ES2-
+      fallback, current NDK (`29.0.14206865`)/ABI list, and the
+      Box2D-version-parity note. **ETC2 textures intentionally not
+      documented as shipped** — evaluated and deferred in Phase 3.2 (no
+      encoder tooling available in this environment); the plan's original
+      wording assumed this would ship, it didn't, and the docs correctly
+      reflect that rather than a claim that isn't true.
+- [x] The Box2D Demo and Raindrop Demo menu entries remain in `app/` as a
+      standing regression suite — never removed, used as the primary
+      regression fixture in every phase of this upgrade.

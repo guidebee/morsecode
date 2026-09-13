@@ -19,7 +19,6 @@ package com.guidebee.game.engine.platform.surfaceview;
 //--------------------------------- IMPORTS ------------------------------------
 import android.opengl.GLSurfaceView;
 import android.opengl.GLSurfaceView.EGLConfigChooser;
-import android.util.Log;
 
 import javax.microedition.khronos.egl.EGL10;
 import javax.microedition.khronos.egl.EGLConfig;
@@ -46,7 +45,6 @@ public class EglConfigChooser implements GLSurfaceView.EGLConfigChooser {
     private static final int EGL_OPENGL_ES3_BIT_KHR = 0x0040;
     public static final int EGL_COVERAGE_BUFFERS_NV = 0x30E0;
     public static final int EGL_COVERAGE_SAMPLES_NV = 0x30E1;
-    private static final String TAG = "EglConfigChooser";
 
     protected int mRedSize;
     protected int mGreenSize;
@@ -89,14 +87,9 @@ public class EglConfigChooser implements GLSurfaceView.EGLConfigChooser {
         EGLConfig[] configs = new EGLConfig[numConfigs];
         egl.eglChooseConfig(display, mConfigAttribs, configs, numConfigs, num_config);
 
-        // FIXME remove this.
-        // printConfigs(egl, display, configs);
-
         // chose the best one, taking into account multi sampling.
         EGLConfig config = chooseConfig(egl, display, configs);
 
-        // FIXME print the chosen config
-        // printConfigs(egl, display, new EGLConfig[] { config });
         return config;
     }
 
@@ -179,64 +172,4 @@ public class EglConfigChooser implements GLSurfaceView.EGLConfigChooser {
         return defaultValue;
     }
 
-    private void printConfigs(EGL10 egl, EGLDisplay display, EGLConfig[] configs) {
-        int numConfigs = configs.length;
-        Log.w(TAG, String.format("%d configurations", numConfigs));
-        for (int i = 0; i < numConfigs; i++) {
-            Log.w(TAG, String.format("Configuration %d:\n", i));
-            printConfig(egl, display, configs[i]);
-        }
-    }
-
-    private void printConfig(EGL10 egl, EGLDisplay display, EGLConfig config) {
-        int[] attributes = {EGL10.EGL_BUFFER_SIZE, EGL10.EGL_ALPHA_SIZE, EGL10.EGL_BLUE_SIZE,
-                EGL10.EGL_GREEN_SIZE,
-                EGL10.EGL_RED_SIZE, EGL10.EGL_DEPTH_SIZE, EGL10.EGL_STENCIL_SIZE,
-                EGL10.EGL_CONFIG_CAVEAT, EGL10.EGL_CONFIG_ID,
-                EGL10.EGL_LEVEL, EGL10.EGL_MAX_PBUFFER_HEIGHT,
-                EGL10.EGL_MAX_PBUFFER_PIXELS, EGL10.EGL_MAX_PBUFFER_WIDTH,
-                EGL10.EGL_NATIVE_RENDERABLE, EGL10.EGL_NATIVE_VISUAL_ID,
-                EGL10.EGL_NATIVE_VISUAL_TYPE,
-                0x3030, // EGL10.EGL_PRESERVED_RESOURCES,
-                EGL10.EGL_SAMPLES, EGL10.EGL_SAMPLE_BUFFERS,
-                EGL10.EGL_SURFACE_TYPE, EGL10.EGL_TRANSPARENT_TYPE,
-                EGL10.EGL_TRANSPARENT_RED_VALUE, EGL10.EGL_TRANSPARENT_GREEN_VALUE,
-                EGL10.EGL_TRANSPARENT_BLUE_VALUE, 0x3039, // EGL10.EGL_BIND_TO_TEXTURE_RGB,
-                0x303A, // EGL10.EGL_BIND_TO_TEXTURE_RGBA,
-                0x303B, // EGL10.EGL_MIN_SWAP_INTERVAL,
-                0x303C, // EGL10.EGL_MAX_SWAP_INTERVAL,
-                EGL10.EGL_LUMINANCE_SIZE, EGL10.EGL_ALPHA_MASK_SIZE,
-                EGL10.EGL_COLOR_BUFFER_TYPE, EGL10.EGL_RENDERABLE_TYPE, 0x3042,
-                // EGL10.EGL_CONFORMANT
-                EGL_COVERAGE_BUFFERS_NV, /* true */
-                EGL_COVERAGE_SAMPLES_NV};
-        String[] names = {"EGL_BUFFER_SIZE", "EGL_ALPHA_SIZE", "EGL_BLUE_SIZE",
-                "EGL_GREEN_SIZE", "EGL_RED_SIZE", "EGL_DEPTH_SIZE",
-                "EGL_STENCIL_SIZE", "EGL_CONFIG_CAVEAT", "EGL_CONFIG_ID",
-                "EGL_LEVEL", "EGL_MAX_PBUFFER_HEIGHT",
-                "EGL_MAX_PBUFFER_PIXELS", "EGL_MAX_PBUFFER_WIDTH",
-                "EGL_NATIVE_RENDERABLE", "EGL_NATIVE_VISUAL_ID",
-                "EGL_NATIVE_VISUAL_TYPE", "EGL_PRESERVED_RESOURCES",
-                "EGL_SAMPLES", "EGL_SAMPLE_BUFFERS", "EGL_SURFACE_TYPE",
-                "EGL_TRANSPARENT_TYPE", "EGL_TRANSPARENT_RED_VALUE",
-                "EGL_TRANSPARENT_GREEN_VALUE", "EGL_TRANSPARENT_BLUE_VALUE",
-                "EGL_BIND_TO_TEXTURE_RGB", "EGL_BIND_TO_TEXTURE_RGBA",
-                "EGL_MIN_SWAP_INTERVAL", "EGL_MAX_SWAP_INTERVAL",
-                "EGL_LUMINANCE_SIZE", "EGL_ALPHA_MASK_SIZE", "EGL_COLOR_BUFFER_TYPE",
-                "EGL_RENDERABLE_TYPE", "EGL_CONFORMANT",
-                "EGL_COVERAGE_BUFFERS_NV", "EGL_COVERAGE_SAMPLES_NV"};
-        int[] value = new int[1];
-        for (int i = 0; i < attributes.length; i++) {
-            int attribute = attributes[i];
-            String name = names[i];
-            if (egl.eglGetConfigAttrib(display, config, attribute, value)) {
-                Log.w(TAG, String.format("  %s: %d\n", name, value[0]));
-            } else {
-                // Log.w(TAG, String.format("  %s: failed\n", name));
-                egl.eglGetError();
-            // while (egl.eglGetError() != EGL10.EGL_SUCCESS)
-            // ;
-            }
-        }
-    }
 }

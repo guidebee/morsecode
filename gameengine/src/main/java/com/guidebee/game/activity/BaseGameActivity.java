@@ -18,7 +18,6 @@ package com.guidebee.game.activity;
 
 //--------------------------------- IMPORTS ------------------------------------
 
-import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
@@ -135,7 +134,6 @@ public class BaseGameActivity extends Activity implements BaseActivity {
         wrapper.onWindowFocusChanged(hasFocus);
     }
 
-    @TargetApi(19)
     @Override
     public void useImmersiveMode(boolean use) {
         wrapper.useImmersiveMode(use);

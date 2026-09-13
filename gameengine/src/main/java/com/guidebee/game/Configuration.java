@@ -108,17 +108,6 @@ public class Configuration {
     public boolean useImmersiveMode = false;
 
     /**
-     * whether to use GLSurfaceView20API18
-     * in place of the classic
-     * GLSurfaceView20} on
-     * Android API 10 and lower.
-     * In case this is true GLSurfaceView20API18
-     * will be used.
-     * This implementation properly supports attach to and detach from window. default: false
-     */
-    public boolean useGLSurfaceView20API18 = false;
-
-    /**
      * pixel to box2d unit ratio
      */
     public float pixelToBox2DUnit = 32.0f;

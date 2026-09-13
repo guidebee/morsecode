@@ -3,11 +3,19 @@ apply plugin: 'com.android.library'
 android {
     namespace = 'com.guidebee.game.engine'
     compileSdk = 37
-    ndkVersion = "21.4.7075529"
+    ndkVersion = "29.0.14206865"
 
     defaultConfig {
         minSdk = 21
         targetSdk = 37
+
+        // AGP determines the ABI set to build from here, not from Application.mk's
+        // own APP_ABI line (AGP overrides that per-invocation) - see
+        // docs/GAMEENGINE_UPGRADE_PLAN.md Phase 1. armeabi-v7a/arm64-v8a cover all
+        // real devices; x86/x86_64 (emulator-only) were dropped.
+        ndk {
+            abiFilters "armeabi-v7a", "arm64-v8a"
+        }
 
         externalNativeBuild {
             ndkBuild {

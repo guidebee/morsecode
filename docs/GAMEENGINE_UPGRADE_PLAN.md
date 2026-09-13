@@ -55,9 +55,9 @@ port fixes and idioms from**, not as a dependency to pull in).
 | Build/AGP/Kotlin | `build.gradle` (root) is already on **AGP 9.4.0**, Kotlin `2.4.0`, Gradle `9.7.1`, `compileSdk/targetSdk = 37`. The **app** side is modern. | The gap is entirely inside `gameengine/`'s native + rendering layer, not the surrounding project. Good — the upgrade is scoped and won't drag in an app-wide migration. |
 | NDK | `ndkVersion = "21.4.7075529"` (NDK r21, released 2020), built via `externalNativeBuild { ndkBuild { ... } }` (`Android.mk`/`Application.mk`), `APP_PLATFORM=android-21`, `APP_STL=c++_static`. | r21 predates Apple-silicon-independent LLVM improvements, predates default 16 KB page-size alignment support (the project currently hand-patches this with `-Wl,-z,max-page-size=16384` in `Application.mk` — fragile, easy to lose on a merge), predates several `-O2`/LTO codegen improvements. |
 | ABIs | `APP_ABI := armeabi-v7a arm64-v8a x86 x86_64`. | `x86`/`x86_64` device share is ~0 in 2026; Play Store requires 64-bit-only for new devices anyway. Shipping 4 ABIs roughly doubles native-lib APK weight and native build time for no real benefit. |
-| GL binding path | `GameEngine`'s `GL20`/`GL30` (`gameengine/src/main/java/com/guidebee/game/engine/platform/GL20.java`) call `android.opengl.GLES20`/`GLES30` directly from Java — **correct**, this is the low-overhead path. | Good news: the perf problem is *not* "JNI overhead on every GL call." |
-| Dead native code | `jni/Wrapper/AndroidGL20.cpp/.h` is a full JNI↔GLES2 shim, compiled into `libgameengine.so` (`Android.mk` lists it) but **never called from any Java code** (`grep` confirms zero references). | Pure dead weight — bigger `.so`, slower native build, larger APK. Safe, zero-risk deletion. |
-| EGL config / surface | `GLSurfaceView20`/`EglConfigChooser`/`GLSurfaceViewAPI18` implement `javax.microedition.khronos.egl.EGL10`-based manual config selection, with an `...API18` code path (Android 4.3, min supported by this file — but the module's actual `minSdk` is already 21). | The `API18` fork is unreachable dead branching (min is 21, not 18) — same category as the AndroidGL20 shim: safe to delete, shrinks the surface area you have to reason about when debugging EGL/context-loss issues. |
+| GL binding path | **Corrected during Phase 1 (2026-09-13) — the original Phase 0 entry here was wrong.** `GL20.java` (`gameengine/src/main/java/com/guidebee/game/engine/platform/GL20.java`) — the GLES2 binding every game/demo actually renders through (`SpriteBatch`, `Mesh`, `ShapeRenderer`, ...) — declares **every single method `native`** (`glBindTexture`, `glBufferData`, `glDrawArrays`, all of it), backed by a JNI shim in `jni/Wrapper/AndroidGL20.cpp`. Only `GL30.java` (the much less-used GLES3 subset) calls `android.opengl.GLES30` directly from Java. The Phase 0 pass mistakenly concluded `GL20` did the same by checking import statements rather than reading method signatures. | **This is the opposite of the original "good news" conclusion** — it means the primary render path pays a JNI transition on *every* GL call, potentially hundreds per frame (bind texture, bind buffer, each draw call, ...). This is a real, concrete, and very plausible contributor to "GL performance not as good as current platform," and a strong candidate for Phase 3's highest-value fix: replacing `GL20`'s native methods with direct `android.opengl.GLES20` Java calls (the low-overhead path current libGDX's Android backend actually uses) is likely a bigger win than the state-cache/batching work originally planned for that phase. |
+| `AndroidGL20.cpp` — **not dead code** | `jni/Wrapper/AndroidGL20.cpp/.h` is the live JNI implementation backing every `GL20.java` native method (see above) — **not** dead weight. The original Phase 0 audit claimed it was dead based on `grep`-ing Java sources for the literal string `AndroidGL20` and finding no matches; that's the wrong check for JNI code, since native-method linkage is by C symbol name (`Java_com_guidebee_game_engine_platform_GL20_init`, etc.), not by any Java-side textual reference to the file/class name. **Confirmed the hard way**: deleting it in Phase 1 broke every GameEngine screen (games and demos alike) with `UnsatisfiedLinkError: No implementation found for void ...GL20.init()`, caught by the Phase 1 on-device spot-check and reverted. Full account in `docs/phase1-results-2026-09.md`. | Any future native-code deletion in this module needs to check JNI symbol coverage (e.g. `nm -D`/`llvm-nm` the built `.so` for the relevant `Java_...` symbols, or just run the app) before assuming "no Java references" means "unused." |
+| EGL config / surface | `GLSurfaceView20`/`EglConfigChooser`/`GLSurfaceViewAPI18` implement `javax.microedition.khronos.egl.EGL10`-based manual config selection, with an `...API18` code path (Android 4.3, min supported by this file — but the module's actual `minSdk` is already 21). | The `API18` fork is genuinely unreachable dead branching (min is 21, not 18, and it's gated on an Android *API level* check unlike `AndroidGL20.cpp` which is gated on JNI symbol resolution — a different, verifiable-by-reading-the-check kind of "dead"): safe to delete, shrinks the surface area you have to reason about when debugging EGL/context-loss issues. **Confirmed in Phase 1**: deleted and spot-checked on-device (3 Box2D Demo stages) with zero crashes; full validation depth matching Phase 0's (all 10 stages, all 4 lessons, all 3 games) not yet repeated against this exact build — see `docs/phase1-results-2026-09.md`'s "Still open" list. |
 | Render mode | `Graphics.java` drives `GLSurfaceView.RENDERMODE_CONTINUOUSLY` — the standard libGDX-style render thread pumping `eglSwapBuffers` every vsync. | Not itself wrong, but there's no adaptation for high-refresh-rate panels (90/120 Hz) or thermal throttling — worth a deliberate frame-pacing pass (see [3.3](#33-frame-pacing--modern-window-behavior)) rather than assuming "vsync-locked" == "fine." |
 | Box2D version | `jni/Box2D/Common/b2Settings.cpp`: `b2_version = {2, 3, 1}` — **byte-for-byte identical** to `C:\workspace\libgdx\extensions\gdx-box2d\gdx-box2d\jni\Box2D\Common\b2Settings.cpp`. | LibGDX itself never moved past Box2D 2.3.1's C++ core (Box2D v3.x is a from-scratch C rewrite with a completely different API that LibGDX has not adopted). **"Upgrade Box2D" here correctly means: re-sync the JNI wrapper layer + native build hygiene against the current `gdx-box2d`, not chase a new physics-engine major version.** |
 | Box2D usage in the 3 games | `grep` across all of `app/src/main/java` for `com.guidebee.game.physics`, `b2Body`, `createBody`, `applyForce`, `setLinearVelocity` → **zero hits**. Flappy Bird hand-rolls gravity in `Bird.act()`; Battle City is grid/AABB; Mario's actor tree (checked `actors/bricks`, `actors/enemies`) shows no physics-package imports either. | The 3 games carry **no direct Box2D regression risk** — but `gameengine` itself wires Box2D into the scene graph (`GameEngine.java`, `Actor.java`, `Group.java`, `Scenery.java`, `Stage.java`, `scene/collision/{Collision,SensorListener}.java` all import `com.guidebee.game.physics`). That path has **no test coverage from the 3 shipped games**, so it needs its own dedicated smoke test (see [5.4](#54-box2d-regression-suite)) — a Box2D regression could ship invisibly otherwise. |
@@ -141,9 +141,10 @@ Everything below assumes **(A)**.
      in the copied source. Their `res/` directories were dropped entirely
      (confirmed zero `R.*` references in either tutorial's Java source — the
      original repos' `AppCompat`-themed `styles.xml`, launcher `ic_launcher`
-     mipmaps, and Raindrop's unused `layout/main.xml` were all dead weight,
-     same category as the engine's own dead `AndroidGL20.cpp`/API18 findings
-     in the audit table above).
+     mipmaps, and Raindrop's unused `layout/main.xml` were all dead weight).
+     Note: an `R.*`-reference grep is a valid dead-code check for Android
+     resources specifically, unlike the JNI-native-method case below — see
+     the corrected "GL binding path"/`AndroidGL20.cpp` audit rows.
    - Merged each repo's `assets/` into `app/src/main/assets/`. Six loose PNGs
      (`Back_08.png`, `Button_08_Normal_Shoot.png`, `Button_08_Normal_Virgin.png`,
      `Button_08_Pressed_Shoot.png`, `Button_08_Pressed_Virgin.png`,
@@ -232,14 +233,33 @@ build-system *and* rendering — at once), but on current, supported tooling.
    ndk-utils elf-info gameengine/build/.../libgameengine.so   # or
    readelf -l libgameengine.so | grep -A1 LOAD                # check p_align
    ```
-4. Trim `Application.mk`'s `APP_ABI` to `armeabi-v7a arm64-v8a` for
-   dev/instrumented builds; keep `x86_64` only in a debug-only product
-   flavor / CI variant for emulator testing, not in the shipped `app` build.
-5. Delete the dead `AndroidGL20.cpp`/`.h` and its `LOCAL_SRC_FILES` entry in
-   `Android.mk` (confirmed zero Java callers in the audit above).
+4. Trim the ABI set to `armeabi-v7a`/`arm64-v8a` for dev/instrumented builds;
+   keep `x86_64` only in a debug-only product flavor / CI variant for
+   emulator testing, not in the shipped `app` build. **Do this via
+   `android.defaultConfig.ndk.abiFilters` in `gameengine/build.gradle`, not
+   by editing `Application.mk`'s `APP_ABI` line** — confirmed in Phase 1
+   that AGP overrides `APP_ABI` per-invocation for a Gradle-driven
+   `ndkBuild`, so an `Application.mk`-only edit silently has no effect
+   (all 4 ABIs still build). Verify by checking the actual task list in the
+   build log (`buildNdkBuildDebug[<abi>]` per ABI), not just that the build
+   succeeds.
+5. ~~Delete the dead `AndroidGL20.cpp`/`.h`~~ — **do not do this.**
+   Confirmed in Phase 1 that this file is the live JNI implementation
+   backing every native method on `GL20.java` (the GLES2 binding every
+   game/demo actually renders through) — deleting it breaks every
+   GameEngine screen with `UnsatisfiedLinkError`. The Phase 0 claim that it
+   was dead came from `grep`-ing Java sources for the class name, which is
+   the wrong check for JNI code (linkage is by C symbol name, not Java-side
+   references). See the corrected "GL binding path" audit row and
+   `docs/phase1-results-2026-09.md` for the full incident/fix. This
+   finding also reframes Phase 3: `GL20.java`'s per-call JNI overhead (every
+   `glBindTexture`/`glDrawArrays`/etc. crosses the JNI boundary) is now a
+   strong candidate for that phase's highest-value fix.
 6. Delete the unreachable `GLSurfaceViewAPI18`/`GLSurfaceView20API18` classes
    (module `minSdk` is 21, these guard for API 18) — check `Graphics.java`
    for the branch that selects them and collapse to the single modern path.
+   **This one is safe and confirmed** — it's gated on an Android API-level
+   check (verifiable by reading the condition), not JNI symbol resolution.
 7. Rebuild, confirm `.so` size drop and native build time drop (record both —
    cheap, visible wins to report).
 
@@ -313,6 +333,40 @@ all resume correctly after backgrounding).
 
 This is the phase that should move the needle on the user's original
 complaint ("OpenGL performance not as good as current Android platform").
+
+#### 3.0 Remove `GL20`'s per-call JNI overhead (new top priority, found in Phase 1)
+
+Phase 1's on-device incident (see `docs/phase1-results-2026-09.md`) revealed
+that `GL20.java` — the GLES2 binding every game and demo actually renders
+through — declares **every method `native`**, backed by a hand-written JNI
+shim (`jni/Wrapper/AndroidGL20.cpp`) rather than calling
+`android.opengl.GLES20` directly from Java. That means every
+`glBindTexture`/`glBufferData`/`glDrawArrays`/etc. call — hundreds per frame
+in a sprite-heavy scene — pays a JNI transition cost that current libGDX's
+Android backend (and the direct-call `GL30.java` already sitting right next
+to it in this same package) doesn't. This is the single most concrete,
+directly-actionable finding tied to the user's original complaint, and
+should be treated as this phase's first task, ahead of 3.1's state-cache
+work:
+
+- Rewrite `GL20.java`'s methods to call `android.opengl.GLES20` directly
+  (matching `GL30.java`'s existing pattern in the same package — this is a
+  "finish what's already started" job, not new design work).
+- Once every `GL20` call site is migrated and the module builds/runs clean,
+  `jni/Wrapper/AndroidGL20.cpp`/`.h` becomes **genuinely** dead code (finally
+  matching Phase 0's original, mistaken belief) and can be deleted then —
+  not before. Verify via `nm -D`/`llvm-nm` on the built `.so` for
+  `Java_com_guidebee_game_engine_platform_GL20_*` symbols before deleting,
+  per Phase 1's corrected audit finding.
+- This is the highest-risk single change in the whole plan (it touches every
+  draw call in every game and demo) — land it as its own PR/commit, separate
+  from 3.1's state-cache work, and run the full regression suite (all 3
+  games, all 10 Box2D stages, all 4 Raindrop lessons) against it before
+  moving on.
+- Capture a before/after perf comparison specifically for this change (frame
+  time on a sprite-heavy scene like Mario) — this is the one change in the
+  plan most likely to produce a measurable, attributable number for "did
+  this upgrade actually fix the performance complaint."
 
 #### 3.1 GL state-cache correctness
 
@@ -417,10 +471,11 @@ has zero new warnings.
 
 ### Phase 5 — Dead-code cleanup & final hardening (1–2 days)
 
-1. Remove now-confirmed-dead code identified across the audit (AndroidGL20
-   shim, API18 GL surface classes) — done incrementally in earlier phases,
-   this is the final sweep for anything missed (grep for `@Deprecated`,
-   unused imports, `TODO`/`FIXME` markers left over from the original port).
+1. Remove now-confirmed-dead code identified across the audit (API18 GL
+   surface classes — **not** the `AndroidGL20` shim, which turned out to be
+   live JNI code, see Phase 1) — done incrementally in earlier phases, this
+   is the final sweep for anything missed (grep for `@Deprecated`, unused
+   imports, `TODO`/`FIXME` markers left over from the original port).
 2. Re-run static analysis / lint (`./gradlew :gameengine:lintDebug` —
    `lintOptions.abortOnError = false` is currently set; review the report
    manually rather than relying on the build to fail).

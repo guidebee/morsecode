@@ -500,16 +500,54 @@ and use it for:
   debugger and inspect the VAO's bound `ELEMENT_ARRAY_BUFFER_BINDING`
   state) before trying again — don't just re-attempt the same
   implementation.
-- **ETC2/ASTC texture compression** for the games' atlases
-  (`flappybird.atlas`, `morsecode.atlas`, Battle City/Mario tilesets),
-  replacing the ETC1-only path in `Wrapper/Box2D/Common/ETC1.cpp`. This is a
-  genuine bandwidth/memory win and directly addresses "GL perf" — texture
-  bandwidth is frequently the actual bottleneck on integrated mobile GPUs,
-  not draw-call CPU overhead.
-- Instanced draws for repeated tile rendering in `TiledLayer`
-  (`com.guidebee.game.microedition`) and Battle City's brick-wall rendering —
-  currently very likely one `glDrawArrays`/`glDrawElements` per tile or per
-  batch-flush; instancing collapses many identical brick draws into one call.
+- **ETC2/ASTC texture compression — blocked on missing tooling
+  (2026-09-13).** Checked this environment for an ETC2/ASTC encoder
+  (`etc2comp`, `astcenc`, `pvrtextool`) and the Android SDK/NDK (r21 and
+  r29, both installed) — none ship one. GGE's existing ETC1 support
+  (`Wrapper/Box2D/Common/ETC1.cpp`, `ETC1.java`) has both an encoder *and*
+  decoder because ETC1 is simple enough to hand-roll; ETC2/ASTC are
+  meaningfully more complex codecs and writing an encoder from scratch is a
+  multi-day project, not something to improvise here. Just as importantly:
+  with no encoder, there'd be no real ETC2-compressed asset to test
+  against, so any "support" code written for it would be unverified and
+  unverifiable — exactly the kind of speculative, untested change this plan
+  has otherwise avoided. **Deferred until an encoder is available**
+  (e.g. via Android Studio's own asset-studio texture tools, or a
+  standalone `etc2comp`/`astcenc` binary brought in separately) — don't
+  attempt without one.
+- **Instanced draws for `TiledLayer`/Battle City — investigated, found to be
+  a non-issue, not implemented (2026-09-13).** The plan's premise ("likely
+  one `glDrawArrays`/`glDrawElements` per tile") doesn't hold up: `TiledLayer.paint()`
+  (`microedition/TiledLayer.java:319-371`) calls `Batch.draw()` per tile,
+  which is `SpriteBatch.draw()` — this already appends into `SpriteBatch`'s
+  existing growing vertex array rather than issuing a separate GL call per
+  tile; the actual `glDrawElements` count is driven by `SpriteBatch`'s
+  flush threshold (1000 sprites, or a texture/blend-mode switch), not by
+  tile count. Checked whether Battle City could ever realistically exceed
+  that threshold: `BattleCityGameScene` sizes the field at
+  `gameWorldWidth=420`/`gameWoldHeight=240`,
+  `ResourceManager.TILE_WIDTH=12` → `xTiles=35`, `yTiles=(240-32)/12=17`;
+  `BattleField`'s constructor doubles both for its internal grid
+  (`WIDTH_IN_TILES=70`, `HEIGHT_IN_TILES=34` → 2,380 cells total), but
+  `TiledLayer.paint()` iterates that *entire* grid every frame with no
+  viewport culling and skips any cell whose tile id is `0`
+  (`TiledLayer.java:344-347`). Reading `BattleField.drawRandomArea()`
+  (`actors/BattleField.java:355-398`): the play area is first cleared to
+  all-`0`, then obstacle clusters are scattered on a stride-6 grid with only
+  a 45% chance per anchor, each cluster covering a small handful of cells —
+  so the field is overwhelmingly empty (`continue`s in `paint()`), with only
+  on the order of ~100-300 actual tile draws per frame even at a fully
+  "unlucky" roll, plus `drawLeftArea()`'s border/letter-display tiles (a
+  fixed, bounded strip). This is nowhere close to the 1,000-sprite flush
+  threshold — `SpriteBatch` already collapses the whole tile field (plus
+  tanks/bullets/HUD, same shared atlas) into a small, roughly constant
+  number of `glDrawElements` calls per frame, most likely just 1. Instancing
+  would add real complexity and risk (a new code path parallel to
+  `SpriteBatch`, needing its own testing) for no measurable win. **Decision:
+  don't implement — same "verify before building" outcome as 3.1's three
+  claims.** Phase 3.2 is considered complete with 3.2a (GLES3 context)
+  shipped; VAOs deferred per the revert above; ETC2 deferred on tooling;
+  instancing not warranted.
 
 Keep the GLES2 path alive and selectable (`Configuration` flag) as the
 fallback for the rare remaining GLES2-only device, so this is additive, not

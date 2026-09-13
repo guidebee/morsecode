@@ -163,3 +163,51 @@ and hope — get an actual GL frame capture (e.g. Android GPU Inspector, or
 `glGetError()`/`glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, ...)` logging
 around `Mesh.bind()`/`render()` to see what's actually bound when the
 `glDrawElements` call happens.
+
+## 3.2c — ETC2/ASTC texture compression — blocked, deferred
+
+No ETC2/ASTC encoder available in this environment (checked for
+`etc2comp`/`astcenc`/`pvrtextool` and both installed NDKs; none ship one).
+Without an encoder there's no real compressed asset to test against, so any
+loader code written for it would be unverified. Deferred until an encoder
+is brought into the environment — see `GAMEENGINE_UPGRADE_PLAN.md`'s 3.2
+section for full reasoning.
+
+## 3.2d — instanced draws for `TiledLayer`/Battle City — investigated, not warranted
+
+The plan's premise was that tile rendering is "likely one `glDrawArrays`/
+`glDrawElements` per tile." Checked `TiledLayer.paint()`
+(`microedition/TiledLayer.java:319-371`): it calls `Batch.draw()` per tile,
+i.e. `SpriteBatch.draw()` — this appends into `SpriteBatch`'s own growing
+vertex array, it does **not** issue a GL draw call per tile. The real
+question is whether Battle City's tile count could ever exceed
+`SpriteBatch`'s flush threshold (1000 sprites, confirmed identical to
+libGDX's default in the 3.1 investigation above) within a single frame,
+since that's the only scenario where instancing would beat what already
+exists.
+
+Computed Battle City's actual grid: `BattleCityGameScene` uses
+`gameWorldWidth=420`, `gameWoldHeight=240`, `ResourceManager.TILE_WIDTH=12`,
+`barHeight=32` → `xTiles=35`, `yTiles=(240-32)/12=17`. `BattleField`'s
+constructor doubles both for its internal grid: `WIDTH_IN_TILES=70`,
+`HEIGHT_IN_TILES=34` → 2,380 total cells. `TiledLayer.paint()` iterates
+that whole grid every frame (no viewport culling) but skips any cell with
+tile id `0` (`TiledLayer.java:344-347`, a `continue`). Reading
+`BattleField.drawRandomArea()` (`actors/BattleField.java:355-398`): the
+play area is cleared to all-`0` first, then obstacle clusters are scattered
+on a stride-6 grid with only a 45% placement chance per anchor, each
+cluster covering a handful of cells — the field is overwhelmingly empty,
+landing at roughly 100-300 actual tile draws per frame even in a fully
+"unlucky" random roll, plus `drawLeftArea()`'s fixed-size border/letter
+strip. This is well under the 1,000-sprite flush threshold, so
+`SpriteBatch` already collapses the entire field (plus tanks/bullets/HUD,
+sharing the same atlas) into a small, effectively constant number of
+`glDrawElements` calls per frame — most likely just 1.
+
+**Decision: don't implement.** Same outcome as the 3.1 investigation —
+verifying the premise against the actual codebase found it false, so no
+code was written. Instancing would add a new parallel rendering path (with
+its own testing/maintenance burden) for no measurable benefit here.
+**Phase 3.2 is complete**: 3.2a (GLES3 context) shipped, 3.2b (VAOs)
+reverted with guidance for a future attempt, 3.2c (ETC2) deferred on
+tooling, 3.2d (instancing) not warranted.

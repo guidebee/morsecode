@@ -93,9 +93,11 @@ fun HomeScreen(
         ToolItem(stringResource(R.string.handbook), Icons.Filled.Book, onOpenHandbook),
         ToolItem(stringResource(R.string.flappybird), Icons.Filled.SportsEsports, onOpenFlappyBird),
         ToolItem(stringResource(R.string.battlecity), Icons.Filled.SportsEsports, onOpenBattleCity),
-        ToolItem(stringResource(R.string.mario), Icons.Filled.SportsEsports, onOpenMario),
-        ToolItem(stringResource(R.string.box2d_demo), Icons.Filled.SportsEsports, onOpenBox2DDemo),
-        ToolItem(stringResource(R.string.raindrop_demo), Icons.Filled.SportsEsports, onOpenRaindropDemo)
+        ToolItem(stringResource(R.string.mario), Icons.Filled.SportsEsports, onOpenMario)
+        // Box2D Demo / Raindrop Demo intentionally hidden from the Home screen --
+        // they're gameengine regression fixtures, not end-user features. Still
+        // reachable via StagePickerActivity/LessonPickerActivity directly (e.g.
+        // adb, or temporarily toggling android:exported) for future engine work.
     )
 
     Scaffold(

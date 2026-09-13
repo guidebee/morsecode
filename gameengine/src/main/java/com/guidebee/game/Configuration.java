@@ -60,6 +60,16 @@ public class Configuration {
     public boolean useCompass = true;
 
     /**
+     * Whether to request an OpenGL ES 3.0 context (with automatic fallback
+     * to ES 2.0 if the device/driver can't create one) instead of always
+     * requesting ES 2.0. minSdk 21 already implies near-universal ES 3.0
+     * hardware support, so this defaults to true; set to false to force the
+     * old ES 2.0-only path (e.g. for a device found to have a buggy ES 3.0
+     * driver). default: true.
+     */
+    public boolean useGL30 = true;
+
+    /**
      * the time in milliseconds to sleep after each event in the touch handler,
      * set this to 16ms to get rid of touch flooding on
      * pre Android 2.0 devices. default: 0.

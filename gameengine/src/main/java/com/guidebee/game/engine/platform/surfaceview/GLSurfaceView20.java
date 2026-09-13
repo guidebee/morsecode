@@ -62,16 +62,26 @@ public class GLSurfaceView20 extends GLSurfaceView {
 
     public GLSurfaceView20(Context context,
                            ResolutionStrategy resolutionStrategy) {
+        this(context, true, resolutionStrategy);
+    }
+
+    public GLSurfaceView20(Context context, boolean useGL30,
+                           ResolutionStrategy resolutionStrategy) {
         super(context);
         this.resolutionStrategy = resolutionStrategy;
-        init(false, 16, 0);
+        init(false, 16, 0, useGL30);
     }
 
     public GLSurfaceView20(Context context, boolean translucent, int depth,
                            int stencil, ResolutionStrategy resolutionStrategy) {
+        this(context, translucent, depth, stencil, true, resolutionStrategy);
+    }
+
+    public GLSurfaceView20(Context context, boolean translucent, int depth,
+                           int stencil, boolean useGL30, ResolutionStrategy resolutionStrategy) {
         super(context);
         this.resolutionStrategy = resolutionStrategy;
-        init(translucent, depth, stencil);
+        init(translucent, depth, stencil, useGL30);
 
     }
 
@@ -125,7 +135,7 @@ public class GLSurfaceView20 extends GLSurfaceView {
         return connection;
     }
 
-    private void init(boolean translucent, int depth, int stencil) {
+    private void init(boolean translucent, int depth, int stencil, boolean useGL30) {
 
 		/*
 		 * By default, GLSurfaceView() creates a RGB_565 opaque surface.
@@ -139,10 +149,10 @@ public class GLSurfaceView20 extends GLSurfaceView {
         }
 
 		/*
-		 * Setup the context factory for 2.0 rendering. See ContextFactory
+		 * Setup the context factory for 2.0/3.0 rendering. See ContextFactory
 		 * class definition below
 		 */
-        setEGLContextFactory(new ContextFactory());
+        setEGLContextFactory(new ContextFactory(useGL30));
 
 		/*
 		 * We need to choose an EGLConfig that matches the format of our
@@ -160,15 +170,45 @@ public class GLSurfaceView20 extends GLSurfaceView {
     static class ContextFactory implements GLSurfaceView.EGLContextFactory {
         private static int EGL_CONTEXT_CLIENT_VERSION = 0x3098;
 
+        private final boolean useGL30;
+
+        ContextFactory(boolean useGL30) {
+            this.useGL30 = useGL30;
+        }
+
         public EGLContext createContext(EGL10 egl, EGLDisplay display,
                                         EGLConfig eglConfig) {
-            Log.w(TAG, "creating OpenGL ES 2.0 context");
             checkEglError("Before eglCreateContext", egl);
-            int[] attrib_list = {EGL_CONTEXT_CLIENT_VERSION, 2,
-                    EGL10.EGL_NONE};
+            if (useGL30) {
+                EGLContext context = tryCreateContext(egl, display, eglConfig, 3);
+                if (context != null) {
+                    Log.w(TAG, "creating OpenGL ES 3.0 context");
+                    return context;
+                }
+                Log.w(TAG, "OpenGL ES 3.0 context creation failed, falling back to ES 2.0");
+            }
+            Log.w(TAG, "creating OpenGL ES 2.0 context");
+            EGLContext context = tryCreateContext(egl, display, eglConfig, 2);
+            checkEglError("After eglCreateContext", egl);
+            return context;
+        }
+
+        /**
+         * Returns the created context, or null if creation failed (e.g. the
+         * driver doesn't actually support the requested client version even
+         * though the EGLConfig's EGL_RENDERABLE_TYPE bitmask advertised it -
+         * this happens on some older/buggy drivers). Clears any resulting
+         * EGL error so the subsequent fallback attempt starts clean.
+         */
+        private EGLContext tryCreateContext(EGL10 egl, EGLDisplay display,
+                                            EGLConfig eglConfig, int version) {
+            int[] attrib_list = {EGL_CONTEXT_CLIENT_VERSION, version, EGL10.EGL_NONE};
             EGLContext context = egl.eglCreateContext(display, eglConfig,
                     EGL10.EGL_NO_CONTEXT, attrib_list);
-            checkEglError("After eglCreateContext", egl);
+            if (context == null || context == EGL10.EGL_NO_CONTEXT
+                    || egl.eglGetError() != EGL10.EGL_SUCCESS) {
+                return null;
+            }
             return context;
         }
 
@@ -196,14 +236,24 @@ public class GLSurfaceView20 extends GLSurfaceView {
         }
 
         /*
-         * This EGL config specification is used to specify 2.0 rendering.
+         * This EGL config specification is used to specify 2.0/3.0 rendering.
          * We use a minimum size of 4 bits for red/green/blue, but
          * will perform actual matching in chooseConfig() below.
+         *
+         * EGL_RENDERABLE_TYPE here requires the config support BOTH the ES2
+         * and ES3 bits (eglChooseConfig treats this as "all requested bits
+         * must be present", not "any of"), so the same config can back
+         * either an ES3 context or an ES2 fallback context created against
+         * it (see ContextFactory). Every ES3-capable Android GPU driver in
+         * practice also advertises the ES2 bit on its ES3 configs, so this
+         * doesn't exclude any real device.
          */
         private static int EGL_OPENGL_ES2_BIT = 4;
+        private static int EGL_OPENGL_ES3_BIT_KHR = 0x0040;
         private static int[] s_configAttribs2 = {EGL10.EGL_RED_SIZE, 4,
                 EGL10.EGL_GREEN_SIZE, 4, EGL10.EGL_BLUE_SIZE, 4,
-                EGL10.EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT, EGL10.EGL_NONE};
+                EGL10.EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT | EGL_OPENGL_ES3_BIT_KHR,
+                EGL10.EGL_NONE};
 
         public EGLConfig chooseConfig(EGL10 egl, EGLDisplay display) {
 

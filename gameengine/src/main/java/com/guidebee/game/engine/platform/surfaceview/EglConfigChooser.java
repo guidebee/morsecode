@@ -36,6 +36,14 @@ import javax.microedition.khronos.egl.EGLDisplay;
  */
 public class EglConfigChooser implements GLSurfaceView.EGLConfigChooser {
     private static final int EGL_OPENGL_ES2_BIT = 4;
+    // Requiring both bits (not either) is intentional: eglChooseConfig's
+    // EGL_RENDERABLE_TYPE filter is an "all requested bits present" match,
+    // and we need a config usable by whichever context version
+    // GLSurfaceView20.ContextFactory actually manages to create (ES3, or
+    // its ES2 fallback) - see docs/GAMEENGINE_UPGRADE_PLAN.md Phase 3.2.
+    // Every ES3-capable Android GPU driver in practice also advertises the
+    // ES2 bit on its ES3 configs, so this doesn't exclude any real device.
+    private static final int EGL_OPENGL_ES3_BIT_KHR = 0x0040;
     public static final int EGL_COVERAGE_BUFFERS_NV = 0x30E0;
     public static final int EGL_COVERAGE_SAMPLES_NV = 0x30E1;
     private static final String TAG = "EglConfigChooser";
@@ -62,7 +70,8 @@ public class EglConfigChooser implements GLSurfaceView.EGLConfigChooser {
 
         mConfigAttribs = new int[]{EGL10.EGL_RED_SIZE, 4, EGL10.EGL_GREEN_SIZE, 4,
                 EGL10.EGL_BLUE_SIZE, 4,
-                EGL10.EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT, EGL10.EGL_NONE};
+                EGL10.EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT | EGL_OPENGL_ES3_BIT_KHR,
+                EGL10.EGL_NONE};
     }
 
     public EGLConfig chooseConfig(EGL10 egl, EGLDisplay display) {

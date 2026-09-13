@@ -398,34 +398,82 @@ device session; the performance direction itself isn't in doubt since this
 is libGDX's own decade-proven production pattern, just the magnitude is
 unmeasured). Full writeup in `docs/phase3-results-2026-09.md`.
 
-#### 3.1 GL state-cache correctness
+#### 3.1 GL state-cache correctness — investigated, no action item found (2026-09-13)
 
-Port the accumulated GL-state-cache bug fixes from current libGDX's
-`com.badlogic.gdx.graphics.glutils.HdpiUtils` / `GL20`/`Mesh`/`SpriteBatch`
-equivalents (`C:\workspace\libgdx\gdx\src\com\badlogic\gdx\graphics\`) into
-`gameengine/src/main/java/com/guidebee/game/graphics/{Mesh,SpriteBatch,Batch,Texture}.java`:
+This section's three claims were speculative when originally written (Phase
+0), based on "a 10-year-old fork is very likely missing decade-of-bugfixes"
+reasoning rather than an actual diff against current libGDX. Checked all
+three against `C:\workspace\libgdx\gdx\src\com\badlogic\gdx\graphics\` this
+session — **all three turned out to be false**:
 
-- Redundant state-change elimination (skip `glBindTexture`/`glUseProgram`/
-  `glBindBuffer` calls when the target is already bound — a 10-year-old fork
-  is very likely missing several of these that were added to libGDX over
-  the following decade as driver-behavior bug reports came in).
-- Confirm `SpriteBatch`/`PolygonSpriteBatch` upload path uses
-  `glBufferSubData` for the per-frame-changing vertex data against a
-  pre-allocated `GL_DYNAMIC_DRAW` buffer, not a full `glBufferData`
-  re-allocation every flush — this is one of the single biggest sprite-batch
-  perf differences between "old" and "current" mobile GL code.
-- Compare flush/batch-size heuristics (max sprites per batch, texture-switch
-  triggered flush) against current libGDX defaults; the mid-2010s constants
-  chosen for that era's typical texture-atlas sizes and GPU vertex throughput
-  are conservative today.
+- ~~Redundant `glBindBuffer`/`glUseProgram` elimination~~: checked current
+  libGDX's own `VertexBufferObject.bind()` — it calls `glBindBuffer`
+  unconditionally on every call, exactly like GGE's fork. Current libGDX
+  does not do this optimization at the Mesh/VBO level either; there's
+  nothing to port.
+- ~~`glBufferSubData` instead of `glBufferData` per flush~~: checked current
+  libGDX's `VertexBufferObjectSubData` (the one variant that *can* use
+  `glBufferSubData`) — its `glBufferSubData` path only fires when
+  `setVertices()` is called while the VBO is *already bound*.
+  `SpriteBatch.flush()` in both GGE and current libGDX calls
+  `mesh.setVertices()` *before* `mesh.render()`/`bind()` — so neither old nor
+  current code ever takes that path for the standard sprite-batch flush; both
+  fall through to the same full `glBufferData` re-upload on `bind()`. Not a
+  real difference, and arguably not even a real problem: `glBufferData`
+  re-specification ("orphaning") on a per-frame streaming buffer is a
+  legitimate, GPU-driver-recommended pattern in its own right — it lets the
+  driver hand back a fresh buffer instead of stalling on a `glBufferSubData`
+  write against a buffer the GPU might still be reading from a prior frame.
+- ~~Conservative default batch size~~: GGE's `SpriteBatch()` and current
+  libGDX's `SpriteBatch()` both default to exactly `1000` sprites (down to
+  matching javadoc wording) — byte-for-byte identical.
+- `HdpiUtils` (cited as a source to port from) turned out to be
+  logical-vs-backbuffer coordinate scaling for `glViewport`/`glScissor` on
+  HiDPI displays — unrelated to GL state-caching entirely. Whether GGE's own
+  viewport/resolution-strategy classes (`FillResolutionStrategy`, etc.)
+  need equivalent HiDPI backbuffer handling is a separate, not-yet-investigated
+  question, distinct from what this section originally claimed.
+
+**No code change made for this section** — investigating a specific,
+falsifiable claim and finding it doesn't hold is the correct outcome here,
+not a reason to invent unnecessary changes. If real GL state-cache issues
+exist in this codebase, they'll need a different, more specific starting
+point than "port from libGDX" (which, in this specific area, already
+matches).
 
 #### 3.2 GLES 3.0 completion
 
-`GL30`/`IGL30` already exist but aren't fully used. Since `minSdk = 21`
-already implies near-universal GLES 3.0 hardware support in 2026, opt the
-default context into GLES 3.0 (`setEGLContextClientVersion(3)` with a GLES2
-context as a documented fallback path only, not the default) and use it for:
+`GL30`/`IGL30` already exist but aren't fully used — in fact, investigation
+this session found `GameEngine.gl30` was **never assigned at all**;
+`Graphics.setupGL()` unconditionally created a `GL20`, so every consumer of
+`com.guidebee.game.physics`/anything checking `GameEngine.gl30` would have
+gotten `null`. Not "partially used" as originally assumed — 0% used. Since
+`minSdk = 21` already implies near-universal GLES 3.0 hardware support in
+2026, opt the default context into GLES 3.0 (`setEGLContextClientVersion(3)`
+with a GLES2 context as a documented fallback path only, not the default)
+and use it for:
 
+- **EGL context version — done (2026-09-13).** `GLSurfaceView20.ContextFactory`
+  now tries to create an ES3 context first (checking for
+  `EGL10.EGL_NO_CONTEXT`/an EGL error to detect failure, which also clears
+  the error state for the fallback attempt) and falls back to ES2 only if
+  that fails. Widened the renderable-type bitmask in the **actually-used**
+  config chooser — turned out to be `EglConfigChooser.java`, not
+  `GLSurfaceView20`'s own internal `ConfigChooser` inner class, which is
+  dead code: `Graphics.getEglConfigChooser()` always returns a non-null
+  `EglConfigChooser`, so `Graphics.createGLSurfaceView()` always calls
+  `view.setEGLConfigChooser(configChooser)` right after construction,
+  unconditionally overriding whatever `GLSurfaceView20`'s own `init()` set
+  moments earlier. Added `Configuration.useGL30` (default `true`) as the
+  opt-out flag the plan asked for, threaded through to the context factory.
+  `Graphics.setupGL()` detects which version was actually negotiated by
+  parsing the driver's own `GL_VERSION` string (`"OpenGL ES 3.2 ..."` etc.)
+  rather than trusting the request — instantiates `GL30`/sets
+  `GameEngine.gl30` only when the driver actually reports ES3+.
+  **Verified on-device** (Mali-G615 MC2, this device never got past ES2
+  before): logcat confirms `creating OpenGL ES 3.0 context` /
+  `OGL version: OpenGL ES 3.2 v1.r44p1-...`; full regression suite (3 games
+  + 10 Box2D stages + 4 Raindrop lessons) passes, pixel-identical rendering.
 - **VAOs** (`glGenVertexArrays`/`glBindVertexArray`) instead of re-specifying
   vertex attrib pointers every draw call.
 - **ETC2/ASTC texture compression** for the games' atlases

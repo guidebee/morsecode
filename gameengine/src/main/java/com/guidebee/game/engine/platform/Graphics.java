@@ -125,7 +125,7 @@ public class Graphics implements com.guidebee.game.Graphics, Renderer {
 
         EGLConfigChooser configChooser = getEglConfigChooser();
         GLSurfaceView20 view = new GLSurfaceView20(application.getContext(),
-                resolutionStrategy);
+                config.useGL30, resolutionStrategy);
         if (configChooser != null)
             view.setEGLConfigChooser(configChooser);
         else
@@ -220,7 +220,16 @@ public class Graphics implements com.guidebee.game.Graphics, Renderer {
     private void setupGL(javax.microedition.khronos.opengles.GL10 gl) {
         if (gl20 != null) return;
 
-        gl20 = new GL20();
+        String versionString = gl.glGetString(GL10.GL_VERSION);
+        if (config.useGL30 && isGLES3OrAbove(versionString)) {
+            GL30 gl30Impl = new GL30();
+            gl20 = gl30Impl;
+            gl30 = gl30Impl;
+            GameEngine.gl30 = gl30Impl;
+        } else {
+            gl20 = new GL20();
+            GameEngine.gl30 = null;
+        }
 
         GameEngine.gl = gl20;
         GameEngine.gl20 = gl20;
@@ -229,10 +238,26 @@ public class Graphics implements com.guidebee.game.Graphics, Renderer {
                 + gl.glGetString(GL10.GL_RENDERER));
         GameEngine.app.log(LOG_TAG, "OGL vendor: "
                 + gl.glGetString(GL10.GL_VENDOR));
-        GameEngine.app.log(LOG_TAG, "OGL version: "
-                + gl.glGetString(GL10.GL_VERSION));
+        GameEngine.app.log(LOG_TAG, "OGL version: " + versionString);
         GameEngine.app.log(LOG_TAG, "OGL extensions: "
                 + gl.glGetString(GL10.GL_EXTENSIONS));
+    }
+
+    /**
+     * The EGLConfig's EGL_RENDERABLE_TYPE bitmask only says a config is
+     * eligible for ES3 - the actual context created by
+     * GLSurfaceView20.ContextFactory may still have fallen back to ES2 (see
+     * docs/GAMEENGINE_UPGRADE_PLAN.md Phase 3.2). Parsing the driver's own
+     * GL_VERSION string is the reliable way to know which one we actually
+     * got, independent of how the context was requested.
+     */
+    private static boolean isGLES3OrAbove(String glVersionString) {
+        if (glVersionString == null) return false;
+        // Android GL_VERSION strings look like "OpenGL ES 3.2 v1.r38...".
+        java.util.regex.Matcher m = java.util.regex.Pattern
+                .compile("OpenGL ES (\\d+)\\.")
+                .matcher(glVersionString);
+        return m.find() && Integer.parseInt(m.group(1)) >= 3;
     }
 
     @Override

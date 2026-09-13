@@ -994,3 +994,149 @@ Phase 1 + max(Phase 2, Phase 3, Phase 4) + Phase 5 ≈ **7–10 working days**.
 - [x] The Box2D Demo and Raindrop Demo menu entries remain in `app/` as a
       standing regression suite — never removed, used as the primary
       regression fixture in every phase of this upgrade.
+
+---
+
+## 9. Future upgrade strategy: how much should we keep referencing libGDX? (2026-09-13)
+
+Asked after Phase 5 shipped: for the *next* round of engine work, do we still
+need libGDX as a reference, or has GGE diverged enough to just evolve
+independently based on the 3 games' own needs? Checked by reading
+`C:\workspace\libgdx`'s actual git history (a live clone, current as of this
+research — HEAD dated this month, latest tagged release `1.14.2`), not just
+diffing file contents once more. **The answer is different for different
+parts of the engine — this isn't a single yes/no.**
+
+### Box2D: libGDX stopped being a living upstream in 2015 — stop referencing it here
+
+`git log -- extensions/gdx-box2d/gdx-box2d/jni/Box2D` shows the vendored
+Box2D C++ source has had exactly one substantive commit since it was pinned
+to 2.3.1, and that commit is dated **22 July 2015**:
+
+```
+06562a4c3  Fix minimum vertex distance check
+           See https://github.com/erincatto/Box2D/pull/350
+```
+
+The diff is **byte-for-byte the same fix** Phase 4 of this plan "discovered"
+independently in `b2PolygonShape.cpp` (the squared-vs-linear vertex-welding
+threshold). In other words: libGDX's copy got this fix in 2015, GGE's fork
+never picked it up until Phase 4 just now, and there has been **nothing else**
+in libGDX's Box2D tree to sync since. Re-diffing against libGDX's `gdx-box2d`
+again in a future round will find nothing new — it's frozen, not maintained.
+
+If more Box2D bug fixes are wanted later, the correct reference is the real
+upstream (`github.com/erincatto/box2d`), not libGDX. Be aware going in:
+upstream Box2D did a ground-up rewrite for its current major version
+(**Box2D v3**, a C API, data-oriented/SoA internals) that is **source-
+incompatible** with the C++ 2.x line our JNI wrapper (and libGDX's) is built
+against. Adopting it isn't a "sync," it's a rewrite of
+`gameengine/src/main/jni/Box2D/` and every JNI signature in
+`Wrapper/Box2D/`/`com.guidebee.game.physics.*` — a multi-week project with no
+demonstrated need from either game. **Recommendation: don't chase Box2D v3.
+If the legacy 2.x C++ line still receives occasional community patches
+upstream, a targeted diff against that branch specifically (not libGDX) is
+cheap and worth doing every year or two; a wholesale migration is not
+worth it.**
+
+### The Android GL/lifecycle backend: keep referencing it — it's active, and it just handed us a probable fix for the crash we parked
+
+`gdx-backend-android/.../AndroidGraphics.java` is a different story entirely
+— commits as recent as **April 2026**. Four are directly relevant to defects
+GGE still carries, found just from reading the last 20 commits to this one
+file:
+
+1. **`Fix Android fast pause/resume bug (#6074)`, June 2020.** GGE's
+   `Graphics.pause()` (`gameengine/.../platform/Graphics.java`) still has
+   this *exact, verbatim* comment, unfixed:
+   ```java
+   // TODO: fix deadlock race condition with quick resume/pause.
+   // Temporary workaround:
+   // Android ANR time is 5 seconds, so wait up to 4 seconds before assuming
+   // deadlock and killing process. This can easily be triggered by opening the
+   // Recent Apps list and then double-tapping the Recent Apps button with
+   // ~500ms between taps.
+   ```
+   This is the *identical* comment libGDX had before this fix — strong,
+   near-certain evidence this is the root cause of **this plan's own parked
+   Phase 2 rapid-relaunch `SIGSEGV`** (see `docs/phase2-notes-2026-09.md`),
+   which was investigated, never root-caused, and left as a "kill the
+   process after a 4s timeout" safety valve rather than a real fix — exactly
+   what libGDX describes replacing. The fix: instead of passively `wait()`ing
+   for the GL thread's normal render loop to eventually notice the `pause`
+   flag and call back (which never happens if the render loop has already
+   stalled — e.g. `RENDERMODE_WHEN_DIRTY`, or a surface teardown mid-flight,
+   both of which GGE supports, same as libGDX), force it: queue a `Runnable`
+   via `view.queueEvent(...)` that directly invokes `onDrawFrame(null)` on
+   the GL thread, guaranteeing the pending pause is processed regardless of
+   whether the render loop would have ticked on its own.
+   `GGE's GLSurfaceView20 already `extends android.opengl.GLSurfaceView`, so
+   `queueEvent()` is available for free — `Graphics` just needs to retain a
+   field reference to its view (currently a local variable in
+   `createGLSurfaceView()`) to call it from `pause()`.
+2. **`Fix ANR/crash in AndroidGraphics.destroy() due to infinite wait() (#7699)`,
+   November 2025.** The identical pattern applied to `destroy()` instead of
+   `pause()` — same `queueEvent`-forces-`onDrawFrame` fix, same underlying
+   "the wait never gets notified if the render loop already stopped"
+   vulnerability. GGE's `destroy()` has the same exposure and needs the same
+   fix.
+3. **`fix: prevent delta time from being negative (#7752)`, April 2026.**
+   `if (lastFrameTime > time) lastFrameTime = time;` guards against
+   `System.nanoTime()` non-monotonicity (can happen across CPU core
+   migrations on some devices) producing a negative `deltaTime`. GGE's
+   `Graphics.onDrawFrame()` (`deltaTime = (time - lastFrameTime) / 1e9f`)
+   has no such guard at all.
+4. **`Fix #6228. Removed delta smoothing on Android backend (#6233)`,
+   October 2020**, marked as a *breaking change* in libGDX's own `CHANGES`
+   file (`getDeltaTime()` now returns raw delta, not smoothed). GGE's
+   `Graphics.java` still carries the pre-2020 `WindowedMean`-based smoothing
+   this fix removed (`mean.addValue(deltaTime)` /
+   `getDeltaTime()` returning `mean.getMean()`) — a pattern libGDX itself
+   found buggy enough to rip out five years ago.
+
+**Recommendation: keep `gdx-backend-android`'s `AndroidGraphics.java` (and
+its close neighbors — `GLSurfaceView20`'s upstream analog, `EGLConfigChooser`)
+on a periodic re-check list.** It's compact, focused, and has now caught
+real bugs twice (the GL20/VAO/EGL patterns Phase 3 leaned on, and these four
+lifecycle fixes) — a much better value/effort ratio than the Box2D tree.
+
+### Everything else: GGE has diverged too far — don't reference libGDX for it
+
+`com.guidebee.game.scene`/`ui`/`ui.actions` (the Scene2D-equivalent layer),
+`com.guidebee.game.microedition` (the MIDP-style `LayerManager`/`Sprite`/
+`TiledLayer` API — **libGDX doesn't have this at all**), and
+`com.guidebee.game.entity` (the Entity System Framework) have all evolved
+independently for a decade-plus on both sides. A file-level diff here isn't
+meaningful the way it is for Box2D or the GL backend — class names, package
+structure, and design decisions have genuinely diverged. Future changes to
+these layers should be driven by what Flappy Bird/Battle City/Mario actually
+need, not by tracking libGDX.
+
+### Net recommendation: a tiered reference policy, not a blanket answer
+
+| Area | Keep referencing libGDX? | Why |
+|---|---|---|
+| `jni/Box2D/` (vendored physics engine) | **No** — frozen since 2015, nothing left to sync | Confirmed via git history; Phase 4 already captured the one real fix that existed |
+| `Wrapper/Box2D/`/`com.guidebee.game.physics` (JNI glue) | **Only if a specific bug is suspected** | Diverged file layout (jnigen-generated vs. checked-in); no evidence of further drift-driven bugs beyond what Phase 4 found |
+| `platform/Graphics.java`/`GLSurfaceView20`/`EglConfigChooser` (Android GL/lifecycle backend) | **Yes — actively, on a regular cadence** | Proven high-value twice; 4 concrete unported fixes identified just now (see above) |
+| `com.guidebee.game.scene`/`ui`/`entity`/`microedition` | **No** | Diverged independently for 10+ years; no comparable libGDX equivalent (`microedition`) or no longer structurally similar enough to diff |
+
+### Backlog for the next engine-work session (not yet implemented)
+
+1. Port the `pause()`/`destroy()` `queueEvent`-forces-`onDrawFrame` fix from
+   libGDX commits `76dd2ec44` (2020) and `0d669f038` (2025) into
+   `Graphics.java` — **highest-priority item, likely resolves the parked
+   Phase 2 crash**. Needs `Graphics` to retain a field reference to its
+   `GLSurfaceView20` (currently a local var in `createGLSurfaceView()`).
+2. Add the monotonic-clock guard from libGDX commit `4fee8d5b4` (2026) to
+   `Graphics.onDrawFrame()`.
+3. Evaluate removing `Graphics`'s `WindowedMean` deltaTime smoothing, matching
+   libGDX's own `91ada330a` (2020) — test carefully first, since libGDX
+   flagged this as a breaking behavior change for consumers of
+   `getDeltaTime()`, and both games' physics (`Bird.act()`'s gravity
+   integration, Mario's `frames = delta * 60f` pattern) read that value
+   directly.
+4. Re-run this same git-history check against `gdx-backend-android` again
+   before the *next* engine-upgrade round (not every commit will be this
+   relevant, but the cadence has been roughly one relevant fix every 6-12
+   months based on the last 3 years of history).

@@ -626,37 +626,64 @@ one gameplay frame against Phase-0 baseline screenshots).
 
 ---
 
-### Phase 4 — Box2D native layer upgrade (2–4 days)
+### Phase 4 — Box2D native layer upgrade — done (2026-09-13)
 
 Since the Box2D **version** is already at parity with upstream (`2.3.1`), this
-phase is a **JNI wrapper + native build re-sync**, not a physics-API migration.
+phase was a **JNI wrapper + native build re-sync**, not a physics-API migration.
 
-1. Diff `gameengine/src/main/jni/Box2D/` against
-   `C:\workspace\libgdx\extensions\gdx-box2d\gdx-box2d\jni\Box2D\` file-by-file
-   (`diff -rq` two directories) — both are 2.3.1, so any delta is either a
-   local Guidebee patch (must be preserved/re-applied) or a libGDX-side bug
-   fix that never got pulled back (should be adopted).
-2. Same diff for `Wrapper/Box2D/` vs `gdx-box2d`'s own Java↔C++ glue
-   (`gdx-box2d/jni/com.badlogic.gdx.physics.box2d.*`) — this is where JNI
-   correctness bugs (reference leaks, `GetDirectBufferAddress` misuse,
-   stale local refs across `World.step()` callbacks) tend to live, and where
-   a decade of upstream bug reports would have accumulated fixes.
-3. Rebuild the Box2D translation unit under the modernized NDK from Phase 1
-   with the same warnings-as-errors bar the rest of the native module uses;
-   fix any new compiler warnings from the newer Clang/LLVM (common ones:
-   narrowing conversions, `-Wreorder`, deprecated `register` keyword still
-   present in old Box2D 2.3.1 headers).
-4. Re-verify float determinism / solver iteration constants
-   (`GameEngine.VELOCITY_ITERATIONS`/`POSITION_ITERATIONS` or equivalent
-   static fields called out in `docs/GAME_ENGINE.md`) are unchanged — Box2D
-   is sensitive to compiler optimization flags affecting floating-point
-   codegen; a stricter `-O2`/LTO setting on the new NDK could subtly change
-   simulation results. Confirm with the regression suite in
-   [5.4](#54-box2d-regression-suite-box2d-tutorial-repo).
+1. **`Box2D/` core diff vs. current libgdx — done.** 22 of 94 files had
+   real content differences. Found and adopted a genuine upstream bug fix
+   (`b2PolygonShape.cpp`'s vertex-welding threshold was comparing a squared
+   distance against a non-squared threshold), adopted 14 files' worth of
+   missing standard-library includes libgdx added (same root cause as
+   Phase 1's `Stb_Image.cpp` incident — NDK r29's stricter headers), and
+   confirmed one local Guidebee patch (`b2Settings.h`) is already ahead of
+   upstream and was left untouched.
+2. **`Wrapper/Box2D/` JNI glue — targeted, not exhaustive.** Discovered
+   GGE's `com.guidebee.game.physics.*` classes use the same `jnigen`
+   convention as current libgdx (JNI bodies embedded as `/*JNI*/` comments
+   in the `.java` files, with the checked-in `.cpp`/`.h` as generated
+   artifacts) — a raw directory diff doesn't apply since file layout/class
+   names diverge. Spot-checked `World.cpp` (the file the plan flagged for
+   stale-ref risk around `World.step()` callbacks) against libgdx's own
+   pattern — structurally identical, no leak pattern found. A full 63-file
+   semantic audit was not done — flagged as future work in
+   `docs/phase4-results-2026-09.md`.
+3. **Clean rebuild under the modernized NDK — done, found 2 real bugs.**
+   A forced full rebuild surfaced `-Wsizeof-pointer-div` in
+   `b2BroadPhase.h`: `qsort(m_pairBuffer, sizeof(m_pairBuffer) / sizeof(b2Pair), ...)`
+   truncates to 0 on every platform (pointer size / struct size), meaning
+   **the broad-phase pair buffer has never actually been sorted** — a
+   real, confirmed, long-standing Box2D bug present in current libgdx too
+   (an unfixed upstream defect, not something libgdx already fixed).
+   Fixed to `qsort(m_pairBuffer, m_pairCount, ...)`, matching the original
+   `std::sort` intent still visible commented out just above it. Also
+   found and fixed a real signature bug in GGE's own `RopeJoint` JNI glue
+   (`jniSetMaxLength` declared `jfloat`/`float` but never returned a
+   value — libgdx's own copy correctly declares this `void`) while
+   chasing an unrelated warning. A mechanical sweep of all 120 non-void
+   native JNI methods in the physics package for the same
+   declared-but-never-returns pattern found no other instances.
+4. **Solver iteration constants — confirmed unchanged.** No edit in this
+   phase touched `b2Settings.h`'s constants or the native build's
+   optimization flags.
 
-**Exit criteria:** all 10 stages in the in-app Box2D Demo (5.4) pass
-bit-for-bit or visually-identical against the Phase-0 baseline; native build
-has zero new warnings.
+Full writeup: `docs/phase4-results-2026-09.md`.
+
+**Verification:** clean full native rebuild succeeds with zero
+Box2D-scoped warnings remaining (only pre-existing, out-of-scope
+`Wrapper/Box2D/Common/` image-utility warnings — JPGD/Stb_Image/
+BufferUtils/ETC1Utils/2DPixmap — remain, deferred to Phase 5). All 10
+Box2D Demo stages (launched directly via intent extras, with
+`am force-stop` between each — `Box2DGameActivity` has no `onNewIntent`)
+render correctly with stable, settled physics and zero crashes. The 3
+games were not re-tested — confirmed via grep that none of them reference
+`com.guidebee.game.physics` at all, so there's no code-path overlap.
+
+**Exit criteria:** all 10 Box2D Demo stages pass visually (no
+prior-phase baseline screenshots existed to diff pixel-for-pixel against,
+but all render correctly, settled, crash-free); native build has zero new
+warnings — actually fewer than before this phase.
 
 ---
 

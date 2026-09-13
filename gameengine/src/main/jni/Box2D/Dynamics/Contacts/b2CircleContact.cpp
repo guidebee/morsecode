@@ -22,6 +22,7 @@
 #include <Box2D/Dynamics/b2WorldCallbacks.h>
 #include <Box2D/Common/b2BlockAllocator.h>
 #include <Box2D/Collision/b2TimeOfImpact.h>
+#include <new>
 
 using namespace std;
 

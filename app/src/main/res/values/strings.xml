@@ -50,6 +50,8 @@
     <string name="flappybird">Flappy Bird</string>
     <string name="battlecity">Battle City</string>
     <string name="mario">Mario</string>
+    <string name="box2d_demo">Box2D Demo</string>
+    <string name="raindrop_demo">Raindrop Demo</string>
     <string name="drawer_open">Open navigation drawer</string>
     <string name="drawer_close">Close navigation drawer</string>
 

@@ -9,7 +9,7 @@ for why.
 
 **Test fixtures used by this plan (updated 2026-09-13):** two standalone
 GuidebeeGameEngine tutorial repos exist as sibling checkouts —
-`C:\workspace\Box2D` (the official GGE Box2D tutorial series, 11 physics
+`C:\workspace\Box2D` (the official GGE Box2D tutorial series, 10 physics
 demo stages) and `C:\workspace\Raindrop` (the official GGE general-engine
 tutorial series — scene graph, collision, camera/viewport, MIDP-style API,
 tiled maps). Both import `com.guidebee.game.*` directly (not a renamed/older
@@ -23,6 +23,23 @@ see [5.4](#54-box2d-regression-suite-box2d-tutorial-repo) and
 [5.5](#55-general-engine-regression-suite-raindrop-tutorial-repo) for how
 this plan turns them into living regression suites instead of building a
 regression harness from scratch.
+
+**Integration point (revised 2026-09-13):** these are folded directly into
+the existing `app/` module as two extra Home-screen menu entries — **not**
+separate Gradle modules/APKs. `app/src/main/java/com/guidebee/game/tutorial/box2d/`
+and `app/src/main/java/com/mapdigit/game/tutorial/` hold the tutorial source
+verbatim (original package names kept, so no import changes were needed);
+`HomeScreen.kt`'s tool grid gets two new tiles, **Box2D Demo** and
+**Raindrop Demo**, alongside Flappy Bird/Battle City/Mario, each opening a
+picker screen (`StagePickerActivity`, `LessonPickerActivity`) that lists that
+demo's stages/lessons. An earlier pass of this plan proposed a separate
+`testapps/box2d-tutorial` / `testapps/raindrop-tutorial` Gradle module pair;
+that was reverted in favor of this single-module approach — same regression
+coverage, one fewer thing to keep building/signing/installing separately.
+Two pre-existing gaps in the upstream tutorial repos were fixed during the
+merge (both repos were missing an asset their own code references —
+`coords.png` and `fly.png` — patched with placeholder images so those two
+lessons don't crash on launch; see `docs/perf-baseline-2026-09.md`).
 
 ---
 
@@ -110,59 +127,88 @@ Everything below assumes **(A)**.
    `java-library`/`kotlin.jvm` module with no Android and no `gameengine`
    dependency (confirmed by reading `decoder/build.gradle`). Excluded from
    further regression scope.
-6. **Import and modernize the two tutorial repos as in-repo regression
+6. **Import and modernize the two tutorial repos as in-app regression
    fixtures** (new step, added after finding `C:\workspace\Box2D` and
    `C:\workspace\Raindrop`). Do this in Phase 0, not Phase 4, so the Box2D
    regression suite exists *before* any engine code changes and can itself be
-   validated against the pre-upgrade engine first:
-   - Copy each repo's `app/src/main/java`, `app/src/main/assets` (and `res/`
-     if present) into two new modules inside the `morsecode` repo, e.g.
-     `testapps/box2d-tutorial/` and `testapps/raindrop-tutorial/`, and add
-     `include ':testapps:box2d-tutorial'` / `include ':testapps:raindrop-tutorial'`
-     to `settings.gradle`. Copying the source into `morsecode`'s own git
-     history (rather than a cross-repo relative-path dependency on
-     `C:\workspace\Box2D`/`C:\workspace\Raindrop`, which may not exist at that
-     path on another machine or CI) is what makes these reusable/durable
-     regression fixtures instead of a one-off local convenience.
-   - Rewrite each new module's `build.gradle` from scratch, modeled on
-     `gameengine/build.gradle`'s Android config (`compileSdk 37`,
-     `minSdk 21`, `targetSdk 37`, Java 17, no Compose needed): drop the dead
-     `jcenter()`/`compile 'com.guidebee:game-engine:0.9.x'` dependency
-     entirely and replace it with `implementation project(':gameengine')` —
-     this is what makes the tutorial apps build against **the exact in-tree
-     engine code this plan is modifying**, giving immediate feedback on every
-     phase rather than testing against a frozen published artifact.
-   - Both repos' manifests only declare **one** launcher `<activity>` even
-     though the source tree contains several dormant Activities per lesson
-     (Box2D repo: `Box2DGameActivity` is the only one, but
-     `Box2DGameScene`'s constructor hardcodes a single stage, `BulletStage`;
-     Raindrop: only `.drop.DropGameActivity` is manifest-registered, while
+   validated against the pre-upgrade engine first. **Folded directly into
+   `app/`** as two extra Home-screen menu entries, alongside Flappy
+   Bird/Battle City/Mario, rather than as separate Gradle modules/APKs — one
+   app to build, sign and install for the whole regression pass:
+   - Copied each repo's `src/main/java` package verbatim into `app/src/main/java/`
+     — `com/guidebee/game/tutorial/box2d/` and `com/mapdigit/game/tutorial/` —
+     with **no package renaming**, so no import changes were needed anywhere
+     in the copied source. Their `res/` directories were dropped entirely
+     (confirmed zero `R.*` references in either tutorial's Java source — the
+     original repos' `AppCompat`-themed `styles.xml`, launcher `ic_launcher`
+     mipmaps, and Raindrop's unused `layout/main.xml` were all dead weight,
+     same category as the engine's own dead `AndroidGL20.cpp`/API18 findings
+     in the audit table above).
+   - Merged each repo's `assets/` into `app/src/main/assets/`. Six loose PNGs
+     (`Back_08.png`, `Button_08_Normal_Shoot.png`, `Button_08_Normal_Virgin.png`,
+     `Button_08_Pressed_Shoot.png`, `Button_08_Pressed_Virgin.png`,
+     `Joystick_08.png`) collided by filename with assets already in `app/` —
+     confirmed these are pre-packing source art baked into `raindrop.atlas`'s
+     regions and never loaded individually at runtime (`assetManager.load`/`.get`
+     never references them by that literal path), so they were skipped rather
+     than namespaced into a subfolder.
+   - **Fixed two pre-existing upstream gaps** found while verifying every
+     asset filename referenced in the copied Java against what actually
+     shipped in each repo: `coords.CoordinateGamePlay`/`CoordinateActor` load
+     `"coords.png"`, and `microedition.actor.Fly` loads `"fly.png"` (needs a
+     128×64 two-frame sheet) — **neither file exists anywhere in the original
+     Raindrop repo.** Both lessons would have crashed on launch as shipped
+     upstream. Patched with placeholders (`coords.png` is a copy of
+     `droplet.png`; `fly.png` is `droplet.png` tiled twice into a 128×64
+     sheet) so both lessons run instead of crashing — cosmetic-only fix, not
+     a behavior change worth blocking on.
+   - Registered 7 new `<activity>` entries in `app/src/main/AndroidManifest.xml`
+     (fully-qualified names, since these packages sit outside the app's own
+     `au.com.guidebee.morsetoolkit.activity` namespace): two picker/launcher
+     screens plus the demo screens they lead to.
+   - Both repos' manifests originally declared only **one** launcher
+     `<activity>` even though the source tree contains several dormant
+     Activities per lesson (Box2D: `Box2DGameActivity` existed, but
+     `Box2DGameScene`'s constructor hardcoded a single stage, `BulletStage`;
+     Raindrop: only `.drop.DropGameActivity` was wired up, while
      `basics.HelloWorldActivity`, `coords.CoordinateGameActivity`, and
-     `microedition.DropGameActivity` exist as unreferenced source). Add a
-     small picker so every lesson is actually reachable in one APK instead of
-     requiring source edits to switch demos:
-     - **Box2D tutorial app:** add a plain launcher list Activity naming the
-       11 stages (`BasicBox2DStage`, `BodyTypeStage`, `BulletStage`,
-       `CollisionStage`, `ForceAndImpulseStage`, `JointsOverviewStage`,
-       `RayCastStage`, `SelfControlStage`, `SensorStage`, `ShapeTypeStage`,
-       plus the base `Box2DGameStage`), passing the chosen class name as an
-       Intent extra to `Box2DGameActivity`; change `Box2DGameScene` to
-       instantiate the requested stage (reflection or a simple `switch`)
-       instead of hardcoding `new BulletStage()`.
-     - **Raindrop tutorial app:** add manifest entries for the three dormant
-       Activities alongside the existing `DropGameActivity`, plus a similar
-       launcher list, so `basics`/`coords`/`drop`/`microedition` are all
-       reachable from one installed APK.
-   - Confirm both modernized apps build and run **unchanged in behavior**
-     against the current, pre-upgrade `gameengine` before moving on — this is
-     the "does the fixture itself work" check, independent of the upgrade.
+     `microedition.DropGameActivity` existed as unreferenced source). Added a
+     picker so every lesson is reachable from the Home screen instead of
+     requiring a source edit to switch demos:
+     - **`com.guidebee.game.tutorial.box2d.StagePickerActivity`** — a plain
+       `ListActivity` naming the 10 concrete stages (`BasicBox2DStage`,
+       `BodyTypeStage`, `BulletStage`, `CollisionStage`, `ForceAndImpulseStage`,
+       `JointsOverviewStage`, `RayCastStage`, `SelfControlStage`,
+       `SensorStage`, `ShapeTypeStage` — `Box2DGameStage` itself is
+       `abstract`, the shared base the other 10 extend, not launchable),
+       passing the chosen class name as an Intent extra to
+       `Box2DGameActivity`. `Box2DGameActivity`→`Box2DGamePlay`→
+       `Box2DGameScene` now thread that `stageClass` string through to a
+       `Class.forName(stageClass).getDeclaredConstructor().newInstance()`
+       call in `Box2DGameScene`, replacing the original hardcoded
+       `new BulletStage()`.
+     - **`com.mapdigit.game.tutorial.LessonPickerActivity`** — same pattern,
+       listing all 4 lessons (`basics`, `coords`, `drop`, `microedition`) and
+       launching each lesson's own already-distinct Activity class directly
+       (no reflection needed here — each lesson is its own fixed entry
+       point, not a parametrized shared scene).
+   - Wired both pickers into `HomeScreen.kt`'s existing tool grid as two new
+     `ToolItem`s (**Box2D Demo**, **Raindrop Demo**) next to Flappy
+     Bird/Battle City/Mario, threaded through `MorseApp.kt` the same way the
+     3 games already are (`onLaunchGame(StagePickerActivity::class.java)` /
+     `onLaunchGame(LessonPickerActivity::class.java)`) — no changes needed to
+     the generic `onLaunchGame = { startActivity(Intent(this, it)) }` launcher
+     in `HomeActivity.kt`.
+   - Confirmed `./gradlew :app:assembleDebug` builds clean with both demos
+     merged in, and that both picker classes plus every copied/patched asset
+     land in the packaged APK (`unzip -l`/`javac` output spot-checked).
 
 **Exit criteria:** baseline APK + baseline perf numbers captured and committed
 to `docs/` (e.g. `docs/perf-baseline-2026-09.md`) so later phases have
-something to diff against; `testapps/box2d-tutorial` and
-`testapps/raindrop-tutorial` build, install, and every lesson/stage is
-reachable and behaves correctly against the pre-upgrade engine (this baseline
-run doubles as the golden reference for [5.4](#54-box2d-regression-suite-box2d-tutorial-repo)).
+something to diff against; the Box2D Demo and Raindrop Demo menu entries
+build into `app` and every lesson/stage is reachable and behaves correctly
+against the pre-upgrade engine (this baseline run doubles as the golden
+reference for [5.4](#54-box2d-regression-suite-box2d-tutorial-repo)).
 
 ---
 
@@ -214,6 +260,26 @@ emulator, since alignment/ABI bugs frequently only show up there).
    - `onPause`/`onResume`/EGL context loss handling across multi-window /
      split-screen / picture-in-picture (didn't exist when GGE forked).
    - Configuration-change handling (fold/unfold, external display).
+   - **Confirmed, reproducible finding from Phase 0 on-device testing
+     (2026-09-13):** rapid Activity relaunch (launch a Box2D Demo stage →
+     Back → relaunch) deterministically crashes with `SIGSEGV` inside the
+     Mali GPU driver via `VertexBufferObject.bind → glBufferData` — a
+     use-after-free. Root cause: `GameActivityWrapper.onPause()` calls
+     `graphics.destroy()` (which runs `ApplicationListener.dispose()`,
+     freeing native Meshes/VBOs/Box2D world state) **before**
+     `graphics.onPauseGLSurfaceView()`, and the `Graphics.pause()`/`destroy()`
+     wait/notify handshake with the GL thread releases the waiting caller
+     before `onDrawFrame`'s `ApplicationListener.dispose()` call has actually
+     finished — so a fast-enough relaunch can start a new GL context while
+     the old one's native teardown is still in flight. A single clean launch
+     of any stage never crashes (confirmed on all 10 Box2D Demo stages).
+     Full repro/analysis in `docs/perf-baseline-2026-09.md`'s "On-device
+     validation" section — start Phase 2's lifecycle fix there instead of
+     re-deriving it. Likely fix shape: reorder `onPause()` so
+     `onPauseGLSurfaceView()` (which synchronously stops the GL thread) runs
+     *before* `clearManagedCaches()`/`destroy()`, but confirm this doesn't
+     starve `pause()`'s own listener notifications, which need the GL thread
+     still alive to run.
 2. **Edge-to-edge enforcement**: `targetSdk = 37` means the games are already
    subject to Android's mandatory edge-to-edge behavior (enforced since
    Android 15/API 35 for apps targeting that SDK or above). Verify
@@ -343,7 +409,7 @@ phase is a **JNI wrapper + native build re-sync**, not a physics-API migration.
    simulation results. Confirm with the regression suite in
    [5.4](#54-box2d-regression-suite-box2d-tutorial-repo).
 
-**Exit criteria:** all 11 stages in `testapps/box2d-tutorial` (5.4) pass
+**Exit criteria:** all 10 stages in the in-app Box2D Demo (5.4) pass
 bit-for-bit or visually-identical against the Phase-0 baseline; native build
 has zero new warnings.
 
@@ -464,7 +530,7 @@ Because none of the 3 shipped games exercise `com.guidebee.game.physics`
 directly, this plan **no longer proposes building a from-scratch test
 harness** — `C:\workspace\Box2D` already is one, and a much better one than
 anything worth hand-rolling: it's the official GGE Box2D tutorial series, and
-its 11 stage classes (`gameengine`-relative names, all under
+its 10 concrete stage classes (`gameengine`-relative names, all under
 `com.guidebee.game.tutorial.box2d.stage`) map directly onto the physics
 subsystems that matter for this upgrade:
 
@@ -487,9 +553,9 @@ integration, real joints, real fixture filters) than a synthetic harness
 would have been, and it already exists — the work is packaging it as a
 runnable regression suite, not authoring test scenarios from scratch:
 
-1. Complete the Phase 0 import (`testapps/box2d-tutorial`) and its stage
-   picker so all 11 stages are individually launchable.
-2. At the **Phase 0 baseline**, for each of the 11 stages, capture a short
+1. Complete the Phase 0 import (the in-app Box2D Demo menu entry) and its stage
+   picker so all 10 concrete stages are individually launchable.
+2. At the **Phase 0 baseline**, for each of the 10 stages, capture a short
    recorded reference: either (a) a screen-recorded video of ~10s of
    interaction per stage (cheapest, good for the visually-obvious failures —
    a body falling through the ground, a joint not constraining, sensors not
@@ -498,7 +564,7 @@ runnable regression suite, not authoring test scenarios from scratch:
    text file per stage. (b) is strictly more useful for Phase 4 specifically
    since it gives a numeric diff, not just an eyeball check — prefer adding
    it if time allows, but (a) alone is enough to unblock the plan.
-3. After Phase 4 (Box2D native/JNI re-sync), re-run all 11 stages on the
+3. After Phase 4 (Box2D native/JNI re-sync), re-run all 10 stages on the
    same device(s) and diff against the Phase 0 golden reference: same visual
    behavior, and (if (b) was done) body state logs matching within a small
    floating-point epsilon.
@@ -509,7 +575,7 @@ runnable regression suite, not authoring test scenarios from scratch:
    is exactly why a numeric golden-value diff (3b) matters more here than for
    the visually-obvious stages like `BulletStage`.
 
-**Exit criteria for Phase 4 specifically:** all 11 Box2D tutorial stages
+**Exit criteria for Phase 4 specifically:** all 10 Box2D tutorial stages
 behave identically (visually, and numerically where instrumented) to the
 Phase 0 baseline; only then is the Box2D native upgrade considered safe to
 merge — independent of the 3 shipped games showing no visible symptom (they
@@ -571,8 +637,8 @@ Phase 1 + max(Phase 2, Phase 3, Phase 4) + Phase 5 ≈ **7–10 working days**.
 
 - [ ] All 3 games (Flappy Bird, Battle City, Mario) pass their full manual
       regression checklist (5.2) on the full device matrix (Section 6).
-- [ ] All 11 stages in `testapps/box2d-tutorial` (5.4) and all 4 lessons in
-      `testapps/raindrop-tutorial` (5.5) pass their regression checks on the
+- [ ] All 10 stages in the in-app Box2D Demo (5.4) and all 4 lessons in
+      the in-app Raindrop Demo (5.5) pass their regression checks on the
       full device matrix.
 - [ ] Perf capture at final sign-off is **equal to or better than** the
       Phase-0 baseline on every device class, on all 3 games.
@@ -583,6 +649,6 @@ Phase 1 + max(Phase 2, Phase 3, Phase 4) + Phase 5 ≈ **7–10 working days**.
 - [ ] `docs/GAME_ENGINE.md` updated to describe the new baseline (GLES3
       default, ETC2 textures, current NDK, Box2D-version-parity note) so the
       next engineer doesn't have to re-derive this audit.
-- [ ] `testapps/box2d-tutorial` and `testapps/raindrop-tutorial` are kept in
-      the repo post-upgrade as a standing regression suite for any future
+- [ ] The Box2D Demo and Raindrop Demo menu entries are kept in `app/`
+      post-upgrade as a standing regression suite for any future
       `gameengine` change, not deleted once this upgrade ships.

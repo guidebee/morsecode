@@ -99,3 +99,67 @@ session, to put a number on the improvement for the record.
 - [x] All 3 games + 10 Box2D stages + 4 Raindrop lessons pass, twice
       (before and after native deletion).
 - [ ] Quantified before/after frame-time number — not captured, see above.
+
+---
+
+# Phase 3.2 — GLES 3.0 completion (2026-09-13)
+
+## 3.2a — default to a GLES 3.0 context, fall back to ES2 — done, committed
+
+See `docs/GAMEENGINE_UPGRADE_PLAN.md`'s Phase 3.2 section for the full
+writeup. Summary: `GameEngine.gl30` was never assigned anywhere before this
+(0% used, not "partially used"). `GLSurfaceView20.ContextFactory` now tries
+ES3 first with an ES2 fallback; the real, active config chooser turned out
+to be `EglConfigChooser.java` (not `GLSurfaceView20`'s own internal
+`ConfigChooser`, which is dead code — always overridden right after
+construction). `Configuration.useGL30` (default `true`) is the opt-out.
+Verified on-device (Mali-G615 MC2 successfully negotiated ES 3.2, first time
+ever on this device/engine pairing) with the full 17-fixture regression
+suite passing, pixel-identical rendering. Committed as `8028698`.
+
+## 3.2b — VAOs in Mesh — attempted, broke rendering, reverted
+
+Added `VertexBufferObjectWithVAO` (ported from libGDX's own reference
+implementation at
+`C:\workspace\libgdx\gdx\src\com\badlogic\gdx\graphics\glutils\VertexBufferObjectWithVAO.java`)
+and wired `Mesh`'s three "default" constructors (the ones every real caller
+— `SpriteBatch`, `ImmediateModeRenderer20`, etc. — actually uses) to pick it
+automatically over the plain `VertexBufferObject` whenever
+`GameEngine.gl30 != null`, via a new `Mesh.createVertexData(...)` helper.
+Compiled clean.
+
+**Broke on-device**: all sprite rendering (Flappy Bird's menu, Box2D Demo
+stage sprites, everything drawn via `SpriteBatch`) went invisible/black,
+while `Box2DDebugRenderer`'s wireframe outlines (drawn via
+`ImmediateModeRenderer20`, `glDrawArrays`, no index buffer) kept rendering
+fine. This indexed-vs-non-indexed split is the one solid clue: `SpriteBatch`
+draws quads via `glDrawElements` against an `IndexBufferObject`, and VAOs
+capture the currently-bound `GL_ELEMENT_ARRAY_BUFFER` as part of their
+state. Best (**unconfirmed**) hypothesis: `IndexBufferObject.bind()`'s own
+`isBound`-gated caching skips the real `glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ...)`
+call needed to (re-)associate the index buffer with whichever VAO is
+*currently* bound, so a second/different `Mesh`'s VAO never gets the
+element-buffer association it needs even though `Mesh.bind()` calls
+`indices.bind()` unconditionally right after `vertices.bind()` — but this
+was never actually confirmed with a GL frame debugger, just inferred from
+the symptom shape.
+
+**Decision: revert rather than debug further live.** This change touches
+the mesh-bind path for every draw call in every game — exactly the kind of
+high-blast-radius change that (per this plan's own stated principle) should
+be isolated to its own commit and thoroughly proven before landing, not
+patched forward under uncertainty. `git checkout` restored `Mesh.java`;
+`VertexBufferObjectWithVAO.java` was deleted. Confirmed on-device after
+revert: sprites render correctly again (`BasicBox2DStage` screenshot
+matches the pre-VAO baseline exactly). The GLES3 context switch (3.2a)
+is untouched by this revert and remains in place — `Mesh` now simply always
+uses the plain `VertexBufferObject` regardless of GL version, same as
+before either 3.2 sub-item started.
+
+**For whoever picks this back up**: don't re-run the same implementation
+and hope — get an actual GL frame capture (e.g. Android GPU Inspector, or
+`adb shell dumpsys` isn't enough here) and inspect the VAO's
+`GL_ELEMENT_ARRAY_BUFFER_BINDING` state at draw time, or add temporary
+`glGetError()`/`glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, ...)` logging
+around `Mesh.bind()`/`render()` to see what's actually bound when the
+`glDrawElements` call happens.

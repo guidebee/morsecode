@@ -474,8 +474,32 @@ and use it for:
   before): logcat confirms `creating OpenGL ES 3.0 context` /
   `OGL version: OpenGL ES 3.2 v1.r44p1-...`; full regression suite (3 games
   + 10 Box2D stages + 4 Raindrop lessons) passes, pixel-identical rendering.
-- **VAOs** (`glGenVertexArrays`/`glBindVertexArray`) instead of re-specifying
-  vertex attrib pointers every draw call.
+- **VAOs — attempted and reverted (2026-09-13).** Added a
+  `VertexBufferObjectWithVAO` implementation (adapted from libGDX's own
+  reference `VertexBufferObjectWithVAO`) and wired `Mesh`'s default
+  constructors to pick it automatically whenever `GameEngine.gl30 != null`,
+  falling back to the plain `VertexBufferObject` otherwise. Compiled clean,
+  but **broke sprite rendering on-device**: indexed draws (every
+  `SpriteBatch` quad, which uses `glDrawElements` against an
+  `IndexBufferObject`) went invisible, while non-indexed debug-line draws
+  (`ImmediateModeRenderer20`/`Box2DDebugRenderer`, `glDrawArrays`, no index
+  buffer) kept working — this pattern points at the VAO not correctly
+  capturing the `GL_ELEMENT_ARRAY_BUFFER` binding (VAOs capture that binding
+  as part of their state; `IndexBufferObject.bind()`'s own `isBound`-gated
+  caching may be skipping the real `glBindBuffer` call needed to
+  re-associate it with each newly-bound VAO), but this is an **unconfirmed
+  hypothesis** — not root-caused with a debugger, just inferred from the
+  indexed-vs-non-indexed symptom split. **Reverted** (`Mesh.java` restored,
+  `VertexBufferObjectWithVAO.java` deleted) rather than debugged further
+  live against shipped rendering code, given the change touches the mesh
+  bind path for every single draw call in every game. GLES3 context
+  negotiation (the bullet above) is unaffected and stays in place — `Mesh`
+  is simply back to always using the plain, non-VAO `VertexBufferObject`
+  regardless of GL version, exactly as before this attempt. Revisit with
+  `lldb`/an actual GL debugger (e.g. capture a frame with a graphics
+  debugger and inspect the VAO's bound `ELEMENT_ARRAY_BUFFER_BINDING`
+  state) before trying again — don't just re-attempt the same
+  implementation.
 - **ETC2/ASTC texture compression** for the games' atlases
   (`flappybird.atlas`, `morsecode.atlas`, Battle City/Mario tilesets),
   replacing the ETC1-only path in `Wrapper/Box2D/Common/ETC1.cpp`. This is a

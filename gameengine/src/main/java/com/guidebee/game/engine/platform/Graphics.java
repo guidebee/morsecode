@@ -36,8 +36,6 @@ import com.guidebee.game.engine.graphics.opengles.IGL30;
 import com.guidebee.game.engine.graphics.opengles.ShaderProgram;
 import com.guidebee.game.engine.platform.surfaceview.EglConfigChooser;
 import com.guidebee.game.engine.platform.surfaceview.GLSurfaceView20;
-import com.guidebee.game.engine.platform.surfaceview.GLSurfaceView20API18;
-import com.guidebee.game.engine.platform.surfaceview.GLSurfaceViewAPI18;
 import com.guidebee.game.engine.platform.surfaceview.ResolutionStrategy;
 import com.guidebee.game.graphics.FrameBuffer;
 import com.guidebee.game.graphics.Texture;
@@ -110,9 +108,7 @@ public class Graphics implements com.guidebee.game.Graphics, Renderer {
     }
 
     protected void preserveEGLContextOnPause() {
-        int sdkVersion = android.os.Build.VERSION.SDK_INT;
-        if ((sdkVersion >= 11 && view instanceof GLSurfaceView20)
-                || view instanceof GLSurfaceView20API18) {
+        if (view instanceof GLSurfaceView20) {
             try {
                 view.getClass().getMethod("setPreserveEGLContextOnPause",
                         boolean.class).invoke(view, true);
@@ -128,34 +124,19 @@ public class Graphics implements com.guidebee.game.Graphics, Renderer {
         if (!checkGL20()) throw new GameEngineRuntimeException("GameEngine requires OpenGL ES 2.0");
 
         EGLConfigChooser configChooser = getEglConfigChooser();
-        int sdkVersion = android.os.Build.VERSION.SDK_INT;
-        if (sdkVersion <= 10 && config.useGLSurfaceView20API18) {
-            GLSurfaceView20API18 view = new GLSurfaceView20API18(application.getContext(),
-                    resolutionStrategy);
-            if (configChooser != null)
-                view.setEGLConfigChooser(configChooser);
-            else
-                view.setEGLConfigChooser(config.r, config.g, config.b, config.a,
-                        config.depth, config.stencil);
-            view.setRenderer(this);
-            return view;
-        } else {
-            GLSurfaceView20 view = new GLSurfaceView20(application.getContext(),
-                    resolutionStrategy);
-            if (configChooser != null)
-                view.setEGLConfigChooser(configChooser);
-            else
-                view.setEGLConfigChooser(config.r, config.g, config.b, config.a,
-                        config.depth, config.stencil);
-            view.setRenderer(this);
-            return view;
-        }
+        GLSurfaceView20 view = new GLSurfaceView20(application.getContext(),
+                config.useGL30, resolutionStrategy);
+        if (configChooser != null)
+            view.setEGLConfigChooser(configChooser);
+        else
+            view.setEGLConfigChooser(config.r, config.g, config.b, config.a,
+                    config.depth, config.stencil);
+        view.setRenderer(this);
+        return view;
     }
 
     public void onPauseGLSurfaceView() {
         if (view != null) {
-            if (view instanceof GLSurfaceViewAPI18)
-                ((GLSurfaceViewAPI18) view).onPause();
             if (view instanceof GLSurfaceView)
                 ((GLSurfaceView) view).onPause();
         }
@@ -163,8 +144,6 @@ public class Graphics implements com.guidebee.game.Graphics, Renderer {
 
     public void onResumeGLSurfaceView() {
         if (view != null) {
-            if (view instanceof GLSurfaceViewAPI18)
-                ((GLSurfaceViewAPI18) view).onResume();
             if (view instanceof GLSurfaceView)
                 ((GLSurfaceView) view).onResume();
         }
@@ -241,7 +220,16 @@ public class Graphics implements com.guidebee.game.Graphics, Renderer {
     private void setupGL(javax.microedition.khronos.opengles.GL10 gl) {
         if (gl20 != null) return;
 
-        gl20 = new GL20();
+        String versionString = gl.glGetString(GL10.GL_VERSION);
+        if (config.useGL30 && isGLES3OrAbove(versionString)) {
+            GL30 gl30Impl = new GL30();
+            gl20 = gl30Impl;
+            gl30 = gl30Impl;
+            GameEngine.gl30 = gl30Impl;
+        } else {
+            gl20 = new GL20();
+            GameEngine.gl30 = null;
+        }
 
         GameEngine.gl = gl20;
         GameEngine.gl20 = gl20;
@@ -250,10 +238,26 @@ public class Graphics implements com.guidebee.game.Graphics, Renderer {
                 + gl.glGetString(GL10.GL_RENDERER));
         GameEngine.app.log(LOG_TAG, "OGL vendor: "
                 + gl.glGetString(GL10.GL_VENDOR));
-        GameEngine.app.log(LOG_TAG, "OGL version: "
-                + gl.glGetString(GL10.GL_VERSION));
+        GameEngine.app.log(LOG_TAG, "OGL version: " + versionString);
         GameEngine.app.log(LOG_TAG, "OGL extensions: "
                 + gl.glGetString(GL10.GL_EXTENSIONS));
+    }
+
+    /**
+     * The EGLConfig's EGL_RENDERABLE_TYPE bitmask only says a config is
+     * eligible for ES3 - the actual context created by
+     * GLSurfaceView20.ContextFactory may still have fallen back to ES2 (see
+     * docs/GAMEENGINE_UPGRADE_PLAN.md Phase 3.2). Parsing the driver's own
+     * GL_VERSION string is the reliable way to know which one we actually
+     * got, independent of how the context was requested.
+     */
+    private static boolean isGLES3OrAbove(String glVersionString) {
+        if (glVersionString == null) return false;
+        // Android GL_VERSION strings look like "OpenGL ES 3.2 v1.r38...".
+        java.util.regex.Matcher m = java.util.regex.Pattern
+                .compile("OpenGL ES (\\d+)\\.")
+                .matcher(glVersionString);
+        return m.find() && Integer.parseInt(m.group(1)) >= 3;
     }
 
     @Override
@@ -413,16 +417,6 @@ public class Graphics implements com.guidebee.game.Graphics, Renderer {
             if (resume) {
                 resume = false;
             }
-
-            if (pause) {
-                pause = false;
-                synch.notifyAll();
-            }
-
-            if (destroy) {
-                destroy = false;
-                synch.notifyAll();
-            }
         }
 
         if (lresume) {
@@ -474,6 +468,31 @@ public class Graphics implements com.guidebee.game.Graphics, Renderer {
             }
             app.getApplicationListener().dispose();
             GameEngine.app.log(LOG_TAG, "destroyed");
+        }
+
+        // Only signal pause()/destroy() (blocked on the calling thread in
+        // synch.wait()) once their corresponding listener callbacks above have
+        // actually finished running - notifying right after clearing the flag
+        // (the previous behavior) let the caller's wait() return, and onPause()
+        // proceed to stop the GLSurfaceView, while dispose() (which frees native
+        // Meshes/VBOs/the Box2D world) was still executing on this thread. Under
+        // a fast Activity relaunch that let a second GL thread start rendering
+        // against state this thread was still freeing - a use-after-free that
+        // crashed inside the GPU driver's glBufferData. See
+        // docs/GAMEENGINE_UPGRADE_PLAN.md Phase 2 and
+        // docs/perf-baseline-2026-09.md's "On-device validation" section for the
+        // full repro/root-cause.
+        if (lpause || ldestroy) {
+            synchronized (synch) {
+                if (lpause) {
+                    pause = false;
+                    synch.notifyAll();
+                }
+                if (ldestroy) {
+                    destroy = false;
+                    synch.notifyAll();
+                }
+            }
         }
 
         if (time - frameStart > 1000000000) {
@@ -614,8 +633,6 @@ public class Graphics implements com.guidebee.game.Graphics, Renderer {
             int renderMode = isContinuous
                     ? GLSurfaceView.RENDERMODE_CONTINUOUSLY
                     : GLSurfaceView.RENDERMODE_WHEN_DIRTY;
-            if (view instanceof GLSurfaceViewAPI18)
-                ((GLSurfaceViewAPI18) view).setRenderMode(renderMode);
             if (view instanceof GLSurfaceView)
                 ((GLSurfaceView) view).setRenderMode(renderMode);
             mean.clear();
@@ -630,8 +647,6 @@ public class Graphics implements com.guidebee.game.Graphics, Renderer {
     @Override
     public void requestRendering() {
         if (view != null) {
-            if (view instanceof GLSurfaceViewAPI18)
-                ((GLSurfaceViewAPI18) view).requestRender();
             if (view instanceof GLSurfaceView)
                 ((GLSurfaceView) view).requestRender();
         }

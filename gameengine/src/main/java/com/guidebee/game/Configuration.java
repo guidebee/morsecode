@@ -60,6 +60,16 @@ public class Configuration {
     public boolean useCompass = true;
 
     /**
+     * Whether to request an OpenGL ES 3.0 context (with automatic fallback
+     * to ES 2.0 if the device/driver can't create one) instead of always
+     * requesting ES 2.0. minSdk 21 already implies near-universal ES 3.0
+     * hardware support, so this defaults to true; set to false to force the
+     * old ES 2.0-only path (e.g. for a device found to have a buggy ES 3.0
+     * driver). default: true.
+     */
+    public boolean useGL30 = true;
+
+    /**
      * the time in milliseconds to sleep after each event in the touch handler,
      * set this to 16ms to get rid of touch flooding on
      * pre Android 2.0 devices. default: 0.
@@ -106,17 +116,6 @@ public class Configuration {
      * set this to true to enable Android 4.4 KitKat's 'Immersive mode' .
      */
     public boolean useImmersiveMode = false;
-
-    /**
-     * whether to use GLSurfaceView20API18
-     * in place of the classic
-     * GLSurfaceView20} on
-     * Android API 10 and lower.
-     * In case this is true GLSurfaceView20API18
-     * will be used.
-     * This implementation properly supports attach to and detach from window. default: false
-     */
-    public boolean useGLSurfaceView20API18 = false;
 
     /**
      * pixel to box2d unit ratio

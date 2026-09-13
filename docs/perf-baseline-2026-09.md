@@ -193,12 +193,22 @@ of `Graphics.java`, `GameActivityWrapper.java`, `Mesh.java`,
   clicking through Box2D Demo stages; a clean launch of any single stage is
   safe and matches how the golden-reference validation above was performed.
 
+### Raindrop Demo — all 4 lessons validated (2026-09-13)
+
+Same methodology: clean process launch per lesson (`am force-stop` then
+`am start` at the lesson's own Activity component — required temporarily
+flipping all 4 Raindrop demo activities' manifest `exported` flag to `true`
+for scripted `adb` access, reverted immediately after). All 4 confirmed
+alive with zero crashes and zero app-level errors/exceptions in logcat:
+
+| Lesson | Result |
+|---|---|
+| `basics.HelloWorldActivity` | Renders correctly (SVG-drawn logo). |
+| `coords.CoordinateGameActivity` | Renders correctly — **validates the `coords.png` placeholder fix** (the patched droplet-copy texture loads and displays with no crash). |
+| `drop.DropGameActivity` | Renders correctly — full scene with the `forest.tmx` tiled map, HUD score/coins, touchpad, Mario actor collecting coins. This is the one asset in the whole fixture set that exercises `com.guidebee.game.maps.tiled`, and it works. |
+| `microedition.DropGameActivity` | Renders correctly — raindrops falling, bucket, tiled ground/water. **Validates the `fly.png` sprite-sheet fix**: no `ArrayIndexOutOfBoundsException`, process stays alive across multiple frames. (The `Fly` actor itself wasn't visually distinguishable in screenshots since its placeholder reuses the same `droplet.png` art as the falling raindrops — cosmetic only, not worth chasing further for a placeholder asset.) |
+
 **Not yet done:**
-- [ ] Click through all 4 Raindrop Demo lessons on-device (only the Box2D
-      Demo's 10 stages were validated in this pass) — particularly the two
-      patched-asset lessons (Coordinates, Microedition), since those are the
-      ones least exercised upstream and most likely to reveal another gap
-      like the `fly.png` one.
 - [ ] Capture logged Box2D body-state values (not just screenshots) per
       docs/GAMEENGINE_UPGRADE_PLAN.md §5.4, if a numeric golden reference is
       wanted before Phase 4 rather than only visual comparison.

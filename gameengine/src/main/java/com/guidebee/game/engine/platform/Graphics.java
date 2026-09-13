@@ -392,16 +392,6 @@ public class Graphics implements com.guidebee.game.Graphics, Renderer {
             if (resume) {
                 resume = false;
             }
-
-            if (pause) {
-                pause = false;
-                synch.notifyAll();
-            }
-
-            if (destroy) {
-                destroy = false;
-                synch.notifyAll();
-            }
         }
 
         if (lresume) {
@@ -453,6 +443,31 @@ public class Graphics implements com.guidebee.game.Graphics, Renderer {
             }
             app.getApplicationListener().dispose();
             GameEngine.app.log(LOG_TAG, "destroyed");
+        }
+
+        // Only signal pause()/destroy() (blocked on the calling thread in
+        // synch.wait()) once their corresponding listener callbacks above have
+        // actually finished running - notifying right after clearing the flag
+        // (the previous behavior) let the caller's wait() return, and onPause()
+        // proceed to stop the GLSurfaceView, while dispose() (which frees native
+        // Meshes/VBOs/the Box2D world) was still executing on this thread. Under
+        // a fast Activity relaunch that let a second GL thread start rendering
+        // against state this thread was still freeing - a use-after-free that
+        // crashed inside the GPU driver's glBufferData. See
+        // docs/GAMEENGINE_UPGRADE_PLAN.md Phase 2 and
+        // docs/perf-baseline-2026-09.md's "On-device validation" section for the
+        // full repro/root-cause.
+        if (lpause || ldestroy) {
+            synchronized (synch) {
+                if (lpause) {
+                    pause = false;
+                    synch.notifyAll();
+                }
+                if (ldestroy) {
+                    destroy = false;
+                    synch.notifyAll();
+                }
+            }
         }
 
         if (time - frameStart > 1000000000) {

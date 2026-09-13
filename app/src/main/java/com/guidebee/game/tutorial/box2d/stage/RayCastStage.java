@@ -66,4 +66,10 @@ public class RayCastStage extends Stage {
         super.draw();
         debugRenderer.render(world, debugMatrix);
     }
+
+    @Override
+    public void dispose() {
+        super.dispose();
+        debugRenderer.dispose();
+    }
 }

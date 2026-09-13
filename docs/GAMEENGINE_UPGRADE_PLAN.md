@@ -294,25 +294,38 @@ emulator, since alignment/ABI bugs frequently only show up there).
      the old one's native teardown is still in flight. A single clean launch
      of any stage never crashes (confirmed on all 10 Box2D Demo stages).
      Full repro/analysis in `docs/perf-baseline-2026-09.md`'s "On-device
-     validation" section — start Phase 2's lifecycle fix there instead of
-     re-deriving it. Likely fix shape: reorder `onPause()` so
-     `onPauseGLSurfaceView()` (which synchronously stops the GL thread) runs
-     *before* `clearManagedCaches()`/`destroy()`, but confirm this doesn't
-     starve `pause()`'s own listener notifications, which need the GL thread
-     still alive to run.
-2. **Edge-to-edge enforcement**: `targetSdk = 37` means the games are already
-   subject to Android's mandatory edge-to-edge behavior (enforced since
-   Android 15/API 35 for apps targeting that SDK or above). Verify
-   `GameActivity` explicitly uses `WindowCompat.setDecorFitsSystemWindows`
-   and consumes `WindowInsets` for the `GLSurfaceView`'s bounds, rather than
-   relying on old `SYSTEM_UI_FLAG_FULLSCREEN`-style immersive flags (those
-   still work but are deprecated and interact badly with gesture nav /
-   cutouts on current devices — check all 3 games' full-screen game views for
-   content hidden behind the status bar / gesture bar / camera cutout).
-3. Predictive back gesture (Android 13+, default-on at `targetSdk 35+`):
-   confirm none of the 3 games rely on `onBackPressed()` overrides that break
-   under predictive back's `OnBackAnimationCallback` model — audit
-   `MainWindow`/menu screens in each game for back-navigation handling.
+     validation" section.
+     **Attempted and insufficient (2026-09-13, see `docs/phase2-notes-2026-09.md`):**
+     fixed the confirmed `pause`/`destroy` notify-before-callback-completes
+     race in `Graphics.onDrawFrame` (real bug, kept), and a separate found
+     bug where every Box2D Demo stage leaked its `Box2DDebugRenderer`'s
+     Mesh/VBO because `dispose()` was never called anywhere in the chain
+     (real bug, kept, fixed in `Box2DGameStage`/`RayCastStage`). **Neither
+     fix resolves the crash** — re-tested on a freshly rebooted device
+     (ruling out GPU-driver-state degradation from repeated crash testing as
+     a confound) and it still reproduces on iteration 2 of the same simple
+     launch→back→relaunch loop. **Parked per user direction** — needs a
+     native debugger (`lldb`) or a larger port of current libGDX's
+     `AndroidGraphics` surface-lifecycle handling to properly root-cause;
+     don't re-attempt the same reorder/notify-timing theory without new
+     evidence, it's been tried.
+2. **Edge-to-edge enforcement — done (2026-09-13).** Replaced
+   `Window.setFlags(FLAG_FULLSCREEN, ...)` with
+   `WindowCompat.setDecorFitsSystemWindows(window, false)`, and the
+   reflection-based `hideStatusBar()`/`useImmersiveMode()` (`View.setSystemUiVisibility`
+   invoked via `Method.invoke`, dead-code version guards for API < 19) with
+   `WindowInsetsControllerCompat.hide(...)`/`setSystemBarsBehavior(...)`.
+   Added `androidx.core:core:1.13.1` as a `gameengine` dependency (previously
+   zero AndroidX deps in that module). Verified on-device: all 3 games
+   launch cleanly and render full edge-to-edge with no status bar. Full
+   writeup in `docs/phase2-notes-2026-09.md`.
+3. **Predictive back gesture — confirmed no change needed (2026-09-13).**
+   `grep` across `app/` and `gameengine/` found zero `onBackPressed()`
+   overrides, zero `OnBackPressedCallback`/`OnBackInvokedCallback` usage, and
+   no `android:enableOnBackInvokedCallback` manifest override anywhere. All
+   3 games rely on the platform default (`Activity.finish()` on back), which
+   is inherently predictive-back-compatible with no custom logic to break.
+   `targetSdk = 37` already gets predictive back enabled by default.
 4. Replace any remaining `javax.microedition.khronos.egl.EGL10`-based manual
    config chooser code that isn't already required by `GLSurfaceView`'s API
    contract with the simpler modern default (`setEGLContextClientVersion(2)`
@@ -320,6 +333,9 @@ emulator, since alignment/ABI bugs frequently only show up there).
    config-scoring loop) — the current `EglConfigChooser`'s scoring logic
    (`chooseConfig`) is inherited complexity from an era of much more varied
    OpenGL ES driver support; today's Android devices don't need it.
+   **Deferred (2026-09-13)** — lower priority than the above (maintainability,
+   not a bug or user-visible issue); current behavior confirmed working
+   correctly throughout this session's extensive testing.
 
 **Exit criteria:** all 3 games render edge-to-edge correctly (no clipped HUD,
 no content under status/nav bar) on an API 35+ device, back gesture works

@@ -66,6 +66,12 @@ public abstract class Box2DGameStage extends Stage implements QueryCallback {
     }
 
     @Override
+    public void dispose() {
+        super.dispose();
+        debugRenderer.dispose();
+    }
+
+    @Override
     public boolean reportFixture(Fixture fixture) {
         Body body = fixture.getBody();
         if (body.getType() == BodyDef.BodyType.DynamicBody) {

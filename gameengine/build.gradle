@@ -47,4 +47,10 @@ android {
 }
 
 dependencies {
+    // WindowCompat/WindowInsetsControllerCompat for edge-to-edge and system-bar
+    // handling (Phase 2, docs/GAMEENGINE_UPGRADE_PLAN.md) - replaces the old
+    // FLAG_FULLSCREEN/reflection-based setSystemUiVisibility calls in
+    // GameActivityWrapper, which are deprecated and superseded by mandatory
+    // edge-to-edge behavior on apps targeting API 35+.
+    implementation "androidx.core:core:1.13.1"
 }

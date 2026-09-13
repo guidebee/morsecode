@@ -17,6 +17,7 @@
 */
 
 #include <Box2D/Collision/b2BroadPhase.h>
+#include <cstring>
 
 using namespace std;
 

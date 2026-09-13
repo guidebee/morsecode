@@ -93,6 +93,15 @@ public class Playground extends Actor {
      */
     private float hintPulseTime = 0;
     private static final float HINT_PULSE_SPEED = 6f;
+    /**
+     * moveStep/offset were originally decremented once per rendered frame,
+     * implicitly assuming ~60fps. Scaling by delta*REFERENCE_FPS and
+     * accumulating the fractional remainder keeps the same scroll speed
+     * (in pixels/second) regardless of the display's actual refresh rate.
+     */
+    private static final float REFERENCE_FPS = 60f;
+    private float moveAccumulator = 0f;
+    private int frameScrollStep = 0;
 
     /**
      * Constructor.
@@ -370,14 +379,19 @@ public class Playground extends Actor {
     public void act(float delta) {
         hintPulseTime += delta;
         if (!stopMoving) {
+            moveAccumulator += moveStep * delta * REFERENCE_FPS;
+            frameScrollStep = (int) moveAccumulator;
+            moveAccumulator -= frameScrollStep;
             for (int i = 0; i < tubePositionArray.size; i++) {
                 TubePosition tubePosition = tubePositionArray.get(i);
 
-                tubePosition.posX -= moveStep;
+                tubePosition.posX -= frameScrollStep;
                 if (tubePosition.powerUp != null) {
-                    tubePosition.powerUp.posX -= moveStep;
+                    tubePosition.powerUp.posX -= frameScrollStep;
                 }
             }
+        } else {
+            frameScrollStep = 0;
         }
         //check speed
 
@@ -399,7 +413,7 @@ public class Playground extends Actor {
         if (size * backWidth < Configuration.SCREEN_WIDTH) size++;
         //make the ground moving animation.
         if (!stopMoving) {
-            offset -= moveStep;
+            offset -= frameScrollStep;
             offset %= backWidth;
         }
         for (int i = 0; i < size + 1; i++) {

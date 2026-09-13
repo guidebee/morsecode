@@ -26,6 +26,7 @@ import com.guidebee.game.scene.Actor;
 import au.com.guidebee.morsetoolkit.activity.flappybird.config.Configuration;
 
 import static com.guidebee.game.GameEngine.assetManager;
+import static com.guidebee.game.GameEngine.graphics;
 
 //[------------------------------ MAIN CLASS ----------------------------------]
 
@@ -44,6 +45,14 @@ public class Background extends Actor {
     private final int moveStep = 1;
     private int offset;
     private boolean stopMoving = false;
+    /**
+     * offset was originally advanced once per rendered frame, implicitly
+     * assuming ~60fps. Scaling by delta*REFERENCE_FPS and accumulating the
+     * fractional remainder keeps the same parallax speed regardless of the
+     * display's actual refresh rate.
+     */
+    private static final float REFERENCE_FPS = 60f;
+    private float moveAccumulator = 0f;
 
 
     /**
@@ -82,7 +91,10 @@ public class Background extends Actor {
          * animation -- moving slowly.
          */
         if (!stopMoving) {
-            offset += moveStep;
+            moveAccumulator += moveStep * graphics.getDeltaTime() * REFERENCE_FPS;
+            int step = (int) moveAccumulator;
+            moveAccumulator -= step;
+            offset += step;
             offset %= backWidth;
         }
         for (int i = 0; i < widthSize + 1; i++) {

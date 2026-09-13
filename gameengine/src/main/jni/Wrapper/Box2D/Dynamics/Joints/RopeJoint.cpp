@@ -32,7 +32,7 @@ Java_com_guidebee_game_physics_joints_RopeJoint_jniGetMaxLength(JNIEnv* env, job
 	return rope->GetMaxLength();
 }
 
-JNIEXPORT jfloat JNICALL
+JNIEXPORT void JNICALL
 Java_com_guidebee_game_physics_joints_RopeJoint_jniSetMaxLength(JNIEnv* env, jobject object,
     jlong addr, jfloat length)
 {

@@ -58,10 +58,7 @@ public class SimpleAssetResolver extends SVGExternalFileResolver {
         supportedFormats.add("image/gif");
         supportedFormats.add("image/bmp");
         supportedFormats.add("image/x-windows-bmp");
-        // .webp supported in 4.0+ (ICE_CREAM_SANDWICH)
-        if (android.os.Build.VERSION.SDK_INT >= 14) {
-            supportedFormats.add("image/webp");
-        }
+        supportedFormats.add("image/webp");
     }
 
 

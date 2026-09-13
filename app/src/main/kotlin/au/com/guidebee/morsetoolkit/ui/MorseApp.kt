@@ -27,6 +27,8 @@ import au.com.guidebee.morsetoolkit.activity.flappybird.FlappyBirdGameActivity
 import au.com.guidebee.morsetoolkit.activity.mario.MarioGameActivity
 import au.com.guidebee.morsetoolkit.training.ThemeMode
 import au.com.guidebee.morsetoolkit.training.TutorialPreference
+import com.guidebee.game.tutorial.box2d.StagePickerActivity
+import com.mapdigit.game.tutorial.LessonPickerActivity
 
 private object Routes {
     const val ONBOARDING = "onboarding"
@@ -124,7 +126,9 @@ fun MorseApp(
                     onOpenHandbook = { navController.navigate(Routes.HANDBOOK) },
                     onOpenFlappyBird = { onLaunchGame(FlappyBirdGameActivity::class.java) },
                     onOpenBattleCity = { onLaunchGame(BattleCityGameActivity::class.java) },
-                    onOpenMario = { onLaunchGame(MarioGameActivity::class.java) }
+                    onOpenMario = { onLaunchGame(MarioGameActivity::class.java) },
+                    onOpenBox2DDemo = { onLaunchGame(StagePickerActivity::class.java) },
+                    onOpenRaindropDemo = { onLaunchGame(LessonPickerActivity::class.java) }
                 )
             }
             composable(Routes.KOCH) {

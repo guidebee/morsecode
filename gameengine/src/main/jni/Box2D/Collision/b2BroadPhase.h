@@ -242,7 +242,10 @@ void b2BroadPhase::UpdatePairs(T* callback)
 	//std::sort(m_pairBuffer, m_pairBuffer + m_pairCount, b2PairLessThan);
 
 	// FIX from http://www.box2d.org/forum/viewtopic.php?f=7&t=4756&start=0 to get rid of stl dependency
-	qsort(m_pairBuffer, sizeof(m_pairBuffer) / sizeof(struct b2Pair) , sizeof(struct b2Pair), b2PairCompareQSort);
+	// the original "fix" divided sizeof(pointer) by sizeof(b2Pair), which truncates
+	// to 0 on every platform -- qsort was never actually sorting anything, so the
+	// adjacent-duplicate-pair skip below never found any duplicates to skip.
+	qsort(m_pairBuffer, m_pairCount, sizeof(struct b2Pair), b2PairCompareQSort);
 	// Send the pairs back to the client.
 	int32 i = 0;
 	while (i < m_pairCount)

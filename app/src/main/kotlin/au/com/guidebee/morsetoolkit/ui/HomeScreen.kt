@@ -66,7 +66,9 @@ fun HomeScreen(
     onOpenHandbook: () -> Unit,
     onOpenFlappyBird: () -> Unit,
     onOpenBattleCity: () -> Unit,
-    onOpenMario: () -> Unit
+    onOpenMario: () -> Unit,
+    onOpenBox2DDemo: () -> Unit,
+    onOpenRaindropDemo: () -> Unit
 ) {
     val context = LocalContext.current
     val streakTracker = remember { StreakTracker(context) }
@@ -92,6 +94,10 @@ fun HomeScreen(
         ToolItem(stringResource(R.string.flappybird), Icons.Filled.SportsEsports, onOpenFlappyBird),
         ToolItem(stringResource(R.string.battlecity), Icons.Filled.SportsEsports, onOpenBattleCity),
         ToolItem(stringResource(R.string.mario), Icons.Filled.SportsEsports, onOpenMario)
+        // Box2D Demo / Raindrop Demo intentionally hidden from the Home screen --
+        // they're gameengine regression fixtures, not end-user features. Still
+        // reachable via StagePickerActivity/LessonPickerActivity directly (e.g.
+        // adb, or temporarily toggling android:exported) for future engine work.
     )
 
     Scaffold(

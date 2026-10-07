@@ -37,12 +37,19 @@ import au.com.guidebee.morsetoolkit.training.KeyClickSounds
  * already uses to let a learner answer a Receive drill by tapping.
  */
 @Composable
-fun rememberMorseKeyDecoder(onEmit: (Char) -> Unit): KeyboardMorseCodeDecoder {
+fun rememberMorseKeyDecoder(includeWordSpaces: Boolean = false, onEmit: (Char) -> Unit): KeyboardMorseCodeDecoder {
     val decoder = remember {
         KeyboardMorseCodeDecoder().apply {
+            var lastCharacter: Char? = null
             addListener(object : MorseCodePatternMatch.MorseCodeListener {
                 override fun onEmit(character: Char) {
-                    if (character != '^') onEmit(character)
+                    // Timer-generated idle spaces are not answers to a drill.
+                    // Free sending accepts one word gap after actual keyed text.
+                    val acceptSpace = includeWordSpaces && lastCharacter != null && lastCharacter != ' '
+                    if (character != '^' && (character != ' ' || acceptSpace)) {
+                        lastCharacter = character
+                        onEmit(character)
+                    }
                 }
 
                 override fun onCharStart() {}

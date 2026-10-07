@@ -1,0 +1,25 @@
+Learn the sound of Morse code, practice your sending, and decode real Morse audio with Morse Code Toolkit.
+
+Whether you are learning your first characters or refreshing your skills for amateur radio, the toolkit brings guided training, hands-on practice, and useful reference material into one app.
+
+LEARN BY LISTENING
+Build your skills with the Koch Trainer. Start with a small set of characters and unlock more as your answers improve. Adjust character speed and spacing to practice at a pace that suits you.
+
+PRACTICE SENDING AND RECEIVING
+Use the on-screen Morse key to send target words and callsigns, with your input decoded as you tap. Transmit drills challenge you to key letters and words from memory. Receive drills let you listen, replay, and respond to what you hear.
+
+DECODE LIVE AUDIO
+Use your device's microphone to turn nearby Morse tones into text. The decoder includes an oscilloscope-style signal display, a live words-per-minute readout, and a choice of detection modes. Play the included audio sample to explore how decoding works. Microphone permission is required for this feature.
+
+The decoder works best with computer-generated Morse audio, such as text converted to Morse code sound with consistent timing. If it struggles with Morse sent by hand, don't be discouraged. Human sending can vary in speed and spacing, and the decoder may have difficulty adapting to changes in words per minute (WPM). Decoding results may therefore be less reliable with hand-keyed Morse.
+
+KEEP A REFERENCE CLOSE
+Review letters, numbers, and punctuation with flashcards and the Morse handbook. Explore Q-codes, prosigns, callsign practice, and sample radio conversations in the Content Library, with audio playback to help you connect the symbols to their sound.
+
+BUILD A PRACTICE HABIT
+Track your practice streak, XP, and training progress from the home dashboard. Guided introductions and tool tips help you get started, while light and dark themes let you choose the look you prefer.
+
+TAKE A PLAYFUL BREAK
+Try the included arcade mini-games for a change of pace between practice sessions.
+
+From a quick flashcard review to a focused listening session, Morse Code Toolkit gives you several ways to keep learning and practicing.

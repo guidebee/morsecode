@@ -46,7 +46,7 @@ fun SendPracticeScreen(onBack: () -> Unit) {
     var target by remember { mutableStateOf(practiceTargets.random()) }
     var typed by remember { mutableStateOf("") }
 
-    val decoder = rememberMorseKeyDecoder { emitted ->
+    val decoder = rememberMorseKeyDecoder(includeWordSpaces = true) { emitted ->
         typed += if (emitted == ' ') " " else emitted.uppercaseChar()
     }
 

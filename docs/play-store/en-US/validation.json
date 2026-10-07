@@ -1,0 +1,70 @@
+{
+  "shortDescriptionCharacters": 76,
+  "fullDescriptionCharacters": 2235,
+  "screenshots": [
+    {
+      "file": "01-home.png",
+      "title": "Home dashboard",
+      "width": 1080,
+      "height": 1920,
+      "mode": "RGB",
+      "bytes": 88394
+    },
+    {
+      "file": "02-audio-decoder.png",
+      "title": "Audio decoder",
+      "width": 1080,
+      "height": 1920,
+      "mode": "RGB",
+      "bytes": 123363
+    },
+    {
+      "file": "03-koch-trainer.png",
+      "title": "Koch Trainer",
+      "width": 1080,
+      "height": 1920,
+      "mode": "RGB",
+      "bytes": 70875
+    },
+    {
+      "file": "04-send-practice.png",
+      "title": "Send Practice",
+      "width": 1080,
+      "height": 1920,
+      "mode": "RGB",
+      "bytes": 57606
+    },
+    {
+      "file": "05-transmit.png",
+      "title": "Transmit drills",
+      "width": 1080,
+      "height": 1920,
+      "mode": "RGB",
+      "bytes": 39714
+    },
+    {
+      "file": "06-receive.png",
+      "title": "Receive drills",
+      "width": 1080,
+      "height": 1920,
+      "mode": "RGB",
+      "bytes": 45852
+    },
+    {
+      "file": "07-flashcards.png",
+      "title": "Flashcards",
+      "width": 1080,
+      "height": 1920,
+      "mode": "RGB",
+      "bytes": 26422
+    },
+    {
+      "file": "08-content-library.png",
+      "title": "Content Library",
+      "width": 1080,
+      "height": 1920,
+      "mode": "RGB",
+      "bytes": 91053
+    }
+  ]
+}

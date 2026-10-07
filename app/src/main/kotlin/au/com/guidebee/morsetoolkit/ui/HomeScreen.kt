@@ -66,7 +66,6 @@ fun HomeScreen(
     onOpenHandbook: () -> Unit,
     onOpenFlappyBird: () -> Unit,
     onOpenBattleCity: () -> Unit,
-    onOpenMario: () -> Unit,
     onOpenBox2DDemo: () -> Unit,
     onOpenRaindropDemo: () -> Unit
 ) {
@@ -92,8 +91,8 @@ fun HomeScreen(
         ToolItem(stringResource(R.string.flashcard), Icons.Filled.Style, onOpenFlashcards),
         ToolItem(stringResource(R.string.handbook), Icons.Filled.Book, onOpenHandbook),
         ToolItem(stringResource(R.string.flappybird), Icons.Filled.SportsEsports, onOpenFlappyBird),
-        ToolItem(stringResource(R.string.battlecity), Icons.Filled.SportsEsports, onOpenBattleCity),
-        ToolItem(stringResource(R.string.mario), Icons.Filled.SportsEsports, onOpenMario)
+        ToolItem(stringResource(R.string.battlecity), Icons.Filled.SportsEsports, onOpenBattleCity)
+        // Mario is hidden from the menu while its port is in development.
         // Box2D Demo / Raindrop Demo intentionally hidden from the Home screen --
         // they're gameengine regression fixtures, not end-user features. Still
         // reachable via StagePickerActivity/LessonPickerActivity directly (e.g.

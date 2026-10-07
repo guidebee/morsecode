@@ -3,6 +3,18 @@ plugins {
     id 'org.jetbrains.kotlin.plugin.compose'
 }
 
+// Both build types use the production IDs in gradle.properties. Properties can
+// be overridden with -P or ~/.gradle/gradle.properties. Test ads are opt-in.
+def admobAppId = providers.gradleProperty('admobAppId').getOrElse('')
+def admobBannerId = providers.gradleProperty('admobBannerId').getOrElse('ca-app-pub-1370558989807131/4913862806')
+def useTestAds = providers.gradleProperty('admobTestAds').getOrElse('false').toBoolean()
+if ((!admobAppId.isEmpty() && !admobAppId.matches('ca-app-pub-[0-9]{16}~[0-9]{10}')) ||
+        !admobBannerId.matches('ca-app-pub-[0-9]{16}/[0-9]{10}')) {
+    throw new GradleException('Invalid AdMob app ID or banner ad unit ID.')
+}
+def testAdmobAppId = 'ca-app-pub-3940256099942544~3347511713'
+def testAdmobBannerId = 'ca-app-pub-3940256099942544/9214589741'
+
 android {
     namespace = 'au.com.guidebee.morsetoolkit.activity'
     compileSdk = 37
@@ -15,6 +27,10 @@ android {
         versionName = "1.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        manifestPlaceholders = [admobAppId: useTestAds || admobAppId.isEmpty() ? testAdmobAppId : admobAppId]
+        buildConfigField 'String', 'ADMOB_BANNER_ID', '"' + (useTestAds ? testAdmobBannerId : admobBannerId) + '"'
+        buildConfigField 'boolean', 'ADMOB_TEST_ADS', useTestAds.toString()
+        buildConfigField 'boolean', 'ADMOB_CONFIGURED', (useTestAds || !admobAppId.isEmpty()).toString()
     }
 
     buildTypes {
@@ -41,6 +57,9 @@ dependencies {
     
     implementation 'androidx.appcompat:appcompat:1.7.0'
     implementation 'com.google.android.material:material:1.12.0'
+    // Last Mobile Ads release supporting this app's minSdk 21.
+    implementation 'com.google.android.gms:play-services-ads:23.6.0'
+    implementation 'com.google.android.ump:user-messaging-platform:3.2.0'
 
     implementation project(':gameengine')
     implementation project(':decoder')

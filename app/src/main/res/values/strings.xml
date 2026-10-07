@@ -191,4 +191,5 @@
     <string name="tutorial_flashcard_tip1">Tap the card to flip between the letter and its Morse pattern.</string>
     <string name="tutorial_flashcard_tip2">Use the arrows to move to the next card — order or shuffle is set in Settings.</string>
     <string name="tutorial_flashcard_tip3">Tap the play icon to hear the pattern spoken aloud.</string>
+    <string name="ad_privacy_options">Ad privacy choices</string>
 </resources>

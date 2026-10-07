@@ -75,7 +75,9 @@ import au.com.guidebee.morsetoolkit.training.ThemeMode
 fun SettingsScreen(
     themeMode: ThemeMode,
     onThemeModeChange: (ThemeMode) -> Unit,
-    onReplayTutorials: () -> Unit
+    onReplayTutorials: () -> Unit,
+    privacyOptionsRequired: Boolean = false,
+    onPrivacyOptions: () -> Unit = {}
 ) {
     val context = LocalContext.current
     var showResetConfirm by remember { mutableStateOf(false) }
@@ -106,6 +108,12 @@ fun SettingsScreen(
                         )
                     }
                 }
+            }
+        }
+
+        if (privacyOptionsRequired) {
+            OutlinedButton(onClick = onPrivacyOptions) {
+                Text(stringResource(R.string.ad_privacy_options))
             }
         }
 

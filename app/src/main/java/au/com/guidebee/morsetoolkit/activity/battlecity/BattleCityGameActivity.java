@@ -3,17 +3,15 @@ package au.com.guidebee.morsetoolkit.activity.battlecity;
 import android.os.Bundle;
 import android.view.KeyEvent;
 import android.view.View;
-import android.widget.RelativeLayout;
 
 import com.guidebee.game.Configuration;
-import com.guidebee.game.activity.GameActivity;
+import au.com.guidebee.morsetoolkit.ads.AdSupportedGameActivity;
 
 import au.com.guidebee.morsetoolkit.ConfigInfo;
-import au.com.guidebee.morsetoolkit.activity.flappybird.FlappyBirdGamePlay;
 import au.com.guidebee.morsetoolkit.helper.MorseEncoder;
 
 
-public class BattleCityGameActivity extends GameActivity {
+public class BattleCityGameActivity extends AdSupportedGameActivity {
 
     protected MorseEncoder morseEncoder = null;
     @Override
@@ -30,10 +28,8 @@ public class BattleCityGameActivity extends GameActivity {
         config.hideStatusBar = true;
 
         View gameView = initializeForView(new BattleCityGamePlay(), config);
-        RelativeLayout mainLayout = new RelativeLayout(this);
-        mainLayout.addView(gameView);
-
-        setContentView(mainLayout);
+        // 3ec5b31 (2023-11-04): ALIGN_PARENT_TOP, despite its "bottom" comment.
+        setGameContent(gameView, true);
         au.com.guidebee.morsetoolkit.activity.flappybird.config.Configuration.gameActivity = this;
     }
 

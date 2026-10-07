@@ -1,6 +1,10 @@
 package au.com.guidebee.morsetoolkit.ui
 
+import android.app.Activity
+import au.com.guidebee.morsetoolkit.ads.AdMobManager
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
@@ -14,6 +18,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -24,7 +30,6 @@ import androidx.navigation.compose.rememberNavController
 import au.com.guidebee.morsetoolkit.activity.R
 import au.com.guidebee.morsetoolkit.activity.battlecity.BattleCityGameActivity
 import au.com.guidebee.morsetoolkit.activity.flappybird.FlappyBirdGameActivity
-import au.com.guidebee.morsetoolkit.activity.mario.MarioGameActivity
 import au.com.guidebee.morsetoolkit.training.ThemeMode
 import au.com.guidebee.morsetoolkit.training.TutorialPreference
 import com.guidebee.game.tutorial.box2d.StagePickerActivity
@@ -61,6 +66,9 @@ fun MorseApp(
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     val showBottomBar = currentRoute == Routes.HOME || currentRoute == Routes.LIBRARY || currentRoute == Routes.SETTINGS
+    val showAds = currentRoute in setOf(Routes.KOCH, Routes.SEND, Routes.TRANSMIT,
+        Routes.RECEIVE, Routes.FLASHCARD, Routes.SETTINGS)
+    var privacyOptionsRequired by remember { mutableStateOf(false) }
     val startDestination = remember {
         if (TutorialPreference.hasSeenOnboarding(context)) Routes.HOME else Routes.ONBOARDING
     }
@@ -75,26 +83,36 @@ fun MorseApp(
         // whichever screen-level Scaffold actually owns it.
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
-            if (showBottomBar) {
-                NavigationBar {
-                    NavigationBarItem(
-                        selected = currentRoute == Routes.HOME,
-                        onClick = { navController.navigate(Routes.HOME) { launchSingleTop = true } },
-                        icon = { Icon(Icons.Filled.Home, contentDescription = null) },
-                        label = { Text(stringResource(R.string.nav_home)) }
-                    )
-                    NavigationBarItem(
-                        selected = currentRoute == Routes.LIBRARY,
-                        onClick = { navController.navigate(Routes.LIBRARY) { launchSingleTop = true } },
-                        icon = { Icon(Icons.Filled.LibraryBooks, contentDescription = null) },
-                        label = { Text(stringResource(R.string.nav_library)) }
-                    )
-                    NavigationBarItem(
-                        selected = currentRoute == Routes.SETTINGS,
-                        onClick = { navController.navigate(Routes.SETTINGS) { launchSingleTop = true } },
-                        icon = { Icon(Icons.Filled.Settings, contentDescription = null) },
-                        label = { Text(stringResource(R.string.nav_settings)) }
-                    )
+            Column {
+                if (showAds) {
+                    // NavigationBar owns its inset; other routes need an inset below the banner.
+                    Column(Modifier.then(if (showBottomBar) Modifier else Modifier.navigationBarsPadding())) {
+                        AdMobBanner {
+                            privacyOptionsRequired = AdMobManager.privacyOptionsRequired(context as Activity)
+                        }
+                    }
+                }
+                if (showBottomBar) {
+                    NavigationBar {
+                        NavigationBarItem(
+                            selected = currentRoute == Routes.HOME,
+                            onClick = { navController.navigate(Routes.HOME) { launchSingleTop = true } },
+                            icon = { Icon(Icons.Filled.Home, contentDescription = null) },
+                            label = { Text(stringResource(R.string.nav_home)) }
+                        )
+                        NavigationBarItem(
+                            selected = currentRoute == Routes.LIBRARY,
+                            onClick = { navController.navigate(Routes.LIBRARY) { launchSingleTop = true } },
+                            icon = { Icon(Icons.Filled.LibraryBooks, contentDescription = null) },
+                            label = { Text(stringResource(R.string.nav_library)) }
+                        )
+                        NavigationBarItem(
+                            selected = currentRoute == Routes.SETTINGS,
+                            onClick = { navController.navigate(Routes.SETTINGS) { launchSingleTop = true } },
+                            icon = { Icon(Icons.Filled.Settings, contentDescription = null) },
+                            label = { Text(stringResource(R.string.nav_settings)) }
+                        )
+                    }
                 }
             }
         }
@@ -126,7 +144,6 @@ fun MorseApp(
                     onOpenHandbook = { navController.navigate(Routes.HANDBOOK) },
                     onOpenFlappyBird = { onLaunchGame(FlappyBirdGameActivity::class.java) },
                     onOpenBattleCity = { onLaunchGame(BattleCityGameActivity::class.java) },
-                    onOpenMario = { onLaunchGame(MarioGameActivity::class.java) },
                     onOpenBox2DDemo = { onLaunchGame(StagePickerActivity::class.java) },
                     onOpenRaindropDemo = { onLaunchGame(LessonPickerActivity::class.java) }
                 )
@@ -160,6 +177,8 @@ fun MorseApp(
             }
             composable(Routes.SETTINGS) {
                 SettingsScreen(
+                    privacyOptionsRequired = privacyOptionsRequired,
+                    onPrivacyOptions = { AdMobManager.showPrivacyOptions(context as Activity) },
                     themeMode = themeMode,
                     onThemeModeChange = onThemeModeChange,
                     onReplayTutorials = {

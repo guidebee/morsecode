@@ -20,10 +20,9 @@ package au.com.guidebee.morsetoolkit.activity.flappybird;
 
 import android.os.Bundle;
 import android.view.View;
-import android.widget.RelativeLayout;
 
 import com.guidebee.game.Configuration;
-import com.guidebee.game.activity.GameActivity;
+import au.com.guidebee.morsetoolkit.ads.AdSupportedGameActivity;
 
 //[------------------------------ MAIN CLASS ----------------------------------]
 
@@ -31,7 +30,7 @@ import com.guidebee.game.activity.GameActivity;
  * Flappy bird Game Activity.
  * @author James Shen <james.shen@guidebee.com>
  */
-public class FlappyBirdGameActivity extends GameActivity {
+public class FlappyBirdGameActivity extends AdSupportedGameActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -45,21 +44,15 @@ public class FlappyBirdGameActivity extends GameActivity {
         config.hideStatusBar = true;
 
         View gameView = initializeForView(new FlappyBirdGamePlay(this), config);
-        RelativeLayout mainLayout = new RelativeLayout(this);
-        mainLayout.addView(gameView);
-
-        setContentView(mainLayout);
+        // 3ec5b31 (2023-11-04): ALIGN_PARENT_BOTTOM.
+        setGameContent(gameView, false);
         au.com.guidebee.morsetoolkit.activity.flappybird.config.Configuration.gameActivity = this;
     }
 
 
-    public void showBanner() {
-    }
 
     public void backToMainActivity() {
         finish();
     }
 
-    public void hideBanner() {
-    }
 }

@@ -301,7 +301,9 @@ public class BattleCityGameScene extends ScreenAdapter implements GameController
 
         backButton = new ImageButton(createBackIcon(false), createBackIcon(true));
         backButton.setSize(16, 16);
-        backButton.setPosition(gameWorldWidth / 2f - 8, gameWoldHeight - 16);
+        // Leave the top center clear for the overlaid banner.
+        backButton.setPosition(gameWorldWidth - backButton.getWidth() - 2,
+                gameWoldHeight - backButton.getHeight() - 2);
         backButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
